@@ -25,12 +25,12 @@ and no index futures. Gold, oil and the S&P 500 are therefore priced through the
 ETF for each. All of these proxies can be traded on Alpaca, so a signal can later be
 paper-traded on the same symbol it was priced from.
 
-| Instrument | Symbol    | Stream                                               | Hours                     |
-| ---------- | --------- | ---------------------------------------------------- | ------------------------- |
-| Gold       | `GLD`     | `wss://stream.data.alpaca.markets/v2/iex`            | US market hours, weekdays |
-| Oil        | `USO`     | same                                                 | same                      |
-| S&P 500    | `SPY`     | same                                                 | same                      |
-| Bitcoin    | `BTC/USD` | `wss://stream.data.alpaca.markets/v1beta3/crypto/us` | 24/7                      |
+| Instrument | Symbol    | Stream                                                 | Hours                     |
+| ---------- | --------- | ------------------------------------------------------ | ------------------------- |
+| Gold       | `GLD`     | `wss://stream.data.alpaca.markets/v2/iex`              | US market hours, weekdays |
+| Oil        | `USO`     | same                                                   | same                      |
+| S&P 500    | `SPY`     | same                                                   | same                      |
+| Bitcoin    | `BTC/USD` | `wss://stream.data.alpaca.markets/v1beta3/crypto/us-1` | 24/7                      |
 
 To add an instrument, add a row to `INSTRUMENTS` in `src/instruments.ts`.
 
@@ -45,9 +45,13 @@ To add an instrument, add a row to `INSTRUMENTS` in `src/instruments.ts`.
   becomes a tick only when it moves the bid/ask midpoint (`source: "quote"`, `price` is
   the midpoint). Quotes with an empty side or a crossed book are skipped. Every tick
   carries the latest `bid` and `ask` once a quote has arrived.
-- Quotes are subscribed because trades alone are sparse. Alpaca's own crypto venue
-  (`crypto/us`) is thin, so BTC/USD can go minutes between trades. IEX is only a small
-  share of US stock volume.
+- Quotes are subscribed because trades alone can be sparse. IEX is only a small share of
+  US stock volume.
+- Crypto comes from Kraken US (`cryptoVenue: "us-1"`) by default. Alpaca's own venue
+  (`"us"`) is where Alpaca fills crypto orders. Its BTC/USD quotes arrive in bursts, often
+  tens of seconds apart, with a spread around $25. On Kraken the spread is around $1.50,
+  with several updates a second. Expect prices to differ slightly between the two venues.
+  `"eu-1"` is Kraken EU.
 - Dropped connections and transient server errors are retried with exponential backoff,
   from 1 s up to a 30 s cap. The backoff resets once a connection has delivered data
   or stayed up for 30 s.
