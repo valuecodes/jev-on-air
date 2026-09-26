@@ -177,12 +177,16 @@ export function alpacaCredentials(env: NodeJS.ProcessEnv): AlpacaCredentials {
   return { keyId, secretKey };
 }
 
-/** Formats a tick as `hh:mm:ss  name  symbol  price`, with the UTC trade time. */
+/**
+ * Formats a tick as `hh:mm:ss  name  symbol  price  kind`, with the UTC
+ * exchange time; kind is `mid` for a quote midpoint or `trade`.
+ */
 export function formatTick(tick: PriceTick): string {
   return [
     tick.timestamp.slice(11, 19),
     tick.name.padEnd(8),
     tick.symbol.padEnd(8),
     tick.price.toFixed(2).padStart(10),
+    tick.source === "quote" ? "mid" : "trade",
   ].join("  ");
 }

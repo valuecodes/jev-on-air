@@ -150,16 +150,29 @@ describe("alpacaCredentials", () => {
 });
 
 describe("formatTick", () => {
-  it("prints the UTC trade time, name, symbol and price", () => {
+  it("prints the UTC time, name, symbol, price and kind", () => {
     expect(
       formatTick({
         instrument: "gold",
         name: "Gold",
         symbol: "GLD",
+        source: "trade",
         price: 243.1,
         size: 100,
         timestamp: "2026-09-25T14:31:07.123456789Z",
       })
-    ).toBe("14:31:07  Gold      GLD           243.10");
+    ).toBe("14:31:07  Gold      GLD           243.10  trade");
+    expect(
+      formatTick({
+        instrument: "bitcoin",
+        name: "Bitcoin",
+        symbol: "BTC/USD",
+        source: "quote",
+        price: 64000.25,
+        bid: 64000,
+        ask: 64000.5,
+        timestamp: "2026-09-25T14:31:08Z",
+      })
+    ).toBe("14:31:08  Bitcoin   BTC/USD     64000.25  mid");
   });
 });

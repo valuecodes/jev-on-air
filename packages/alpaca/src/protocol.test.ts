@@ -17,6 +17,7 @@ describe("messages", () => {
     expect(JSON.parse(subscribeMessage(["SPY", "GLD"]))).toEqual({
       action: "subscribe",
       trades: ["SPY", "GLD"],
+      quotes: ["SPY", "GLD"],
     });
   });
 });
@@ -35,7 +36,7 @@ describe("parseFrame", () => {
     ).toEqual([
       { type: "connected" },
       { type: "authenticated" },
-      { type: "subscription", trades: ["SPY"] },
+      { type: "subscription", trades: ["SPY"], quotes: [] },
       { type: "error", code: 402, message: "auth failed" },
     ]);
   });
@@ -88,10 +89,41 @@ describe("parseFrame", () => {
     ]);
   });
 
+  it("parses quotes", () => {
+    expect(
+      parseFrame(
+        JSON.stringify([
+          {
+            T: "q",
+            S: "BTC/USD",
+            bp: 63999.5,
+            bs: 0.5,
+            ap: 64001,
+            as: 0.25,
+            t: "2026-09-25T14:31:08Z",
+          },
+        ])
+      )
+    ).toEqual([
+      {
+        type: "quote",
+        quote: {
+          symbol: "BTC/USD",
+          bidPrice: 63999.5,
+          bidSize: 0.5,
+          askPrice: 64001,
+          askSize: 0.25,
+          timestamp: "2026-09-25T14:31:08Z",
+        },
+      },
+    ]);
+  });
+
   it("drops messages it does not use or cannot read", () => {
     expect(
       parseFrame(
         JSON.stringify([
+          { T: "b", S: "SPY", o: 1, c: 2 },
           { T: "q", S: "SPY", bp: 1, ap: 2 },
           { T: "t", S: "SPY", p: "512" },
           { T: "success", msg: "something new" },

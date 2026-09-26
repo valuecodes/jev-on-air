@@ -1,7 +1,7 @@
 import { createTestLogger } from "@repo/logger/testing";
 import { describe, expect, it, vi } from "vitest";
 
-import { FakeServer, trade } from "./fake-socket";
+import { FakeServer, quote, trade } from "./fake-socket";
 import { AlpacaError } from "./protocol";
 import { AlpacaStream } from "./stream";
 
@@ -24,7 +24,7 @@ function setup() {
 describe("AlpacaStream", () => {
   it("authenticates, subscribes and yields trades", async () => {
     const { server, stream } = setup();
-    const trades = stream.trades();
+    const trades = stream.marketData();
     const first = trades.next();
 
     const socket = server.latest(url);
@@ -37,11 +37,29 @@ describe("AlpacaStream", () => {
     expect(socket.sent[1]).toEqual({
       action: "subscribe",
       trades: ["SPY", "GLD"],
+      quotes: ["SPY", "GLD"],
     });
 
     socket.receive(trade("SPY", 512.34), trade("GLD", 243.1));
-    expect((await first).value).toMatchObject({ symbol: "SPY", price: 512.34 });
-    expect((await trades.next()).value).toMatchObject({ symbol: "GLD" });
+    expect((await first).value).toMatchObject({
+      trade: { symbol: "SPY", price: 512.34 },
+    });
+    expect((await trades.next()).value).toMatchObject({
+      trade: { symbol: "GLD" },
+    });
+
+    socket.receive(quote("SPY", 512.3, 512.4));
+    expect((await trades.next()).value).toEqual({
+      type: "quote",
+      quote: {
+        symbol: "SPY",
+        bidPrice: 512.3,
+        bidSize: 5,
+        askPrice: 512.4,
+        askSize: 7,
+        timestamp: "2026-09-25T14:31:07.456Z",
+      },
+    });
 
     await trades.return(undefined);
     expect(socket.closed).toBe(true);
@@ -49,7 +67,7 @@ describe("AlpacaStream", () => {
 
   it("reconnects after the connection drops", async () => {
     const { server, stream, lines } = setup();
-    const trades = stream.trades();
+    const trades = stream.marketData();
     const first = trades.next();
     server.latest().accept();
     server.latest().drop();
@@ -60,7 +78,9 @@ describe("AlpacaStream", () => {
     const socket = server.latest();
     socket.accept();
     socket.receive(trade("SPY", 1));
-    expect((await first).value).toMatchObject({ symbol: "SPY", price: 1 });
+    expect((await first).value).toMatchObject({
+      trade: { symbol: "SPY", price: 1 },
+    });
     expect(
       lines.some((line) => line.message === "stream closed, reconnecting")
     ).toBe(true);
@@ -69,7 +89,7 @@ describe("AlpacaStream", () => {
 
   it("reconnects after a transient server error", async () => {
     const { server, stream } = setup();
-    const trades = stream.trades();
+    const trades = stream.marketData();
     const first = trades.next();
     server.latest().receive({ T: "error", code: 500, msg: "internal error" });
     expect(server.latest().closed).toBe(true);
@@ -79,13 +99,13 @@ describe("AlpacaStream", () => {
     });
     server.latest().accept();
     server.latest().receive(trade("GLD", 2));
-    expect((await first).value).toMatchObject({ symbol: "GLD" });
+    expect((await first).value).toMatchObject({ trade: { symbol: "GLD" } });
     await trades.return(undefined);
   });
 
   it("throws fatal errors without reconnecting", async () => {
     const { server, stream } = setup();
-    const first = stream.trades().next();
+    const first = stream.marketData().next();
     const socket = server.latest();
     socket.receive({ T: "success", msg: "connected" });
     socket.receive({ T: "error", code: 402, msg: "auth failed" });
@@ -98,7 +118,7 @@ describe("AlpacaStream", () => {
 
   it("throws a connection-limit error on the first connection", async () => {
     const { server, stream } = setup();
-    const first = stream.trades().next();
+    const first = stream.marketData().next();
     server.latest().receive({ T: "success", msg: "connected" });
     server.latest().receive({ T: "error", code: 406, msg: "limit exceeded" });
 
@@ -108,7 +128,7 @@ describe("AlpacaStream", () => {
 
   it("retries a connection-limit error after a drop", async () => {
     const { server, stream } = setup();
-    const trades = stream.trades();
+    const trades = stream.marketData();
     const first = trades.next();
     server.latest().accept();
     server.latest().drop();
@@ -125,7 +145,7 @@ describe("AlpacaStream", () => {
     });
     server.latest().accept();
     server.latest().receive(trade("SPY", 4));
-    expect((await first).value).toMatchObject({ price: 4 });
+    expect((await first).value).toMatchObject({ trade: { price: 4 } });
     await trades.return(undefined);
   });
 
@@ -140,7 +160,7 @@ describe("AlpacaStream", () => {
       retry: { minDelayMs: 1, maxDelayMs: 1 },
       handshakeTimeoutMs: 20,
     });
-    const trades = stream.trades();
+    const trades = stream.marketData();
     const first = trades.next();
     server.latest().receive({ T: "success", msg: "connected" });
 
@@ -157,7 +177,7 @@ describe("AlpacaStream", () => {
     server.latest().accept();
     server.latest().receive({ T: "subscription", trades: ["SPY"] });
     server.latest().receive(trade("SPY", 5));
-    expect((await first).value).toMatchObject({ price: 5 });
+    expect((await first).value).toMatchObject({ trade: { price: 5 } });
     await trades.return(undefined);
   });
 
@@ -173,7 +193,7 @@ describe("AlpacaStream", () => {
       idleTimeoutMs: 5,
     });
     const controller = new AbortController();
-    const first = stream.trades(controller.signal).next();
+    const first = stream.marketData(controller.signal).next();
     server.latest().accept();
     server.latest().receive({ T: "subscription", trades: ["BTC/USD"] });
 
@@ -199,7 +219,7 @@ describe("AlpacaStream", () => {
       retry: { minDelayMs: 1, maxDelayMs: 1000 },
     });
     const controller = new AbortController();
-    const first = stream.trades(controller.signal).next();
+    const first = stream.marketData(controller.signal).next();
     for (let i = 1; i <= 3; i++) {
       await vi.waitFor(() => {
         expect(server.sockets).toHaveLength(i);
@@ -221,7 +241,7 @@ describe("AlpacaStream", () => {
   it("stops when the signal aborts", async () => {
     const { server, stream } = setup();
     const controller = new AbortController();
-    const first = stream.trades(controller.signal).next();
+    const first = stream.marketData(controller.signal).next();
     server.latest().accept();
 
     controller.abort();
@@ -241,7 +261,7 @@ describe("AlpacaStream", () => {
       retry: { minDelayMs: 60_000 },
     });
     const controller = new AbortController();
-    const first = stream.trades(controller.signal).next();
+    const first = stream.marketData(controller.signal).next();
     server.latest().drop();
     await Promise.resolve();
 
@@ -252,20 +272,20 @@ describe("AlpacaStream", () => {
 
   it("does not connect when the signal is already aborted", async () => {
     const { server, stream } = setup();
-    const result = await stream.trades(AbortSignal.abort()).next();
+    const result = await stream.marketData(AbortSignal.abort()).next();
     expect(result.done).toBe(true);
     expect(server.sockets).toHaveLength(0);
   });
 
   it("skips unreadable frames", async () => {
     const { server, stream, lines } = setup();
-    const trades = stream.trades();
+    const trades = stream.marketData();
     const first = trades.next();
     const socket = server.latest();
     socket.accept();
     socket.receiveRaw("not json");
     socket.receive(trade("SPY", 3));
-    expect((await first).value).toMatchObject({ price: 3 });
+    expect((await first).value).toMatchObject({ trade: { price: 3 } });
     expect(lines.some((line) => line.message === "unreadable frame")).toBe(
       true
     );
