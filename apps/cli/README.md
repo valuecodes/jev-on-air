@@ -5,7 +5,7 @@ Arguments are parsed with Node's built-in `node:util` `parseArgs`.
 
 ## Stack
 
-- Node.js 24 running TypeScript directly (type stripping, no build step)
+- Node.js 24 running TypeScript through [tsx](https://tsx.is) (no build step)
 - Vitest for unit tests
 
 ## Getting started

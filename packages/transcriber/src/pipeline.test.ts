@@ -1,8 +1,8 @@
 import { createTestLogger } from "@repo/logger/testing";
 import { describe, expect, it } from "vitest";
 
-import { Pipeline } from "./pipeline.ts";
-import type { Command } from "./pipeline.ts";
+import { Pipeline } from "./pipeline";
+import type { Command } from "./pipeline";
 
 const node = (name: string, script: string): Command => ({
   name,

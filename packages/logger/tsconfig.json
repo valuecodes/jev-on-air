@@ -1,12 +1,5 @@
 {
   "extends": "@repo/typescript/node.json",
   "include": ["src"],
-  "exclude": ["node_modules", "dist"],
-  "compilerOptions": {
-    // Apps run this package's `src/*.ts` directly under Node's type stripping,
-    // so relative imports keep their `.ts` extension and only erasable
-    // TypeScript syntax is allowed.
-    "allowImportingTsExtensions": true,
-    "erasableSyntaxOnly": true
-  }
+  "exclude": ["node_modules", "dist"]
 }

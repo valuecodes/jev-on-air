@@ -4,8 +4,8 @@
 import { join } from "node:path";
 import type { LoggerLike } from "@repo/logger";
 
-import { Pipeline } from "./pipeline.ts";
-import type { Command } from "./pipeline.ts";
+import { Pipeline } from "./pipeline";
+import type { Command } from "./pipeline";
 
 export type Segment = {
   /** Seconds from the start of the transcribed audio. */

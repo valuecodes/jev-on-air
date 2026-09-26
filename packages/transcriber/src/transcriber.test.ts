@@ -1,7 +1,7 @@
 import { createTestLogger } from "@repo/logger/testing";
 import { describe, expect, it } from "vitest";
 
-import { parseSegmentLine, Transcriber } from "./transcriber.ts";
+import { parseSegmentLine, Transcriber } from "./transcriber";
 
 describe("parseSegmentLine", () => {
   it("parses a worker segment line", () => {
