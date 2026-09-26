@@ -1,5 +1,6 @@
 // The `prices` command: streams live prices for Jev's instruments from Alpaca
 // to stdout until interrupted.
+import { once } from "node:events";
 import { PriceFeed } from "@repo/alpaca/prices";
 import type { LoggerLike } from "@repo/logger";
 
@@ -20,9 +21,9 @@ export class PricesCommand {
   ): Promise<void> {
     const feed = new PriceFeed(this.logger, { credentials });
     for await (const tick of feed.stream(signal)) {
-      process.stdout.write(
-        `${args.json ? JSON.stringify(tick) : formatTick(tick)}\n`
-      );
+      const line = `${args.json ? JSON.stringify(tick) : formatTick(tick)}\n`;
+      // Wait out a slow pipe rather than queueing output in memory.
+      if (!process.stdout.write(line)) await once(process.stdout, "drain");
     }
   }
 }

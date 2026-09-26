@@ -144,6 +144,9 @@ export class PriceFeed {
         ticks.end();
       },
       (error: unknown) => {
+        // Stop the surviving stream now, not once the consumer has drained
+        // whatever is still buffered.
+        controller.abort();
         ticks.fail(error);
       }
     );

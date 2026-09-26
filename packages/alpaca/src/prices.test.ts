@@ -1,5 +1,5 @@
 import { createTestLogger } from "@repo/logger/testing";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { FakeServer, quote, trade } from "./fake-socket";
 import { PriceFeed, streamUrl } from "./prices";
@@ -159,6 +159,30 @@ describe("PriceFeed", () => {
 
     await expect(first).rejects.toThrow(/406: connection limit exceeded/);
     expect(server.sockets.every((socket) => socket.closed)).toBe(true);
+  });
+
+  it("closes the other stream at once even with ticks still buffered", async () => {
+    const { server, feed } = setup();
+    const ticks = feed.stream();
+    const first = ticks.next();
+    await Promise.resolve();
+    server.latest(cryptoUrl).accept();
+    server.latest(stocksUrl).receive({ T: "success", msg: "connected" });
+    server
+      .latest(cryptoUrl)
+      .receive(trade("BTC/USD", 1), trade("BTC/USD", 2), trade("BTC/USD", 3));
+    await first;
+    server
+      .latest(stocksUrl)
+      .receive({ T: "error", code: 402, msg: "auth failed" });
+
+    // Two ticks are still buffered, but the crypto socket is already closed.
+    await vi.waitFor(() => {
+      expect(server.latest(cryptoUrl).closed).toBe(true);
+    });
+    await expect(async () => {
+      for (;;) if ((await ticks.next()).done) break;
+    }).rejects.toThrow(/402/);
     expect(server.sockets).toHaveLength(2);
   });
 
