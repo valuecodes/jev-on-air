@@ -25,7 +25,12 @@ export class FakeSocket implements Socket {
 
   /** Delivers one server frame holding `messages`. */
   receive(...messages: object[]): void {
-    this.handlers.message(JSON.stringify(messages));
+    this.receiveRaw(JSON.stringify(messages));
+  }
+
+  /** Delivers `data` as a frame exactly as given. */
+  receiveRaw(data: string): void {
+    this.handlers.message(data);
   }
 
   /** Plays the handshake up to an accepted subscription. */

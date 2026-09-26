@@ -59,12 +59,28 @@ export type AlpacaStreamOptions = {
   symbols: readonly string[];
   createSocket?: CreateSocket;
   retry?: RetryOptions;
+  /**
+   * Reconnect if the subscription is not confirmed this soon after opening
+   * the socket (default 15000).
+   */
+  handshakeTimeoutMs?: number;
+  /**
+   * Reconnect after this long without a frame. A half-open connection fires
+   * no `close`, so this is how a silently dead stream is noticed. Off by
+   * default: only set it for a stream that is never legitimately quiet.
+   */
+  idleTimeoutMs?: number;
 };
+
+// A connection that stays up this long counts as healthy even with no trades.
+const healthyAfterMs = 30_000;
 
 type Connection = {
   trades: Channel<Trade>;
   /** Whether the server accepted our credentials on this connection. */
   authenticated: () => boolean;
+  /** Whether the connection delivered a trade or stayed up a while. */
+  healthy: () => boolean;
   close: () => void;
 };
 
@@ -86,8 +102,9 @@ export class AlpacaStream {
     const minDelay = this.options.retry?.minDelayMs ?? 1000;
     const maxDelay = this.options.retry?.maxDelayMs ?? 30_000;
     let attempt = 0;
+    let everAuthenticated = false;
     while (!signal?.aborted) {
-      const connection = this.connect(signal);
+      const connection = this.connect(signal, everAuthenticated);
       try {
         yield* connection.trades;
       } finally {
@@ -95,9 +112,10 @@ export class AlpacaStream {
       }
       if (signal?.aborted) return;
 
-      // A connection that got as far as authenticating was healthy, so the
-      // next drop starts the backoff over.
-      if (connection.authenticated()) attempt = 0;
+      if (connection.authenticated()) everAuthenticated = true;
+      // Only a connection that actually worked starts the backoff over; one
+      // the server keeps closing right after auth must not retry every second.
+      if (connection.healthy()) attempt = 0;
       const delay = Math.min(minDelay * 2 ** attempt, maxDelay);
       attempt += 1;
       this.logger.warn("stream closed, reconnecting", { delayMs: delay });
@@ -109,14 +127,46 @@ export class AlpacaStream {
     }
   }
 
-  private connect(signal?: AbortSignal): Connection {
+  /**
+   * `reconnecting` means an earlier connection of this stream authenticated.
+   * After an unclean drop Alpaca can still count that connection for a while,
+   * so a connection-limit error then is retried instead of thrown.
+   */
+  private connect(
+    signal: AbortSignal | undefined,
+    reconnecting: boolean
+  ): Connection {
     const { url, credentials, symbols } = this.options;
     const createSocket = this.options.createSocket ?? createWebSocket;
+    const { handshakeTimeoutMs = 15_000, idleTimeoutMs } = this.options;
     const trades = new Channel<Trade>();
-    let authenticated = false;
+    // Handlers can run before `createSocket` returns, so they reach the socket
+    // through this holder rather than a `const` still in its dead zone.
+    const holder: { socket?: Socket } = {};
+    let authenticatedAt: number | undefined;
+    let tradeSeen = false;
     let closed = false;
 
+    const expire = (reason: string): void => {
+      this.logger.warn(reason);
+      close();
+    };
+    let handshakeTimer: NodeJS.Timeout | undefined = setTimeout(() => {
+      expire("handshake timed out");
+    }, handshakeTimeoutMs);
+    let idleTimer: NodeJS.Timeout | undefined;
+
+    // (Re)starts the idle watchdog; runs from the subscription onwards.
+    const armIdle = (): void => {
+      if (idleTimeoutMs === undefined || closed) return;
+      clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => {
+        expire("no data, stream looks dead");
+      }, idleTimeoutMs);
+    };
+
     const handleFrame = (data: string): void => {
+      if (handshakeTimer === undefined) armIdle();
       let messages;
       try {
         messages = parseFrame(data);
@@ -127,18 +177,22 @@ export class AlpacaStream {
       for (const message of messages) {
         switch (message.type) {
           case "connected":
-            socket.send(authMessage(credentials));
+            holder.socket?.send(authMessage(credentials));
             break;
           case "authenticated":
-            authenticated = true;
-            socket.send(subscribeMessage(symbols));
+            authenticatedAt = Date.now();
+            holder.socket?.send(subscribeMessage(symbols));
             break;
           case "subscription":
             this.logger.info("subscribed", { trades: message.trades });
+            clearTimeout(handshakeTimer);
+            handshakeTimer = undefined;
+            armIdle();
             break;
           case "error": {
             const error = new AlpacaError(message.code, message.message);
-            if (isFatalError(message.code)) {
+            const staleConnection = reconnecting && message.code === 406;
+            if (isFatalError(message.code) && !staleConnection) {
               trades.fail(error);
             } else {
               this.logger.warn("stream error", { err: error });
@@ -147,6 +201,7 @@ export class AlpacaStream {
             return;
           }
           case "trade":
+            tradeSeen = true;
             trades.push(message.trade);
             break;
         }
@@ -160,8 +215,10 @@ export class AlpacaStream {
     const close = (): void => {
       if (closed) return;
       closed = true;
+      clearTimeout(handshakeTimer);
+      clearTimeout(idleTimer);
       signal?.removeEventListener("abort", onAbort);
-      socket.close();
+      holder.socket?.close();
       trades.end();
     };
 
@@ -173,8 +230,19 @@ export class AlpacaStream {
         close();
       },
     });
+    // A socket that reported a failure synchronously is already done.
+    holder.socket = socket;
+    if (closed) socket.close();
     signal?.addEventListener("abort", onAbort, { once: true });
 
-    return { trades, authenticated: () => authenticated, close };
+    return {
+      trades,
+      authenticated: () => authenticatedAt !== undefined,
+      healthy: () =>
+        tradeSeen ||
+        (authenticatedAt !== undefined &&
+          Date.now() - authenticatedAt >= healthyAfterMs),
+      close,
+    };
   }
 }

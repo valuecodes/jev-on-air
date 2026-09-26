@@ -33,6 +33,13 @@ export type PriceFeedOptions = {
 
 const dataHost = "wss://stream.data.alpaca.markets";
 
+// Bitcoin trades around the clock, so two silent minutes mean a dead
+// connection. Stocks are legitimately silent outside market hours.
+const idleTimeoutMs: Record<Market, number | undefined> = {
+  stocks: undefined,
+  crypto: 120_000,
+};
+
 export function streamUrl(market: Market, stockFeed: "iex" | "sip"): string {
   return market === "stocks"
     ? `${dataHost}/v2/${stockFeed}`
@@ -68,6 +75,7 @@ export class PriceFeed {
           ).map((instrument) => instrument.symbol),
           createSocket: options.createSocket,
           retry: options.retry,
+          idleTimeoutMs: idleTimeoutMs[market],
         })
     );
   }

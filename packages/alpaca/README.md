@@ -42,10 +42,16 @@ To add an instrument, add a row to `INSTRUMENTS` in `src/instruments.ts`.
 - Each connection goes through the same steps: it waits for `connected`, sends `auth`,
   waits for `authenticated`, then subscribes to `trades`. Each trade becomes one tick.
 - Dropped connections and transient server errors are retried with exponential backoff,
-  from 1 s up to a 30 s cap. The backoff resets once a connection authenticates again.
+  from 1 s up to a 30 s cap. The backoff resets once a connection has delivered a trade
+  or stayed up for 30 s.
+- A connection is also reopened if the handshake isn't done within 15 s. The crypto stream
+  is reopened after 2 minutes with no data at all, because a half-open socket never fires
+  `close` and Bitcoin trades around the clock. Stocks have no idle limit, since they go
+  quiet outside market hours.
 - Some errors can't be fixed by reconnecting, so they close both streams and are thrown:
   bad keys (401/402), the plan's symbol or connection limit (405/406), and a feed your plan
-  doesn't include (409/410).
+  doesn't include (409/410). The one exception is a 406 on a reconnect. After an unclean
+  drop, Alpaca can briefly keep counting the dead connection, so that case is retried.
 
 ## Plan limits
 
