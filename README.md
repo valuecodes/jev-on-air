@@ -5,14 +5,14 @@ statements with Jev, and turns them into structured simulated trade signals.
 
 ## What's inside
 
-- Vite playground in `apps/playground` (Vite 8, React 19, Tailwind CSS 4)
+- Command-line app in `apps/cli` (Node.js 24, TypeScript run directly)
 - Shared tooling: oxlint, Prettier, TypeScript 7, Turbo
 - `@repo/logger` — structured JSON logging for Cloud Run / Cloud Logging
 - pnpm catalog for versions, with a 14-day release-age guard on new releases
 - Agent settings in `.claude/`, `.codex/`, and `.github/`
 
 ```text
-apps/playground        Vite 8 + React 19 sandbox
+apps/cli               Node.js 24 CLI, hello world for now
 packages/logger        pino logger, Cloud Logging shaped JSON
 tooling/prettier       shared Prettier config
 tooling/typescript     shared tsconfig presets (base, node, react)
@@ -26,7 +26,7 @@ Requires Node.js 24.12.0 (`.nvmrc`) and pnpm 11.24.0 (`packageManager` in `packa
 
 ```bash
 pnpm install
-pnpm dev          # playground at http://localhost:3001
+pnpm cli --hello-world    # prints a greeting
 ```
 
 ## Commands

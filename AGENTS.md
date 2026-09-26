@@ -12,9 +12,9 @@ into simulated trade signals.
 
 ### Apps (`apps/`)
 
-| Name       | Filter       | Description                           |
-| ---------- | ------------ | ------------------------------------- |
-| playground | `playground` | Vite 8 + React 19 app for experiments |
+| Name | Filter | Description                                           |
+| ---- | ------ | ----------------------------------------------------- |
+| cli  | `cli`  | Node.js 24 command-line app, runs TypeScript directly |
 
 ### Packages (`packages/`)
 
@@ -40,7 +40,7 @@ Apps may import packages; packages must never import apps.
 
 ```bash
 pnpm install                     # Install all dependencies
-pnpm --filter playground dev     # Vite dev server (port 3001)
+pnpm cli --hello-world           # Run the CLI (args go to apps/cli)
 
 pnpm lint                        # oxlint, one process over the whole repo
 pnpm typecheck                   # turbo run typecheck
