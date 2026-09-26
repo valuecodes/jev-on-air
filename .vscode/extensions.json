@@ -1,0 +1,10 @@
+{
+  "recommendations": [
+    "Anthropic.claude-code",
+    "openai.chatgpt",
+    "oxc.oxc-vscode",
+    "esbenp.prettier-vscode",
+    "bradlc.vscode-tailwindcss",
+    "GitHub.vscode-pull-request-github"
+  ]
+}

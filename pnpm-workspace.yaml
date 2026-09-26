@@ -1,0 +1,56 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+  - "tooling/*"
+
+# Single source of truth for versions used by more than one package. A manifest
+# references an entry with `catalog:` — bare, because there is one catalog — so
+# a shared version is declared here once instead of once per manifest. Bump with
+# `pnpm up --latest -r <pkg>`: it rewrites the entry below and leaves every
+# package.json untouched, so `git diff pnpm-workspace.yaml` is the whole
+# version-change review surface.
+#
+# Two things NOT to put here: `@repo/*` deps stay `workspace:*` (pnpm rejects
+# the workspace protocol as a catalog value), and a dependency with exactly one
+# consumer stays pinned inline in that manifest — the catalog is for versions
+# that can drift apart.
+#
+# Scoped keys must be double-quoted: unquoted `@` is a YAML syntax error, and
+# Prettier checks this file, so single quotes fail `format:check`.
+catalog:
+  # Toolchain — every package runs the same one. `typescript` is the native (Go)
+  # compiler; its binary is still called `tsc`.
+  "@types/node": 26.4.0
+  prettier: 3.9.6
+  typescript: 7.0.2
+  vitest: 4.1.11
+
+  # Prettier plugins, loaded by the root manifest and tooling/prettier.
+  "@ianvs/prettier-plugin-sort-imports": 4.7.1
+  prettier-plugin-tailwindcss: 0.8.1
+
+# Routes `pnpm add` / `pnpm update <pkg>` into the catalog and fails a version
+# that conflicts with an entry, instead of silently pinning one package away
+# from the rest. NOTE: it acts on those commands only — a plain `pnpm install`
+# never evaluates it — so it is an authoring guardrail, not a CI-enforced
+# invariant. A hand-written version in a package.json will still install.
+catalogMode: strict
+
+allowBuilds:
+  # Tailwind 4 compiles CSS through a native binary, and this install script is
+  # what puts it in place. Without it Tailwind silently emits no styles — a
+  # failure `pnpm build` does not surface, only looking at the page does.
+  "@tailwindcss/oxide": true
+  # Vite and Vitest both reach esbuild. Vite 8 bundles with rolldown, but
+  # esbuild is still used for dependency pre-bundling and by Vitest's
+  # transform pipeline, so its binary has to be linked.
+  esbuild: true
+
+# 14 days, in minutes. A newly published version is not resolvable until it has
+# been on the registry this long, which blunts the compromised-release window.
+#
+# Consequence worth knowing: "latest" now means "newest stable at least 14 days
+# old", so `pnpm up --latest` will deliberately skip a fresh release and pick it
+# up on a later run. Use `minimumReleaseAgeExclude` if one package genuinely
+# needs to move faster.
+minimumReleaseAge: 20160

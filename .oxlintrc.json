@@ -1,0 +1,221 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+
+  // Every rule below is listed explicitly and every category is off, because
+  // oxlint's categories are not the same set as the ESLint presets this
+  // replaced (`eslint:recommended` + typescript-eslint `recommended` +
+  // `recommendedTypeChecked` + `stylisticTypeChecked` + react-hooks
+  // `recommended-latest`). Turning on `correctness` instead would both drop
+  // rules we had and add ones we never ran.
+  //
+  // Generated from the old flat config with `@oxlint/migrate --type-aware`,
+  // then flattened by hand: the tool mirrors ESLint's config-array shape, which
+  // meant eight `overrides` entries repeating the same rules four times.
+  //
+  // `unicorn` and `oxc` are ON by default, so `plugins` has to be explicit to
+  // keep them off -- an empty/absent `plugins` is not the same as "none".
+  //
+  // `correctness` has to be turned off by NAME, not by an empty `categories`
+  // object: `{}` leaves oxlint's default category on, which silently adds ~57
+  // rules at `warn` -- including the ones typescript-eslint deliberately
+  // disables for TS because tsc already reports them (`no-const-assign`,
+  // `constructor-super`, `no-unreachable`, ...). Those are omitted below for
+  // the same reason: every source file in this repo is TypeScript.
+  "plugins": ["typescript", "import", "react"],
+  "categories": { "correctness": "off" },
+
+  // Type-aware rules (the no-unsafe-* family, no-floating-promises,
+  // unbound-method, ...) need the `oxlint-tsgolint` binary. Without it
+  // `oxlint` exits 0 having silently skipped all of them, so the root `lint`
+  // script also passes `--type-aware` to fail loudly.
+  "options": { "typeAware": true },
+  "env": { "builtin": true },
+
+  // `.gitignore` is read natively by oxlint, which is what keeps `dist/`,
+  // `.turbo/` and `.cache/` out -- the old config had to feed it in through
+  // `includeIgnoreFile`. Only the config-file glob has to be repeated here:
+  // `postcss.config.mjs`, `vite.config.ts` and `vitest.config.ts` sit outside
+  // every tsconfig `include`, so type-aware rules cannot resolve them.
+  "ignorePatterns": ["**/*.config.*"],
+
+  "rules": {
+    // eslint core -- eslint:recommended, minus the rules typescript-eslint
+    // turns back off for TS files because tsc already reports them.
+    "for-direction": "error",
+    "no-async-promise-executor": "error",
+    "no-case-declarations": "error",
+    "no-compare-neg-zero": "error",
+    "no-cond-assign": "error",
+    "no-constant-binary-expression": "error",
+    "no-constant-condition": "error",
+    "no-control-regex": "error",
+    "no-debugger": "error",
+    "no-delete-var": "error",
+    "no-dupe-else-if": "error",
+    "no-duplicate-case": "error",
+    "no-empty": "error",
+    "no-empty-character-class": "error",
+    "no-empty-pattern": "error",
+    "no-empty-static-block": "error",
+    "no-ex-assign": "error",
+    "no-extra-boolean-cast": "error",
+    "no-fallthrough": "error",
+    "no-global-assign": "error",
+    "no-invalid-regexp": "error",
+    "no-irregular-whitespace": "error",
+    "no-loss-of-precision": "error",
+    "no-misleading-character-class": "error",
+    "no-nonoctal-decimal-escape": "error",
+    "no-prototype-builtins": "error",
+    "no-regex-spaces": "error",
+    "no-self-assign": "error",
+    "no-shadow-restricted-names": "error",
+    "no-sparse-arrays": "error",
+    "no-unexpected-multiline": "error",
+    "no-unsafe-finally": "error",
+    "no-unsafe-optional-chaining": "error",
+    "no-unused-labels": "error",
+    "no-unused-private-class-members": "error",
+    "no-useless-backreference": "error",
+    "no-useless-catch": "error",
+    "no-useless-escape": "error",
+    "no-var": "error",
+    "prefer-const": "error",
+    "prefer-rest-params": "error",
+    "prefer-spread": "error",
+    "require-yield": "error",
+    "use-isnan": "error",
+    "valid-typeof": "error",
+
+    // typescript-eslint: recommended + recommendedTypeChecked
+    "typescript/await-thenable": "error",
+    "typescript/ban-ts-comment": "error",
+    "typescript/no-array-constructor": "error",
+    "typescript/no-array-delete": "error",
+    "typescript/no-base-to-string": "error",
+    "typescript/no-duplicate-enum-values": "error",
+    "typescript/no-duplicate-type-constituents": "error",
+    "typescript/no-empty-object-type": "error",
+    "typescript/no-explicit-any": "error",
+    "typescript/no-extra-non-null-assertion": "error",
+    "typescript/no-floating-promises": "error",
+    "typescript/no-for-in-array": "error",
+    "typescript/no-implied-eval": "error",
+    "typescript/no-misused-new": "error",
+    "typescript/no-namespace": "error",
+    "typescript/no-non-null-asserted-optional-chain": "error",
+    "typescript/no-redundant-type-constituents": "error",
+    "typescript/no-require-imports": "error",
+    "typescript/no-this-alias": "error",
+    "typescript/no-unnecessary-type-assertion": "error",
+    "typescript/no-unnecessary-type-constraint": "error",
+    "typescript/no-unsafe-argument": "error",
+    "typescript/no-unsafe-assignment": "error",
+    "typescript/no-unsafe-call": "error",
+    "typescript/no-unsafe-declaration-merging": "error",
+    "typescript/no-unsafe-enum-comparison": "error",
+    "typescript/no-unsafe-function-type": "error",
+    "typescript/no-unsafe-member-access": "error",
+    "typescript/no-unsafe-return": "error",
+    "typescript/no-unsafe-unary-minus": "error",
+    "typescript/no-unused-expressions": "error",
+    "typescript/no-wrapper-object-types": "error",
+    "typescript/only-throw-error": "error",
+    "typescript/prefer-as-const": "error",
+    "typescript/prefer-namespace-keyword": "error",
+    "typescript/prefer-promise-reject-errors": "error",
+    "typescript/require-await": "error",
+    "typescript/restrict-plus-operands": "error",
+    "typescript/restrict-template-expressions": "error",
+    "typescript/triple-slash-reference": "error",
+    "typescript/unbound-method": "error",
+
+    // typescript-eslint: stylisticTypeChecked
+    "typescript/adjacent-overload-signatures": "error",
+    "typescript/array-type": "error",
+    "typescript/ban-tslint-comment": "error",
+    "typescript/class-literal-property-style": "error",
+    "typescript/consistent-generic-constructors": "error",
+    "typescript/consistent-indexed-object-style": "error",
+    "typescript/consistent-type-assertions": "error",
+    // `type` rather than the rule's `interface` default: the shared packages
+    // are written with type aliases, and unions like `LogLevel` cannot be
+    // interfaces anyway, so the alias form is the only one that spans both.
+    "typescript/consistent-type-definitions": ["error", "type"],
+    "typescript/dot-notation": "error",
+    "typescript/no-confusing-non-null-assertion": "error",
+    "typescript/no-empty-function": "error",
+    "typescript/no-inferrable-types": "error",
+    "typescript/non-nullable-type-assertion-style": "error",
+    "typescript/prefer-find": "error",
+    "typescript/prefer-for-of": "error",
+    "typescript/prefer-function-type": "error",
+    "typescript/prefer-includes": "error",
+    "typescript/prefer-nullish-coalescing": "error",
+    "typescript/prefer-regexp-exec": "error",
+    "typescript/prefer-string-starts-ends-with": "error",
+
+    // Explicit overrides the old base config set on top of those presets.
+    "typescript/no-non-null-assertion": "error",
+    "typescript/no-unused-vars": [
+      "error",
+      { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }
+    ],
+    "typescript/consistent-type-imports": [
+      "warn",
+      { "prefer": "type-imports", "fixStyle": "separate-type-imports" }
+    ],
+    "typescript/no-misused-promises": [
+      "error",
+      { "checksVoidReturn": { "attributes": false } }
+    ],
+
+    // eslint-plugin-import
+    "import/consistent-type-specifier-style": ["error", "prefer-top-level"],
+
+    // eslint-plugin-react `recommended`. These were dead under the old config:
+    // `tooling/eslint/react.ts` spread `configs.flat["jsx-runtime"]` after
+    // `configs.flat.recommended`, and since both objects carry a `rules` key the
+    // second spread replaced the first -- collapsing 22 rules down to the two
+    // "off" entries jsx-runtime declares. Enabling them here is a fix, not a
+    // new gate. `react-in-jsx-scope` and `jsx-uses-react` stay off, which is
+    // what jsx-runtime was there to do in the first place.
+    "react/display-name": "error",
+    "react/jsx-key": "error",
+    "react/jsx-no-comment-textnodes": "error",
+    "react/jsx-no-duplicate-props": "error",
+    "react/jsx-no-target-blank": "error",
+    "react/jsx-no-undef": "error",
+    "react/no-children-prop": "error",
+    "react/no-danger-with-children": "error",
+    "react/no-direct-mutation-state": "error",
+    "react/no-find-dom-node": "error",
+    "react/no-is-mounted": "error",
+    "react/no-render-return-value": "error",
+    "react/no-string-refs": "error",
+    "react/no-unescaped-entities": "error",
+    "react/no-unknown-property": "error",
+
+    // eslint-plugin-react-hooks `recommended-latest`. The hooks and React
+    // Compiler rules are namespaced `react/*` in oxlint, not `react-hooks/*`.
+    "react/error-boundaries": "error",
+    "react/exhaustive-deps": "warn",
+    "react/globals": "error",
+    "react/immutability": "error",
+    "react/incompatible-library": "warn",
+    "react/preserve-manual-memoization": "error",
+    "react/purity": "error",
+    "react/refs": "error",
+    "react/rules-of-hooks": "error",
+    "react/set-state-in-effect": "error",
+    "react/set-state-in-render": "error",
+    "react/static-components": "error",
+    "react/unsupported-syntax": "warn",
+    "react/use-memo": "error",
+    "react/void-use-memo": "error"
+  },
+
+  "globals": {
+    "React": "writable"
+  }
+}
