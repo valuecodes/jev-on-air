@@ -96,6 +96,128 @@ describe("AlpacaStream", () => {
     expect(server.sockets).toHaveLength(1);
   });
 
+  it("throws a connection-limit error on the first connection", async () => {
+    const { server, stream } = setup();
+    const first = stream.trades().next();
+    server.latest().receive({ T: "success", msg: "connected" });
+    server.latest().receive({ T: "error", code: 406, msg: "limit exceeded" });
+
+    await expect(first).rejects.toThrow(/406/);
+    expect(server.sockets).toHaveLength(1);
+  });
+
+  it("retries a connection-limit error after a drop", async () => {
+    const { server, stream } = setup();
+    const trades = stream.trades();
+    const first = trades.next();
+    server.latest().accept();
+    server.latest().drop();
+
+    // Alpaca still counts the dropped connection.
+    await vi.waitFor(() => {
+      expect(server.sockets).toHaveLength(2);
+    });
+    server.latest().receive({ T: "success", msg: "connected" });
+    server.latest().receive({ T: "error", code: 406, msg: "limit exceeded" });
+
+    await vi.waitFor(() => {
+      expect(server.sockets).toHaveLength(3);
+    });
+    server.latest().accept();
+    server.latest().receive(trade("SPY", 4));
+    expect((await first).value).toMatchObject({ price: 4 });
+    await trades.return(undefined);
+  });
+
+  it("reconnects when the handshake stalls", async () => {
+    const server = new FakeServer();
+    const { logger, lines } = createTestLogger();
+    const stream = new AlpacaStream(logger, {
+      url,
+      credentials,
+      symbols: ["SPY"],
+      createSocket: server.createSocket,
+      retry: { minDelayMs: 1, maxDelayMs: 1 },
+      handshakeTimeoutMs: 20,
+    });
+    const trades = stream.trades();
+    const first = trades.next();
+    server.latest().receive({ T: "success", msg: "connected" });
+
+    // Each retry times out too until the handshake completes, so wait for a
+    // reconnect that is still open and finish its handshake at once.
+    await vi.waitFor(() => {
+      expect(server.sockets.length).toBeGreaterThanOrEqual(2);
+      expect(server.latest().closed).toBe(false);
+    });
+    expect(server.sockets[0]?.closed).toBe(true);
+    expect(lines.some((line) => line.message === "handshake timed out")).toBe(
+      true
+    );
+    server.latest().accept();
+    server.latest().receive({ T: "subscription", trades: ["SPY"] });
+    server.latest().receive(trade("SPY", 5));
+    expect((await first).value).toMatchObject({ price: 5 });
+    await trades.return(undefined);
+  });
+
+  it("reconnects when a subscribed stream goes silent", async () => {
+    const server = new FakeServer();
+    const { logger, lines } = createTestLogger();
+    const stream = new AlpacaStream(logger, {
+      url,
+      credentials,
+      symbols: ["BTC/USD"],
+      createSocket: server.createSocket,
+      retry: { minDelayMs: 1 },
+      idleTimeoutMs: 5,
+    });
+    const controller = new AbortController();
+    const first = stream.trades(controller.signal).next();
+    server.latest().accept();
+    server.latest().receive({ T: "subscription", trades: ["BTC/USD"] });
+
+    await vi.waitFor(() => {
+      expect(server.sockets.length).toBeGreaterThanOrEqual(2);
+    });
+    expect(server.sockets[0]?.closed).toBe(true);
+    expect(
+      lines.some((line) => line.message === "no data, stream looks dead")
+    ).toBe(true);
+    controller.abort();
+    await expect(first).resolves.toMatchObject({ done: true });
+  });
+
+  it("keeps backing off when the server closes right after auth", async () => {
+    const { logger, lines } = createTestLogger();
+    const server = new FakeServer();
+    const stream = new AlpacaStream(logger, {
+      url,
+      credentials,
+      symbols: ["SPY"],
+      createSocket: server.createSocket,
+      retry: { minDelayMs: 1, maxDelayMs: 1000 },
+    });
+    const controller = new AbortController();
+    const first = stream.trades(controller.signal).next();
+    for (let i = 1; i <= 3; i++) {
+      await vi.waitFor(() => {
+        expect(server.sockets).toHaveLength(i);
+      });
+      server.latest().accept();
+      server.latest().drop();
+    }
+    await vi.waitFor(() => {
+      expect(server.sockets).toHaveLength(4);
+    });
+    const delays = lines
+      .filter((line) => line.message === "stream closed, reconnecting")
+      .map((line) => line.delayMs);
+    expect(delays).toEqual([1, 2, 4]);
+    controller.abort();
+    await expect(first).resolves.toMatchObject({ done: true });
+  });
+
   it("stops when the signal aborts", async () => {
     const { server, stream } = setup();
     const controller = new AbortController();
@@ -141,8 +263,7 @@ describe("AlpacaStream", () => {
     const first = trades.next();
     const socket = server.latest();
     socket.accept();
-    // @ts-expect-error -- reach the raw handler to send a broken frame
-    socket.handlers.message("not json");
+    socket.receiveRaw("not json");
     socket.receive(trade("SPY", 3));
     expect((await first).value).toMatchObject({ price: 3 });
     expect(lines.some((line) => line.message === "unreadable frame")).toBe(

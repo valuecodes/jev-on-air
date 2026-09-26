@@ -12,15 +12,20 @@ import {
 import { PricesCommand } from "./prices";
 import { TranscribeCommand } from "./transcribe";
 
-// Secrets such as the Alpaca keys may live in `.env` at the repo root. Values
-// already in the environment win.
-try {
-  process.loadEnvFile(join(import.meta.dirname, "..", "..", "..", ".env"));
-} catch (error) {
-  if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
-}
-
 const argv = process.argv.slice(2);
+
+/**
+ * Loads `.env` at the repo root, if there is one; values already in the
+ * environment win. Only `prices` calls this, so the keys stay out of the
+ * transcriber's child processes.
+ */
+function loadEnvFile(): void {
+  try {
+    process.loadEnvFile(join(import.meta.dirname, "..", "..", "..", ".env"));
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+  }
+}
 
 function fail(error: unknown): void {
   console.error(
@@ -83,6 +88,7 @@ if (argv[0] === "transcribe") {
   let credentials;
   try {
     args = parsePricesArgs(argv.slice(1));
+    loadEnvFile();
     credentials = alpacaCredentials(process.env);
   } catch (error) {
     fail(error);
