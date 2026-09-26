@@ -114,6 +114,13 @@ export class Pipeline {
       }
     };
     signal?.addEventListener("abort", killAll, { once: true });
+    // The stages are not in our process group, so they would outlive us if we
+    // exited mid-run (an uncaught exception, `process.exit`). `exit` handlers
+    // must be synchronous, which `process.kill` is.
+    const killOnExit = () => {
+      for (const child of running) signalGroup(child, "SIGKILL");
+    };
+    process.once("exit", killOnExit);
 
     children.forEach((child, index) => {
       const stage = commands[index]?.name ?? "process";
@@ -173,6 +180,7 @@ export class Pipeline {
     } finally {
       signal?.removeEventListener("abort", killAll);
       killAll();
+      void Promise.all(exits).then(() => process.off("exit", killOnExit));
     }
   }
 }
