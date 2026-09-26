@@ -1,7 +1,7 @@
-# Agentic Monorepo Starter
+# JevOnAir
 
-A Turborepo template for agentic development: strict repo guardrails, consistent tooling,
-and clear package boundaries — so agents move fast without turning the codebase into spaghetti.
+JevOnAir monitors livestreams in real time, transcribes speech, detects market-moving
+statements with Jev, and turns them into structured simulated trade signals.
 
 ## What's inside
 
@@ -46,14 +46,6 @@ oxlint prints nothing when there are no findings, so silent output means clean.
 CI runs typecheck, lint, format-check, test, build and a gitleaks secret scan on push to
 `main` and on PRs. `secrets:scan` needs either `gitleaks` v8.19+ on PATH or a running
 Docker daemon.
-
-## Use this template
-
-Use GitHub's **Use this template** button, then:
-
-- Optionally rename the `@repo/*` scope to your own (e.g. `@acme/*`)
-- Update `name` and `description` in `package.json`
-- Verify everything is green: `pnpm lint && pnpm typecheck && pnpm test && pnpm build`
 
 ## Working with AI agents
 

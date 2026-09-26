@@ -1,6 +1,8 @@
 # AGENTS.md
 
-Guidelines for AI agents and contributors working in this Turborepo monorepo.
+Guidelines for AI agents and contributors working in JevOnAir, a Turborepo monorepo that
+monitors livestreams, transcribes speech, and turns market-moving statements detected by Jev
+into simulated trade signals.
 
 `CLAUDE.md` is a symlink to this file. Never edit `CLAUDE.md` directly.
 

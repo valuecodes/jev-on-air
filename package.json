@@ -1,6 +1,6 @@
 {
-  "name": "agentic-monorepo-starter",
-  "description": "Monorepo template for agent-assisted development",
+  "name": "jev-on-air",
+  "description": "Monitors livestreams, transcribes speech, and turns market-moving statements detected by Jev into simulated trade signals",
   "private": true,
   "engines": {
     "node": ">=24.12.0",
