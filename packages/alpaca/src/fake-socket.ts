@@ -69,3 +69,15 @@ export class FakeServer {
 export function trade(symbol: string, price: number): object {
   return { T: "t", S: symbol, p: price, s: 10, t: "2026-09-25T14:31:07.123Z" };
 }
+
+export function quote(symbol: string, bid: number, ask: number): object {
+  return {
+    T: "q",
+    S: symbol,
+    bp: bid,
+    bs: 5,
+    ap: ask,
+    as: 7,
+    t: "2026-09-25T14:31:07.456Z",
+  };
+}

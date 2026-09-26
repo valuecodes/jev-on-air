@@ -11,8 +11,8 @@ const feed = new PriceFeed(logger, {
   credentials: { keyId: "…", secretKey: "…" },
 });
 for await (const tick of feed.stream(signal)) {
-  // { instrument: "gold", name: "Gold", symbol: "GLD", price: 243.12, size: 100,
-  //   timestamp: "2026-09-25T14:31:07.123456789Z" }
+  // { instrument: "bitcoin", name: "Bitcoin", symbol: "BTC/USD", source: "quote",
+  //   price: 64000.25, bid: 64000, ask: 64000.5, timestamp: "2026-09-25T14:31:07.123Z" }
 }
 ```
 
@@ -40,9 +40,16 @@ To add an instrument, add a row to `INSTRUMENTS` in `src/instruments.ts`.
   `PriceFeed` merges the two into a single stream of ticks. Ticks from the same stream keep
   their order. Ticks from different streams can interleave in any order.
 - Each connection goes through the same steps: it waits for `connected`, sends `auth`,
-  waits for `authenticated`, then subscribes to `trades`. Each trade becomes one tick.
+  waits for `authenticated`, then subscribes to `trades` and `quotes`.
+- Each trade becomes a tick (`source: "trade"`, `price` is the trade price). A quote
+  becomes a tick only when it moves the bid/ask midpoint (`source: "quote"`, `price` is
+  the midpoint). Quotes with an empty side or a crossed book are skipped. Every tick
+  carries the latest `bid` and `ask` once a quote has arrived.
+- Quotes are subscribed because trades alone are sparse. Alpaca's own crypto venue
+  (`crypto/us`) is thin, so BTC/USD can go minutes between trades. IEX is only a small
+  share of US stock volume.
 - Dropped connections and transient server errors are retried with exponential backoff,
-  from 1 s up to a 30 s cap. The backoff resets once a connection has delivered a trade
+  from 1 s up to a 30 s cap. The backoff resets once a connection has delivered data
   or stayed up for 30 s.
 - A connection is also reopened if the handshake isn't done within 15 s. The crypto stream
   is reopened after 2 minutes with no data at all, because a half-open socket never fires

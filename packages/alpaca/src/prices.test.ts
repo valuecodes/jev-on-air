@@ -1,7 +1,7 @@
 import { createTestLogger } from "@repo/logger/testing";
 import { describe, expect, it } from "vitest";
 
-import { FakeServer, trade } from "./fake-socket";
+import { FakeServer, quote, trade } from "./fake-socket";
 import { PriceFeed, streamUrl } from "./prices";
 
 const stocksUrl = "wss://stream.data.alpaca.markets/v2/iex";
@@ -40,10 +40,12 @@ describe("PriceFeed", () => {
     expect(server.latest(stocksUrl).sent[1]).toEqual({
       action: "subscribe",
       trades: ["GLD", "SPY", "USO"],
+      quotes: ["GLD", "SPY", "USO"],
     });
     expect(server.latest(cryptoUrl).sent[1]).toEqual({
       action: "subscribe",
       trades: ["BTC/USD"],
+      quotes: ["BTC/USD"],
     });
 
     server.latest(cryptoUrl).receive(trade("BTC/USD", 64000.5));
@@ -51,6 +53,7 @@ describe("PriceFeed", () => {
       instrument: "bitcoin",
       name: "Bitcoin",
       symbol: "BTC/USD",
+      source: "trade",
       price: 64000.5,
       size: 10,
       timestamp: "2026-09-25T14:31:07.123Z",
@@ -82,6 +85,53 @@ describe("PriceFeed", () => {
       "sp500",
     ]);
     expect(instruments).toContain("bitcoin");
+    await ticks.return(undefined);
+  });
+
+  it("prices quotes at the midpoint when it moves", async () => {
+    const { server, feed } = setup();
+    const ticks = feed.stream();
+    const first = ticks.next();
+    await Promise.resolve();
+    const crypto = server.latest(cryptoUrl);
+    crypto.accept();
+
+    crypto.receive(
+      quote("BTC/USD", 63999, 64001),
+      // Same midpoint, new prices: not a new tick.
+      quote("BTC/USD", 63998, 64002),
+      // Empty side and crossed book: not a price.
+      quote("BTC/USD", 0, 64001),
+      quote("BTC/USD", 64005, 64001),
+      quote("BTC/USD", 64001, 64003),
+      trade("BTC/USD", 64002.5)
+    );
+
+    const results = [await first];
+    for (let i = 0; i < 2; i++) results.push(await ticks.next());
+    expect(
+      results.map((result) => (result.done ? undefined : result.value))
+    ).toEqual([
+      {
+        instrument: "bitcoin",
+        name: "Bitcoin",
+        symbol: "BTC/USD",
+        source: "quote",
+        price: 64000,
+        bid: 63999,
+        ask: 64001,
+        timestamp: "2026-09-25T14:31:07.456Z",
+      },
+      expect.objectContaining({ source: "quote", price: 64002 }),
+      // A trade carries the latest quote alongside its own price.
+      expect.objectContaining({
+        source: "trade",
+        price: 64002.5,
+        bid: 64001,
+        ask: 64003,
+        size: 10,
+      }),
+    ]);
     await ticks.return(undefined);
   });
 

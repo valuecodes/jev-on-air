@@ -12,12 +12,26 @@ export type Trade = {
   timestamp: string;
 };
 
+export type Quote = {
+  symbol: string;
+  bidPrice: number;
+  bidSize: number;
+  askPrice: number;
+  askSize: number;
+  /** RFC 3339 timestamp from the exchange, up to nanosecond precision. */
+  timestamp: string;
+};
+
+/** What a subscribed stream delivers. */
+export type MarketData =
+  { type: "trade"; trade: Trade } | { type: "quote"; quote: Quote };
+
 export type AlpacaMessage =
   | { type: "connected" }
   | { type: "authenticated" }
-  | { type: "subscription"; trades: string[] }
+  | { type: "subscription"; trades: string[]; quotes: string[] }
   | { type: "error"; code: number; message: string }
-  | { type: "trade"; trade: Trade };
+  | MarketData;
 
 export function authMessage(credentials: Credentials): string {
   return JSON.stringify({
@@ -27,8 +41,17 @@ export function authMessage(credentials: Credentials): string {
   });
 }
 
+/**
+ * Subscribes to trades and quotes. Trades can be minutes apart (Alpaca's own
+ * crypto venue is thin, IEX is a small share of stock volume); quotes keep
+ * the price current in between.
+ */
 export function subscribeMessage(symbols: readonly string[]): string {
-  return JSON.stringify({ action: "subscribe", trades: symbols });
+  return JSON.stringify({
+    action: "subscribe",
+    trades: symbols,
+    quotes: symbols,
+  });
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -52,6 +75,7 @@ function parseMessage(value: unknown): AlpacaMessage | undefined {
       return {
         type: "subscription",
         trades: isStringArray(value.trades) ? value.trades : [],
+        quotes: isStringArray(value.quotes) ? value.quotes : [],
       };
     case "error":
       if (typeof value.code !== "number") return undefined;
@@ -77,13 +101,34 @@ function parseMessage(value: unknown): AlpacaMessage | undefined {
           timestamp: value.t,
         },
       };
+    case "q":
+      if (
+        typeof value.S !== "string" ||
+        typeof value.bp !== "number" ||
+        typeof value.bs !== "number" ||
+        typeof value.ap !== "number" ||
+        typeof value.as !== "number" ||
+        typeof value.t !== "string"
+      )
+        return undefined;
+      return {
+        type: "quote",
+        quote: {
+          symbol: value.S,
+          bidPrice: value.bp,
+          bidSize: value.bs,
+          askPrice: value.ap,
+          askSize: value.as,
+          timestamp: value.t,
+        },
+      };
     default:
       return undefined;
   }
 }
 
 /**
- * Parses one server frame. Messages we do not use (quotes, bars, corrections,
+ * Parses one server frame. Messages we do not use (bars, corrections,
  * unknown types) are dropped. Throws if the frame is not a JSON array.
  */
 export function parseFrame(data: string): AlpacaMessage[] {

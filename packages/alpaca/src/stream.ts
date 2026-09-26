@@ -1,5 +1,5 @@
 // One Alpaca market-data WebSocket: authenticates, subscribes to trades and
-// yields them, reconnecting with backoff when the connection drops.
+// quotes and yields them, reconnecting with backoff when the connection drops.
 import { setTimeout as sleep } from "node:timers/promises";
 import type { LoggerLike } from "@repo/logger";
 
@@ -11,7 +11,7 @@ import {
   parseFrame,
   subscribeMessage,
 } from "./protocol";
-import type { Credentials, Trade } from "./protocol";
+import type { Credentials, MarketData } from "./protocol";
 
 export type SocketHandlers = {
   message(data: string): void;
@@ -72,14 +72,14 @@ export type AlpacaStreamOptions = {
   idleTimeoutMs?: number;
 };
 
-// A connection that stays up this long counts as healthy even with no trades.
+// A connection that stays up this long counts as healthy even with no data.
 const healthyAfterMs = 30_000;
 
 type Connection = {
-  trades: Channel<Trade>;
+  data: Channel<MarketData>;
   /** Whether the server accepted our credentials on this connection. */
   authenticated: () => boolean;
-  /** Whether the connection delivered a trade or stayed up a while. */
+  /** Whether the connection delivered data or stayed up a while. */
   healthy: () => boolean;
   close: () => void;
 };
@@ -94,11 +94,11 @@ export class AlpacaStream {
   }
 
   /**
-   * Yields trades until `signal` aborts or the consumer stops. A dropped
+   * Yields trades and quotes until `signal` aborts or the consumer stops. A dropped
    * connection is reopened; an error reconnecting cannot fix (bad keys, the
    * plan's connection limit) is thrown.
    */
-  async *trades(signal?: AbortSignal): AsyncGenerator<Trade> {
+  async *marketData(signal?: AbortSignal): AsyncGenerator<MarketData> {
     const minDelay = this.options.retry?.minDelayMs ?? 1000;
     const maxDelay = this.options.retry?.maxDelayMs ?? 30_000;
     let attempt = 0;
@@ -106,7 +106,7 @@ export class AlpacaStream {
     while (!signal?.aborted) {
       const connection = this.connect(signal, everAuthenticated);
       try {
-        yield* connection.trades;
+        yield* connection.data;
       } finally {
         connection.close();
       }
@@ -139,12 +139,12 @@ export class AlpacaStream {
     const { url, credentials, symbols } = this.options;
     const createSocket = this.options.createSocket ?? createWebSocket;
     const { handshakeTimeoutMs = 15_000, idleTimeoutMs } = this.options;
-    const trades = new Channel<Trade>();
+    const data = new Channel<MarketData>();
     // Handlers can run before `createSocket` returns, so they reach the socket
     // through this holder rather than a `const` still in its dead zone.
     const holder: { socket?: Socket } = {};
     let authenticatedAt: number | undefined;
-    let tradeSeen = false;
+    let dataSeen = false;
     let closed = false;
 
     const expire = (reason: string): void => {
@@ -165,11 +165,11 @@ export class AlpacaStream {
       }, idleTimeoutMs);
     };
 
-    const handleFrame = (data: string): void => {
+    const handleFrame = (frame: string): void => {
       if (handshakeTimer === undefined) armIdle();
       let messages;
       try {
-        messages = parseFrame(data);
+        messages = parseFrame(frame);
       } catch (error) {
         this.logger.warn("unreadable frame", { err: error });
         return;
@@ -184,7 +184,10 @@ export class AlpacaStream {
             holder.socket?.send(subscribeMessage(symbols));
             break;
           case "subscription":
-            this.logger.info("subscribed", { trades: message.trades });
+            this.logger.info("subscribed", {
+              trades: message.trades,
+              quotes: message.quotes,
+            });
             clearTimeout(handshakeTimer);
             handshakeTimer = undefined;
             armIdle();
@@ -193,7 +196,7 @@ export class AlpacaStream {
             const error = new AlpacaError(message.code, message.message);
             const staleConnection = reconnecting && message.code === 406;
             if (isFatalError(message.code) && !staleConnection) {
-              trades.fail(error);
+              data.fail(error);
             } else {
               this.logger.warn("stream error", { err: error });
             }
@@ -201,8 +204,9 @@ export class AlpacaStream {
             return;
           }
           case "trade":
-            tradeSeen = true;
-            trades.push(message.trade);
+          case "quote":
+            dataSeen = true;
+            data.push(message);
             break;
         }
       }
@@ -219,7 +223,7 @@ export class AlpacaStream {
       clearTimeout(idleTimer);
       signal?.removeEventListener("abort", onAbort);
       holder.socket?.close();
-      trades.end();
+      data.end();
     };
 
     this.logger.debug("connecting");
@@ -236,10 +240,10 @@ export class AlpacaStream {
     signal?.addEventListener("abort", onAbort, { once: true });
 
     return {
-      trades,
+      data,
       authenticated: () => authenticatedAt !== undefined,
       healthy: () =>
-        tradeSeen ||
+        dataSeen ||
         (authenticatedAt !== undefined &&
           Date.now() - authenticatedAt >= healthyAfterMs),
       close,
