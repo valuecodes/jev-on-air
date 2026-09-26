@@ -1,10 +1,12 @@
 // Argument parsing and commands. Pure: returns the output instead of printing it,
 // so tests can call `run` directly. `main.ts` is the process entry point.
 import { parseArgs } from "node:util";
+import type { PriceTick } from "@repo/alpaca/prices";
 import type { Segment } from "@repo/transcriber";
 
 export const usage = `Usage: pnpm cli [options]
        pnpm cli transcribe <youtube-url> [transcribe options]
+       pnpm cli prices [--json]
 
 Options:
   --hello-world    Print a greeting
@@ -17,7 +19,10 @@ Transcribe options:
   --chunk=<seconds>   Audio per transcription window (default: 8)
   --realtime          Pace a finished video like a live stream
   --json              Print segments as JSON lines
-  --out=<path>        Transcript file (default: .cache/transcripts/<id>.jsonl)`;
+  --out=<path>        Transcript file (default: .cache/transcripts/<id>.jsonl)
+
+Prices options (needs ALPACA_API_KEY_ID and ALPACA_API_SECRET_KEY, e.g. in .env):
+  --json              Print ticks as JSON lines`;
 
 /** Parses `argv` and returns the text to print. Throws on unknown flags. */
 export function run(argv: string[]): string {
@@ -140,4 +145,44 @@ export function formatSegment(segment: Segment): string {
     .map(pad)
     .join(":");
   return `[${clock}] ${segment.text}`;
+}
+
+export type PricesArgs = { json: boolean };
+
+/** Parses the arguments after `prices`. Throws on invalid input. */
+export function parsePricesArgs(argv: string[]): PricesArgs {
+  const { values } = parseArgs({
+    args: argv,
+    options: { json: { type: "boolean" } },
+    strict: true,
+  });
+  return { json: values.json ?? false };
+}
+
+export type AlpacaCredentials = { keyId: string; secretKey: string };
+
+/** Reads the Alpaca API keys from `env`. Throws naming any that are missing. */
+export function alpacaCredentials(env: NodeJS.ProcessEnv): AlpacaCredentials {
+  const keyId = env.ALPACA_API_KEY_ID;
+  const secretKey = env.ALPACA_API_SECRET_KEY;
+  if (!keyId || !secretKey) {
+    const missing = [
+      keyId ? undefined : "ALPACA_API_KEY_ID",
+      secretKey ? undefined : "ALPACA_API_SECRET_KEY",
+    ].filter(Boolean);
+    throw new Error(
+      `missing ${missing.join(" and ")}: set ${missing.length > 1 ? "them" : "it"} in the environment or in .env at the repo root`
+    );
+  }
+  return { keyId, secretKey };
+}
+
+/** Formats a tick as `hh:mm:ss  name  symbol  price`, with the UTC trade time. */
+export function formatTick(tick: PriceTick): string {
+  return [
+    tick.timestamp.slice(11, 19),
+    tick.name.padEnd(8),
+    tick.symbol.padEnd(8),
+    tick.price.toFixed(2).padStart(10),
+  ].join("  ");
 }

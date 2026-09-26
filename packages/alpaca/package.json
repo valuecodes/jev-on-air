@@ -1,0 +1,27 @@
+{
+  "name": "@repo/alpaca",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./instruments": "./src/instruments.ts",
+    "./prices": "./src/prices.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc",
+    "test": "vitest run",
+    "format": "prettier --write .",
+    "clean": "rm -rf .turbo node_modules .cache"
+  },
+  "dependencies": {
+    "@repo/logger": "workspace:*"
+  },
+  "devDependencies": {
+    "@repo/prettier": "workspace:*",
+    "@repo/typescript": "workspace:*",
+    "@types/node": "catalog:",
+    "prettier": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "prettier": "@repo/prettier"
+}

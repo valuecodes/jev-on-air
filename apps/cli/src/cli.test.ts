@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  alpacaCredentials,
   formatSegment,
+  formatTick,
+  parsePricesArgs,
   parseTranscribeArgs,
   parseYoutubeVideoId,
   run,
@@ -114,5 +117,49 @@ describe("formatSegment", () => {
     expect(formatSegment({ start: 3725.9, end: 3727, text: "hi" })).toBe(
       "[01:02:05] hi"
     );
+  });
+});
+
+describe("parsePricesArgs", () => {
+  it("defaults to formatted output", () => {
+    expect(parsePricesArgs([])).toEqual({ json: false });
+    expect(parsePricesArgs(["--json"])).toEqual({ json: true });
+  });
+
+  it("throws on unknown flags and arguments", () => {
+    expect(() => parsePricesArgs(["--nope"])).toThrow();
+    expect(() => parsePricesArgs(["GLD"])).toThrow();
+  });
+});
+
+describe("alpacaCredentials", () => {
+  it("reads both keys", () => {
+    expect(
+      alpacaCredentials({ ALPACA_API_KEY_ID: "k", ALPACA_API_SECRET_KEY: "s" })
+    ).toEqual({ keyId: "k", secretKey: "s" });
+  });
+
+  it("names the missing keys", () => {
+    expect(() => alpacaCredentials({})).toThrow(
+      /missing ALPACA_API_KEY_ID and ALPACA_API_SECRET_KEY/
+    );
+    expect(() =>
+      alpacaCredentials({ ALPACA_API_KEY_ID: "k", ALPACA_API_SECRET_KEY: "" })
+    ).toThrow(/missing ALPACA_API_SECRET_KEY:/);
+  });
+});
+
+describe("formatTick", () => {
+  it("prints the UTC trade time, name, symbol and price", () => {
+    expect(
+      formatTick({
+        instrument: "gold",
+        name: "Gold",
+        symbol: "GLD",
+        price: 243.1,
+        size: 100,
+        timestamp: "2026-09-25T14:31:07.123456789Z",
+      })
+    ).toBe("14:31:07  Gold      GLD           243.10");
   });
 });

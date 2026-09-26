@@ -59,6 +59,9 @@ importers:
 
   apps/cli:
     dependencies:
+      '@repo/alpaca':
+        specifier: workspace:*
+        version: link:../../packages/alpaca
       '@repo/logger':
         specifier: workspace:*
         version: link:../../packages/logger
@@ -78,6 +81,31 @@ importers:
       tsx:
         specifier: 4.23.13
         version: 4.23.13
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.11(@types/node@26.4.0)(vite@8.2.2(@types/node@26.4.0)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13))
+
+  packages/alpaca:
+    dependencies:
+      '@repo/logger':
+        specifier: workspace:*
+        version: link:../logger
+    devDependencies:
+      '@repo/prettier':
+        specifier: workspace:*
+        version: link:../../tooling/prettier
+      '@repo/typescript':
+        specifier: workspace:*
+        version: link:../../tooling/typescript
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.4.0
+      prettier:
+        specifier: 'catalog:'
+        version: 3.9.6
       typescript:
         specifier: 'catalog:'
         version: 7.0.2

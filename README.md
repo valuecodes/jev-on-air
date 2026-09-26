@@ -8,11 +8,13 @@ statements with Jev, and turns them into structured simulated trade signals.
 - Command-line app in `apps/cli` (Node.js 24, TypeScript run directly)
 - Shared tooling: oxlint, Prettier, TypeScript 7, Turbo
 - `@repo/logger` — structured JSON logging for Cloud Run / Cloud Logging
+- `@repo/alpaca` — live Gold, Bitcoin, S&P 500 and Oil prices from Alpaca
 - pnpm catalog for versions, with a 14-day release-age guard on new releases
 - Agent settings in `.claude/`, `.codex/`, and `.github/`
 
 ```text
 apps/cli               Node.js 24 CLI, hello world for now
+packages/alpaca        Alpaca market data: live prices over WebSocket
 packages/logger        pino logger, Cloud Logging shaped JSON
 tooling/prettier       shared Prettier config
 tooling/typescript     shared tsconfig presets (base, node, react)
