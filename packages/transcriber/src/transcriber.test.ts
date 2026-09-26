@@ -18,7 +18,7 @@ describe("parseSegmentLine", () => {
 });
 
 describe("Transcriber.commands", () => {
-  const url = "https://www.youtube.com/watch?v=H8FlQPYHGA4";
+  const url = "https://www.youtube.com/watch?v=U5Ovbz8KnYE";
   const { logger } = createTestLogger();
 
   it("chains yt-dlp, ffmpeg and the worker", () => {
