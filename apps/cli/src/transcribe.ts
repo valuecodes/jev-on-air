@@ -1,9 +1,7 @@
 // The `transcribe` command: streams a YouTube transcript to stdout and appends
 // every segment to a JSONL file, so a run can be replayed or tailed later.
-import { createWriteStream } from "node:fs";
-import { mkdir } from "node:fs/promises";
+import { mkdir, open } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
-import { finished } from "node:stream/promises";
 import type { LoggerLike } from "@repo/logger";
 import { Transcriber } from "@repo/transcriber";
 
@@ -25,7 +23,7 @@ export class TranscribeCommand {
       ? resolve(process.env.INIT_CWD ?? process.cwd(), args.out)
       : join(cacheDir, `${args.videoId}.jsonl`);
     await mkdir(dirname(out), { recursive: true });
-    const file = createWriteStream(out, { flags: "a" });
+    const file = await open(out, "a");
     this.logger.info("writing transcript", { out });
 
     const transcriber = new Transcriber(this.logger, {
@@ -37,12 +35,11 @@ export class TranscribeCommand {
     try {
       for await (const segment of transcriber.transcribe(args.url, signal)) {
         const line = JSON.stringify(segment);
-        file.write(`${line}\n`);
+        await file.appendFile(`${line}\n`);
         process.stdout.write(`${args.json ? line : formatSegment(segment)}\n`);
       }
     } finally {
-      file.end();
-      await finished(file);
+      await file.close();
     }
   }
 }

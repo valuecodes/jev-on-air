@@ -26,8 +26,15 @@ if (argv[0] === "transcribe") {
       bindings: { service: "cli" },
       destination: process.stderr,
     });
+    // The transcriber's processes run in their own process groups, so they
+    // do not see these signals. The first one aborts, which stops them; a
+    // second exits at once, and the transcriber's exit hook kills them.
     const controller = new AbortController();
-    process.once("SIGINT", () => controller.abort());
+    for (const name of ["SIGINT", "SIGTERM", "SIGHUP"] as const)
+      process.on(name, () => {
+        if (controller.signal.aborted) process.exit(130);
+        controller.abort();
+      });
     try {
       await new TranscribeCommand(logger).run(args, controller.signal);
     } catch (error) {
