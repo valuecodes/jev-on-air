@@ -1,4 +1,4 @@
-import type { LogLevel } from "./types";
+import type { LogLevel } from "./types.ts";
 
 const LOG_LEVELS: readonly LogLevel[] = [
   "debug",

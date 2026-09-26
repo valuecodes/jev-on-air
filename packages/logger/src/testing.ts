@@ -1,5 +1,5 @@
-import { Logger } from "./logger";
-import type { LogLevel } from "./types";
+import { Logger } from "./logger.ts";
+import type { LogLevel } from "./types.ts";
 
 type LogLine = Record<string, unknown>;
 

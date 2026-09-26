@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { isLogLevel, resolveLevel } from "./level";
+import { isLogLevel, resolveLevel } from "./level.ts";
 
 describe("resolveLevel", () => {
   it("prefers a valid LOG_LEVEL over the NODE_ENV default", () => {

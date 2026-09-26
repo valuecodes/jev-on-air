@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { withStackTrace } from "./error-reporting";
+import { withStackTrace } from "./error-reporting.ts";
 
 const stackOf = (object: Record<string, unknown>): string => {
   const trace = object.stack_trace;
