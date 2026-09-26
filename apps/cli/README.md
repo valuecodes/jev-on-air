@@ -24,7 +24,7 @@ Needs [uv](https://docs.astral.sh/uv/) and `ffmpeg` on `PATH` (see
 [`@repo/transcriber`](../../packages/transcriber/README.md)).
 
 ```bash
-pnpm cli transcribe https://www.youtube.com/watch?v=H8FlQPYHGA4
+pnpm cli transcribe https://www.youtube.com/watch?v=U5Ovbz8KnYE
 pnpm cli transcribe <url> --model medium --language en --chunk 5
 pnpm cli transcribe <url> --realtime --json
 ```

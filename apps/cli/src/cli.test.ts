@@ -35,25 +35,25 @@ describe("run", () => {
 describe("parseYoutubeVideoId", () => {
   it("reads watch, live, shorts and youtu.be URLs", () => {
     expect(
-      parseYoutubeVideoId("https://www.youtube.com/watch?v=H8FlQPYHGA4")
-    ).toBe("H8FlQPYHGA4");
-    expect(parseYoutubeVideoId("https://youtube.com/live/H8FlQPYHGA4")).toBe(
-      "H8FlQPYHGA4"
+      parseYoutubeVideoId("https://www.youtube.com/watch?v=U5Ovbz8KnYE")
+    ).toBe("U5Ovbz8KnYE");
+    expect(parseYoutubeVideoId("https://youtube.com/live/U5Ovbz8KnYE")).toBe(
+      "U5Ovbz8KnYE"
     );
     expect(
-      parseYoutubeVideoId("https://m.youtube.com/shorts/H8FlQPYHGA4?si=x")
-    ).toBe("H8FlQPYHGA4");
-    expect(parseYoutubeVideoId("https://youtu.be/H8FlQPYHGA4")).toBe(
-      "H8FlQPYHGA4"
+      parseYoutubeVideoId("https://m.youtube.com/shorts/U5Ovbz8KnYE?si=x")
+    ).toBe("U5Ovbz8KnYE");
+    expect(parseYoutubeVideoId("https://youtu.be/U5Ovbz8KnYE")).toBe(
+      "U5Ovbz8KnYE"
     );
   });
 
   it("rejects other hosts, schemes and malformed IDs", () => {
     expect(() =>
-      parseYoutubeVideoId("https://example.com/watch?v=H8FlQPYHGA4")
+      parseYoutubeVideoId("https://example.com/watch?v=U5Ovbz8KnYE")
     ).toThrow(/not a YouTube URL/);
     expect(() =>
-      parseYoutubeVideoId("file://youtube.com/watch?v=H8FlQPYHGA4")
+      parseYoutubeVideoId("file://youtube.com/watch?v=U5Ovbz8KnYE")
     ).toThrow(/not a YouTube URL/);
     expect(() =>
       parseYoutubeVideoId("https://www.youtube.com/watch?v=../../etc")
@@ -63,12 +63,12 @@ describe("parseYoutubeVideoId", () => {
 });
 
 describe("parseTranscribeArgs", () => {
-  const url = "https://www.youtube.com/watch?v=H8FlQPYHGA4";
+  const url = "https://www.youtube.com/watch?v=U5Ovbz8KnYE";
 
   it("parses the URL and defaults", () => {
     expect(parseTranscribeArgs([url])).toEqual({
       url,
-      videoId: "H8FlQPYHGA4",
+      videoId: "U5Ovbz8KnYE",
       model: undefined,
       language: undefined,
       chunkSeconds: undefined,
