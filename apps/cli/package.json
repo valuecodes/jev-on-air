@@ -19,6 +19,7 @@
     "vitest": "catalog:"
   },
   "dependencies": {
+    "@repo/alpaca": "workspace:*",
     "@repo/logger": "workspace:*",
     "@repo/transcriber": "workspace:*"
   }

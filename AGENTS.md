@@ -20,6 +20,7 @@ into simulated trade signals.
 
 | Name        | Filter              | Description                                              |
 | ----------- | ------------------- | -------------------------------------------------------- |
+| alpaca      | `@repo/alpaca`      | Alpaca live prices: Gold, Bitcoin, S&P 500, Oil          |
 | logger      | `@repo/logger`      | pino logger emitting Cloud Logging shaped JSON           |
 | transcriber | `@repo/transcriber` | YouTube → faster-whisper transcript stream (Python + uv) |
 
@@ -39,11 +40,14 @@ Apps may import packages; packages must never import apps.
 
 **Prerequisites:** Node.js 24.12.0 (`.nvmrc`), pnpm 11.24.0 (`packageManager` in root `package.json`).
 `pnpm cli transcribe` also needs [uv](https://docs.astral.sh/uv/) and `ffmpeg` on `PATH`.
+`pnpm cli prices` needs `ALPACA_API_KEY_ID` and `ALPACA_API_SECRET_KEY`, in the environment
+or in a root `.env` (see `.env.example`).
 
 ```bash
 pnpm install                     # Install all dependencies
 pnpm cli --hello-world           # Run the CLI (args go to apps/cli)
 pnpm cli transcribe <youtube-url> # Stream a live/video transcript
+pnpm cli prices                  # Stream live prices from Alpaca
 
 pnpm lint                        # oxlint, one process over the whole repo
 pnpm typecheck                   # turbo run typecheck

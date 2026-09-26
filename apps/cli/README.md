@@ -34,6 +34,20 @@ to stdout as `[hh:mm:ss] text` (or JSON lines with `--json`), and every segment 
 appended to `.cache/transcripts/<video-id>.jsonl` (`--out` to change it). Logs go to stderr.
 `--realtime` paces a finished video like a live stream. Ctrl+C stops the whole pipeline.
 
+## Stream live prices
+
+Streams trades for Gold (`GLD`), Bitcoin (`BTC/USD`), S&P 500 (`SPY`) and Oil (`USO`) from
+Alpaca (see [`@repo/alpaca`](../../packages/alpaca/README.md)). Copy `.env.example` to `.env`
+at the repo root and fill in your Alpaca keys; a paper-trading account's keys work.
+
+```bash
+pnpm cli prices          # 14:31:07  Gold      GLD           243.10
+pnpm cli prices --json   # one JSON tick per line
+```
+
+Times are the UTC trade time. Bitcoin ticks around the clock; the ETFs only during US
+market hours. Logs go to stderr, and Ctrl+C closes the streams.
+
 The root `cli` script runs `pnpm --silent --filter cli start`, so any arguments after
 `pnpm cli` are passed straight to `src/main.ts`.
 
