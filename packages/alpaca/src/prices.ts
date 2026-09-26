@@ -35,7 +35,13 @@ export type PriceFeedOptions = {
    * Stock data feed: `iex` is real time on the free plan but covers one
    * exchange; `sip` covers every US exchange and needs a paid plan.
    */
-  stockFeed?: "iex" | "sip";
+  stockFeed?: StockFeed;
+  /**
+   * Crypto venue: `us-1` (Kraken US, the default) and `eu-1` (Kraken EU) are
+   * liquid; `us` is Alpaca's own venue, where Alpaca fills crypto orders but
+   * quotes arrive in sparse bursts with a wide spread.
+   */
+  cryptoVenue?: CryptoVenue;
   createSocket?: CreateSocket;
   retry?: RetryOptions;
 };
@@ -49,10 +55,16 @@ const idleTimeoutMs: Record<Market, number | undefined> = {
   crypto: 120_000,
 };
 
-export function streamUrl(market: Market, stockFeed: "iex" | "sip"): string {
+export type StockFeed = "iex" | "sip";
+export type CryptoVenue = "us" | "us-1" | "eu-1";
+
+export function streamUrl(
+  market: Market,
+  feeds: { stockFeed: StockFeed; cryptoVenue: CryptoVenue }
+): string {
   return market === "stocks"
-    ? `${dataHost}/v2/${stockFeed}`
-    : `${dataHost}/v1beta3/crypto/us`;
+    ? `${dataHost}/v2/${feeds.stockFeed}`
+    : `${dataHost}/v1beta3/crypto/${feeds.cryptoVenue}`;
 }
 
 type Book = { bid: number; ask: number; mid: number };
@@ -101,12 +113,15 @@ export class PriceFeed {
   private readonly streams: AlpacaStream[];
 
   constructor(logger: LoggerLike, options: PriceFeedOptions) {
-    const stockFeed = options.stockFeed ?? "iex";
+    const feeds = {
+      stockFeed: options.stockFeed ?? "iex",
+      cryptoVenue: options.cryptoVenue ?? "us-1",
+    };
     const markets: Market[] = ["stocks", "crypto"];
     this.streams = markets.map(
       (market) =>
         new AlpacaStream(logger, {
-          url: streamUrl(market, stockFeed),
+          url: streamUrl(market, feeds),
           credentials: options.credentials,
           symbols: INSTRUMENTS.filter(
             (instrument) => instrument.market === market

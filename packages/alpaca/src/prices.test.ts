@@ -5,7 +5,7 @@ import { FakeServer, quote, trade } from "./fake-socket";
 import { PriceFeed, streamUrl } from "./prices";
 
 const stocksUrl = "wss://stream.data.alpaca.markets/v2/iex";
-const cryptoUrl = "wss://stream.data.alpaca.markets/v1beta3/crypto/us";
+const cryptoUrl = "wss://stream.data.alpaca.markets/v1beta3/crypto/us-1";
 
 function setup() {
   const server = new FakeServer();
@@ -20,11 +20,15 @@ function setup() {
 
 describe("streamUrl", () => {
   it("picks the stock feed and the crypto endpoint", () => {
-    expect(streamUrl("stocks", "iex")).toBe(stocksUrl);
-    expect(streamUrl("stocks", "sip")).toBe(
+    const feeds = { stockFeed: "iex", cryptoVenue: "us-1" } as const;
+    expect(streamUrl("stocks", feeds)).toBe(stocksUrl);
+    expect(streamUrl("stocks", { ...feeds, stockFeed: "sip" })).toBe(
       "wss://stream.data.alpaca.markets/v2/sip"
     );
-    expect(streamUrl("crypto", "sip")).toBe(cryptoUrl);
+    expect(streamUrl("crypto", feeds)).toBe(cryptoUrl);
+    expect(streamUrl("crypto", { ...feeds, cryptoVenue: "us" })).toBe(
+      "wss://stream.data.alpaca.markets/v1beta3/crypto/us"
+    );
   });
 });
 
