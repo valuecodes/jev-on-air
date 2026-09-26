@@ -6,7 +6,7 @@ import {
   parseYoutubeVideoId,
   run,
   usage,
-} from "./cli.ts";
+} from "./cli";
 
 describe("run", () => {
   it("prints a greeting for --hello-world", () => {

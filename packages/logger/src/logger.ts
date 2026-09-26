@@ -13,11 +13,11 @@ import type {
   LoggerOptions as PinoLoggerOptions,
 } from "pino";
 
-import { withStackTrace } from "./error-reporting.ts";
-import { sanitizeBindings, sanitizeFields } from "./fields.ts";
-import { resolveLevel } from "./level.ts";
-import { toSeverity } from "./severity.ts";
-import type { LogFields, LoggerLike, LogLevel } from "./types.ts";
+import { withStackTrace } from "./error-reporting";
+import { sanitizeBindings, sanitizeFields } from "./fields";
+import { resolveLevel } from "./level";
+import { toSeverity } from "./severity";
+import type { LogFields, LoggerLike, LogLevel } from "./types";
 
 type LoggerOptions = {
   /** Overrides the LOG_LEVEL / NODE_ENV resolution. */

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { sanitizeBindings, sanitizeFields } from "./fields.ts";
+import { sanitizeBindings, sanitizeFields } from "./fields";
 
 describe("sanitizeFields", () => {
   // pino resolves `serializers[key]` / `stringifiers[key]` with plain bracket

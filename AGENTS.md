@@ -12,9 +12,9 @@ into simulated trade signals.
 
 ### Apps (`apps/`)
 
-| Name | Filter | Description                                           |
-| ---- | ------ | ----------------------------------------------------- |
-| cli  | `cli`  | Node.js 24 command-line app, runs TypeScript directly |
+| Name | Filter | Description                                          |
+| ---- | ------ | ---------------------------------------------------- |
+| cli  | `cli`  | Node.js 24 command-line app, runs TypeScript via tsx |
 
 ### Packages (`packages/`)
 

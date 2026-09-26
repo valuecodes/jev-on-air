@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { Logger } from "./logger.ts";
-import { createTestLogger } from "./testing.ts";
+import { Logger } from "./logger";
+import { createTestLogger } from "./testing";
 
 const ISO = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
 

@@ -5,8 +5,8 @@ import { dirname, join, resolve } from "node:path";
 import type { LoggerLike } from "@repo/logger";
 import { Transcriber } from "@repo/transcriber";
 
-import { formatSegment } from "./cli.ts";
-import type { TranscribeArgs } from "./cli.ts";
+import { formatSegment } from "./cli";
+import type { TranscribeArgs } from "./cli";
 
 const cacheDir = join(import.meta.dirname, "..", ".cache", "transcripts");
 

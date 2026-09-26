@@ -1,8 +1,8 @@
 // Process entry point: reads argv, prints the result, and sets the exit code.
 import { Logger } from "@repo/logger";
 
-import { parseTranscribeArgs, run, usage } from "./cli.ts";
-import { TranscribeCommand } from "./transcribe.ts";
+import { parseTranscribeArgs, run, usage } from "./cli";
+import { TranscribeCommand } from "./transcribe";
 
 const argv = process.argv.slice(2);
 
@@ -28,12 +28,19 @@ if (argv[0] === "transcribe") {
     });
     // The transcriber's processes run in their own process groups, so they
     // do not see these signals. The first one aborts, which stops them; a
-    // second exits at once, and the transcriber's exit hook kills them.
+    // later one exits at once, and the transcriber's exit hook kills them.
+    // A terminal Ctrl+C arrives twice — directly and relayed by tsx — so
+    // signals within a second of the first count as the same one.
     const controller = new AbortController();
+    let abortedAt = 0;
     for (const name of ["SIGINT", "SIGTERM", "SIGHUP"] as const)
       process.on(name, () => {
-        if (controller.signal.aborted) process.exit(130);
-        controller.abort();
+        if (!controller.signal.aborted) {
+          abortedAt = Date.now();
+          controller.abort();
+        } else if (Date.now() - abortedAt > 1000) {
+          process.exit(130);
+        }
       });
     try {
       await new TranscribeCommand(logger).run(args, controller.signal);

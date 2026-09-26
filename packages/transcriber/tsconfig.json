@@ -1,11 +1,5 @@
 {
   "extends": "@repo/typescript/node.json",
   "include": ["src"],
-  "exclude": ["node_modules", "dist"],
-  "compilerOptions": {
-    // The CLI runs this package's `src/*.ts` directly under Node's type
-    // stripping, so the same rules as `apps/cli` apply here.
-    "allowImportingTsExtensions": true,
-    "erasableSyntaxOnly": true
-  }
+  "exclude": ["node_modules", "dist"]
 }
