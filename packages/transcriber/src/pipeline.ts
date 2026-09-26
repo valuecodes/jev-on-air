@@ -101,6 +101,18 @@ export class Pipeline {
       // A stage that fails to spawn may emit only `error`, never `close`.
       child.once("error", done);
       child.once("close", done);
+      // Once a stage's leader exits, anything left in its group can only be
+      // holding its pipes open, which would stall `close` and the read loop
+      // below. Stop it; bytes already written stay readable in the pipe. The
+      // leader's exit code is still what gets reported.
+      child.once("exit", () => {
+        signalGroup(child, "SIGTERM");
+        const reap = setTimeout(
+          () => signalGroup(child, "SIGKILL"),
+          KILL_GRACE_MS
+        );
+        child.once("close", () => clearTimeout(reap));
+      });
     }
     const killAll = () => {
       for (const child of running) {

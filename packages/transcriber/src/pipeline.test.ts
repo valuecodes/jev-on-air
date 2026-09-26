@@ -98,6 +98,20 @@ describe("Pipeline", () => {
     await collect(new Pipeline(logger), [leaky, upper], controller.signal);
   });
 
+  it("finishes when the last stage exits but a descendant keeps its stdout", async () => {
+    const { logger } = createTestLogger();
+    // No abort: the leader prints, exits, and leaves a child holding stdout.
+    const leakySink = node(
+      "sink",
+      "process.stdin.resume(); console.log('done'); require('child_process').spawn(process.execPath, ['-e', 'setInterval(() => {}, 1000)'], { stdio: ['ignore', 'inherit', 'ignore'] }); setTimeout(() => process.exit(0), 50)"
+    );
+    const lines = await collect(new Pipeline(logger), [
+      node("source", "console.log('x')"),
+      leakySink,
+    ]);
+    expect(lines).toEqual(["done"]);
+  });
+
   it("finishes aborting when a stage's stdout is stalled on backpressure", async () => {
     const { logger } = createTestLogger();
     // `sink` never reads, so `flood` fills the pipe and its stdout is paused.
