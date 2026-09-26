@@ -16,5 +16,9 @@
     "@types/node": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
+  },
+  "dependencies": {
+    "@repo/logger": "workspace:*",
+    "@repo/transcriber": "workspace:*"
   }
 }

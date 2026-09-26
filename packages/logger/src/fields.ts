@@ -1,4 +1,4 @@
-import type { LogFields } from "./types";
+import type { LogFields } from "./types.ts";
 
 /**
  * pino looks up its per-key serialiser and stringifier with plain bracket

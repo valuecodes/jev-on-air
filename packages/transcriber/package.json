@@ -1,0 +1,27 @@
+{
+  "name": "@repo/transcriber",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/transcriber.ts",
+    "./pipeline": "./src/pipeline.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc",
+    "test": "vitest run",
+    "format": "prettier --write .",
+    "clean": "rm -rf .turbo node_modules .cache whisper/.venv"
+  },
+  "dependencies": {
+    "@repo/logger": "workspace:*"
+  },
+  "devDependencies": {
+    "@repo/prettier": "workspace:*",
+    "@repo/typescript": "workspace:*",
+    "@types/node": "catalog:",
+    "prettier": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "prettier": "@repo/prettier"
+}

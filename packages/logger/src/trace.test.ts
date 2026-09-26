@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { parseTraceHeaders } from "./trace";
+import { parseTraceHeaders } from "./trace.ts";
 
 const TRACE = "4bf92f3577b34da6a3ce929d0e0e4736";
 

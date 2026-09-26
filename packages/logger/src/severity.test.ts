@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { toSeverity } from "./severity";
+import { toSeverity } from "./severity.ts";
 
 // The two rows that matter are `warn` and `fatal`: pino's labels and Google's
 // LogSeverity names diverge there, and getting either wrong files the entry
