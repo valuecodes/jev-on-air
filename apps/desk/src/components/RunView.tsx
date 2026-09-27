@@ -229,6 +229,7 @@ export function RunView({ id }: { id: string }) {
 
       {group ? (
         <>
+          <Summary start={start} book={book} events={events} />
           <section className={card}>
             <h2 className={heading}>
               <ChartLine className="text-accent size-4" aria-hidden />
@@ -307,7 +308,6 @@ export function RunView({ id }: { id: string }) {
               </ol>
             </section>
           </div>
-          <Summary start={start} book={book} events={events} />
         </>
       ) : (
         <section className={`${card} text-muted items-center py-10`}>
