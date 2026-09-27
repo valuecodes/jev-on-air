@@ -54,8 +54,12 @@ export function normalizeTurnOutput(output: TurnOutput): TurnOutput {
     if (!current || candidate.confidence > current.confidence)
       best.set(decision.instrument, candidate);
   }
+  const signal =
+    output.signal !== undefined && Number.isFinite(output.signal)
+      ? Math.min(1, Math.max(0, output.signal))
+      : undefined;
   return {
     decisions: [...best.values()],
-    ...(output.signal === undefined ? {} : { signal: output.signal }),
+    ...(signal === undefined ? {} : { signal }),
   };
 }

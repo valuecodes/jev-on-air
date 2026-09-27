@@ -10,6 +10,7 @@ import { formatSegment } from "./cli";
 import type { TranscribeArgs } from "./cli";
 import { buildSidecar, sidecarPath, writeSidecar } from "./sidecar";
 import type { Sidecar } from "./sidecar";
+import { childEnv } from "./time";
 
 const cacheDir = join(import.meta.dirname, "..", ".cache", "transcripts");
 
@@ -31,6 +32,7 @@ export class TranscribeCommand {
       language: args.language,
       chunkSeconds: args.chunkSeconds,
       realtime: args.realtime,
+      env: childEnv(process.env),
     });
     const sidecar = await describeVideo(
       this.logger,

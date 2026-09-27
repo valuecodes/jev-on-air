@@ -6,6 +6,11 @@ import type { ChildProcess } from "node:child_process";
 import { createInterface } from "node:readline";
 import type { LoggerLike } from "@repo/logger";
 
+export type PipelineOptions = {
+  /** Environment for the stages (default: this process's). */
+  env?: NodeJS.ProcessEnv;
+};
+
 export type Command = {
   /** Label used in logs and error messages. */
   name: string;
@@ -63,8 +68,10 @@ function logStderrLine(logger: LoggerLike, line: string): void {
 
 export class Pipeline {
   private readonly logger: LoggerLike;
+  private readonly env: NodeJS.ProcessEnv | undefined;
 
-  constructor(logger: LoggerLike) {
+  constructor(logger: LoggerLike, options: PipelineOptions = {}) {
+    this.env = options.env;
     this.logger = logger;
   }
 
@@ -84,6 +91,7 @@ export class Pipeline {
       spawn(command.file, command.args, {
         stdio: ["pipe", "pipe", "pipe"],
         detached: true,
+        env: this.env ?? process.env,
       })
     );
     const exits = children.map((child, index) =>

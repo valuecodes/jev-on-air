@@ -32,7 +32,9 @@ pnpm cli transcribe <url> --realtime --json
 Works for live streams (starting at the live edge) and finished videos. Transcript lines go
 to stdout as `[hh:mm:ss] text` (or JSON lines with `--json`), and every segment is also
 appended to `.cache/transcripts/<video-id>.jsonl` (`--out` to change it). A `.meta.json`
-next to it records the video's title, whether it was live and when its audio began. Logs go to stderr.
+next to it records the video's title, whether it was live and when its audio began. The
+yt-dlp, ffmpeg and whisper processes run with a copy of the environment stripped of anything
+that looks like a credential. Logs go to stderr.
 `--realtime` paces a finished video like a live stream. Ctrl+C stops the whole pipeline.
 
 ## Stream live prices

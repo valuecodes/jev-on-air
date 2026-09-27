@@ -65,6 +65,25 @@ export function tickTimeline(
   });
 }
 
+/**
+ * Shifts timelines so the earliest item of any of them sits at zero, keeping
+ * their relative timing; for pacing several of them side by side.
+ */
+export function rebase<T>(
+  timelines: readonly (readonly Timed<T>[])[]
+): Timed<T>[][] {
+  const earliest = Math.min(
+    0,
+    ...timelines.map((timeline) => timeline[0]?.at ?? 0)
+  );
+  return timelines.map((timeline) =>
+    timeline.map((item) => ({ ...item, at: item.at - earliest }))
+  );
+}
+
+// A tick's exchange time must carry a zone, or it would be read as local time.
+const zoned = /(?:Z|[+-]\d{2}:\d{2})$/i;
+
 /** Parses one line of `pnpm cli prices --json`. Throws if it is not a tick. */
 export function parseTickLine(line: string): PriceTick {
   const value: unknown = JSON.parse(line);
@@ -84,6 +103,7 @@ export function parseTickLine(line: string): PriceTick {
     !Number.isFinite(price) ||
     price <= 0 ||
     typeof timestamp !== "string" ||
+    !zoned.test(timestamp) ||
     Number.isNaN(Date.parse(timestamp))
   )
     return fail();

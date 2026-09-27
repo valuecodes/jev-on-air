@@ -88,10 +88,16 @@ export function interpretAnswers(
 ): DecideResult {
   if (!isRecord(answers))
     throw new DeciderError("unparseable", "reply carried no answers");
+  // The gate is optional, but a present answer must be a probability: a
+  // malformed one would otherwise silently switch the gate off.
   const gate: unknown = answers[SIGNAL_QUESTION];
-  const noul = isRecord(gate) ? gate.noul : undefined;
-  const signal =
-    typeof noul === "number" && Number.isFinite(noul) ? noul : undefined;
+  let signal: number | undefined;
+  if (gate !== undefined) {
+    const noul = isRecord(gate) ? gate.noul : undefined;
+    if (typeof noul !== "number" || !Number.isFinite(noul))
+      throw new DeciderError("unparseable", "invalid signal answer");
+    signal = noul;
+  }
   const decisions: Decision[] = [];
   for (const instrument of instruments) {
     const picked = readChoice(instrument, answers[instrument]);

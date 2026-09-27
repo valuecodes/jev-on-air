@@ -6,6 +6,7 @@ import {
   fast,
   paced,
   parseTickLine,
+  rebase,
   segmentTimeline,
   tickTimeline,
 } from "./replay";
@@ -98,9 +99,25 @@ describe("parseTickLine", () => {
       }),
       JSON.stringify(tick("2026-09-26T12:00:00.000Z", 0)),
       JSON.stringify(tick("yesterday")),
+      JSON.stringify(tick("2026-09-16T18:30:00")),
       JSON.stringify({ ...tick("2026-09-26T12:00:00.000Z"), source: "guess" }),
     ])
       expect(() => parseTickLine(bad)).toThrow(/not a price tick/);
+  });
+});
+
+describe("rebase", () => {
+  it("moves the earliest item of any timeline to zero", () => {
+    const [a, b] = rebase([
+      [{ at: 0, value: "line" }],
+      [
+        { at: -60_000, value: "old tick" },
+        { at: 30_000, value: "tick" },
+      ],
+    ]);
+    expect(a?.map((item) => item.at)).toEqual([60_000]);
+    expect(b?.map((item) => item.at)).toEqual([0, 90_000]);
+    expect(rebase([[{ at: 5, value: 1 }]])[0]?.[0]?.at).toBe(5);
   });
 });
 

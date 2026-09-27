@@ -63,5 +63,11 @@ describe("readSidecar", () => {
     await expect(readSidecar(path)).rejects.toThrow(/not a transcript sidecar/);
     await writeFile(path, JSON.stringify({ ...sidecar, audioStart: "soon" }));
     await expect(readSidecar(path)).rejects.toThrow(/not a transcript sidecar/);
+    // A zone-less time would be read in local time and shift the replay.
+    await writeFile(
+      path,
+      JSON.stringify({ ...sidecar, audioStart: "2026-09-25T15:43:13" })
+    );
+    await expect(readSidecar(path)).rejects.toThrow(/not a transcript sidecar/);
   });
 });
