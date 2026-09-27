@@ -3,6 +3,9 @@
 JevOnAir monitors livestreams in real time, transcribes speech, detects market-moving
 statements with Jev, and turns them into structured simulated trade signals.
 
+> **Disclaimer:** JevOnAir is a research and paper-trading tool. It never places real orders,
+> and nothing it produces is financial advice.
+
 ## What's inside
 
 - Command-line app in `apps/cli` (Node.js 24, TypeScript run directly)
@@ -12,7 +15,7 @@ statements with Jev, and turns them into structured simulated trade signals.
 - `@repo/transcriber` — YouTube → faster-whisper live transcript
 - `@repo/jev` — the decision engine: transcript + prices → Jev (TypeSafe AI) → simulated portfolio
 - pnpm catalog for versions, with a 14-day release-age guard on new releases
-- Agent settings in `.claude/`, `.codex/`, and `.github/`
+- Agent settings in `.claude/` and `.github/`
 
 ```text
 apps/cli               Node.js 24 CLI: transcribe, prices, jev
@@ -33,8 +36,24 @@ Requires Node.js 24.12.0 (`.nvmrc`) and pnpm 11.24.0 (`packageManager` in `packa
 ```bash
 pnpm install
 pnpm cli --hello-world    # prints a greeting
-pnpm cli jev <youtube-url> # paper-trade a live stream (needs keys in .env)
 ```
+
+## Quick start
+
+Paper-trade a YouTube live stream with Jev. Needs [uv](https://docs.astral.sh/uv/) and
+`ffmpeg` on `PATH`, Alpaca API keys (a paper-trading account's keys work) and a TypeSafe AI
+API key.
+
+```bash
+pnpm install
+cp .env.example .env   # fill in ALPACA_API_KEY_ID, ALPACA_API_SECRET_KEY and TYPESAFE_API_KEY
+pnpm cli jev "https://www.youtube.com/watch?v=VIDEO_ID" --language=en
+```
+
+Replace `VIDEO_ID` with the ID of a live stream. Jev's decisions and simulated fills print to
+stdout and are appended to `apps/cli/.cache/jev/<video-id>.jsonl`; Ctrl+C stops the run. See
+[`apps/cli/README.md`](apps/cli/README.md) for replaying a recording and backtesting a past
+event.
 
 ## Commands
 
@@ -53,14 +72,3 @@ oxlint prints nothing when there are no findings, so silent output means clean.
 CI runs typecheck, lint, format-check, test, build and a gitleaks secret scan on push to
 `main` and on PRs. `secrets:scan` needs either `gitleaks` v8.19+ on PATH or a running
 Docker daemon.
-
-## Working with AI agents
-
-`AGENTS.md` is the contract — repo structure, commands, and rules. `CLAUDE.md` is a
-symlink to it, so edit `AGENTS.md` and never `CLAUDE.md`.
-
-- Claude Code: permissions in `.claude/settings.json`. No post-edit format hook — run
-  `pnpm format` before committing.
-- Codex: config in `.codex/config.toml`.
-
-Recommended editor extensions are listed in `.vscode/extensions.json`.
