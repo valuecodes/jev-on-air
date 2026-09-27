@@ -49,6 +49,42 @@ Each line is a trade, or a quote update shown as its bid/ask midpoint (`mid`), p
 the midpoint moves. Times are UTC exchange times. Bitcoin ticks around the clock; the ETFs
 only during US market hours. Logs go to stderr, and Ctrl+C closes the streams.
 
+## Paper-trade a stream with Jev
+
+Runs the decision engine (see [`@repo/jev`](../../packages/jev/README.md)) over a live stream:
+the transcript and live prices go in, TypeSafe AI's Jev model decides, and the fills land in a
+simulated portfolio. Needs the Alpaca keys and `TYPESAFE_API_KEY` in `.env` (`JEV_MODEL` picks
+the model; the default is `jev-latest`).
+
+```bash
+pnpm cli jev https://www.youtube.com/watch?v=U5Ovbz8KnYE --language en
+pnpm cli jev <url> --interval 60 --size 0.05               # fewer, smaller trades
+pnpm cli jev <url> --json                                  # ledger events as JSON lines
+```
+
+Every decision, fill, rejection, snapshot and error is printed and appended to
+`.cache/jev/<video-id>.jsonl`. The portfolio itself lives in `.cache/jev/portfolio.json`, is
+saved after every fill and picked up again by the next run; `--reset` starts over with `--cash`
+and `--state` points at another file. A lock file next to it keeps two runs from trading the same
+book at once. Live runs also save their transcript to
+`.cache/transcripts/<video-id>.jsonl`, so any run can be replayed.
+
+### Replay a recording
+
+```bash
+pnpm cli prices --json > ticks.jsonl                          # record prices for a while
+pnpm cli jev --replay .cache/transcripts/<id>.jsonl           # saved transcript, live prices
+pnpm cli jev --replay <transcript> --prices ticks.jsonl --fast --decider hold
+pnpm cli jev --replay <transcript> --prices ticks.jsonl --fast --decider script:plan.jsonl
+```
+
+`--replay` paces the transcript by its own timestamps; with `--prices` it is fully offline and
+`--fast` runs it without waiting on a virtual clock. `--decider hold` exercises the plumbing
+without an API key; `script:<file>` replays one JSON decision object per line
+(`{"decisions":[...],"signal":0.9}`). A replay uses a scratch portfolio under
+`.cache/jev/replay/` unless `--state` says otherwise, so it never trades on top of the live book.
+Run `pnpm cli` for the full option list.
+
 The root `cli` script runs `pnpm --silent --filter cli start`, so any arguments after
 `pnpm cli` are passed straight to `src/main.ts`.
 

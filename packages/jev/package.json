@@ -1,0 +1,41 @@
+{
+  "name": "@repo/jev",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./schema": "./src/schema.ts",
+    "./portfolio": "./src/portfolio.ts",
+    "./state": "./src/state.ts",
+    "./prices": "./src/prices.ts",
+    "./trigger": "./src/trigger.ts",
+    "./merge": "./src/merge.ts",
+    "./decider": "./src/decider.ts",
+    "./ledger": "./src/ledger.ts",
+    "./engine": "./src/engine.ts",
+    "./replay": "./src/replay.ts",
+    "./questions": "./src/questions.ts",
+    "./typesafe": "./src/typesafe.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc",
+    "test": "vitest run",
+    "format": "prettier --write .",
+    "clean": "rm -rf .turbo node_modules .cache"
+  },
+  "dependencies": {
+    "@repo/alpaca": "workspace:*",
+    "@repo/logger": "workspace:*",
+    "@repo/transcriber": "workspace:*",
+    "@typesafe-ai/sdk": "0.5.7",
+    "zod": "4.6.2"
+  },
+  "devDependencies": {
+    "@repo/prettier": "workspace:*",
+    "@repo/typescript": "workspace:*",
+    "@types/node": "catalog:",
+    "prettier": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "prettier": "@repo/prettier"
+}

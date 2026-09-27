@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./channel": "./src/channel.ts",
     "./instruments": "./src/instruments.ts",
     "./prices": "./src/prices.ts"
   },
