@@ -230,21 +230,6 @@ export function RunView({ id }: { id: string }) {
       {group ? (
         <>
           <Summary start={start} book={book} events={events} />
-          <section className={card}>
-            <h2 className={heading}>
-              <ChartLine className="text-accent size-4" aria-hidden />
-              Prices
-              <span className="font-normal tracking-normal normal-case">
-                · % since the run started
-              </span>
-            </h2>
-            <PriceChart
-              points={stream.prices}
-              fills={fills}
-              from={Date.parse(group.run)}
-              to={last?.type === "end" ? Date.parse(last.time) : undefined}
-            />
-          </section>
           {/* The video sets the row's height; the timeline scrolls within it. */}
           <div className={`grid gap-4 ${videoId ? "lg:grid-cols-2" : ""}`}>
             {videoId && (
@@ -308,6 +293,21 @@ export function RunView({ id }: { id: string }) {
               </ol>
             </section>
           </div>
+          <section className={card}>
+            <h2 className={heading}>
+              <ChartLine className="text-accent size-4" aria-hidden />
+              Prices
+              <span className="font-normal tracking-normal normal-case">
+                · % since the run started
+              </span>
+            </h2>
+            <PriceChart
+              points={stream.prices}
+              fills={fills}
+              from={Date.parse(group.run)}
+              to={last?.type === "end" ? Date.parse(last.time) : undefined}
+            />
+          </section>
         </>
       ) : (
         <section className={`${card} text-muted items-center py-10`}>
