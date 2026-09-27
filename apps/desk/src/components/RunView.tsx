@@ -143,9 +143,12 @@ export function RunView({ id }: { id: string }) {
     };
   }, [id, groups.length, hasTranscript]);
 
+  // A replay desk started records its video in the sidecar.
   const videoId = start?.source.startsWith("youtube:")
     ? start.source.slice("youtube:".length)
-    : undefined;
+    : start?.source.startsWith("replay:") && transcript.match === "exact"
+      ? meta?.video.id
+      : undefined;
   const player = useRef<PlayerHandle | null>(null);
   const [playerReady, setPlayerReady] = useState(false);
   const onPlayerReady = useCallback((handle: PlayerHandle | null) => {
@@ -161,6 +164,16 @@ export function RunView({ id }: { id: string }) {
         : undefined,
     [playerReady, runStart, meta]
   );
+  // Watching a sample along: start the video at the first line replayed.
+  const firstLine = transcript.lines[0]?.segment.end;
+  const watching = stream.run?.mode === "paced" && live;
+  const started = useRef<string | null>(null);
+  useEffect(() => {
+    if (!watching || !seek || firstLine === undefined || !runStart) return;
+    if (started.current === runStart) return;
+    started.current = runStart;
+    seek(firstLine);
+  }, [watching, seek, firstLine, runStart]);
   const fills = useMemo(
     () => events.filter((event): event is FillEvent => event.type === "fill"),
     [events]
@@ -307,7 +320,7 @@ export function RunView({ id }: { id: string }) {
             <PriceChart
               points={stream.prices}
               fills={fills}
-              from={Date.parse(group.run)}
+              from={Date.parse(start?.time ?? group.run)}
               to={last?.type === "end" ? Date.parse(last.time) : undefined}
             />
           </section>

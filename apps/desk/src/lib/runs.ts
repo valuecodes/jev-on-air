@@ -93,6 +93,7 @@ export class RunRegistry {
         exitCode: null,
         signal: null,
         error: null,
+        mode: request.sample?.mode ?? "live",
         ledgerStart: 0,
         transcriptStart: 0,
       },

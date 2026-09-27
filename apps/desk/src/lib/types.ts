@@ -3,6 +3,8 @@
 import type { JevEvent } from "@repo/jev/ledger";
 import type { Decision } from "@repo/jev/schema";
 
+import type { SampleMode } from "./samples";
+
 export type RunState =
   "starting" | "running" | "stopping" | "exited" | "failed";
 
@@ -15,6 +17,8 @@ export type RunSummary = {
   exitCode: number | null;
   signal: string | null;
   error: string | null;
+  /** A live stream, or a sample replayed fast or in real time. */
+  mode: "live" | SampleMode;
   /** Ledger and transcript sizes when the run started: where its lines begin. */
   ledgerStart: number;
   transcriptStart: number;

@@ -1,0 +1,400 @@
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75320.503,"size":0,"timestamp":"2026-09-16T17:51:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":398.35,"size":11881,"timestamp":"2026-09-16T17:51:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":759.61,"size":44185,"timestamp":"2026-09-16T17:51:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.6,"size":605,"timestamp":"2026-09-16T17:51:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75362.92,"size":0,"timestamp":"2026-09-16T17:52:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":398.52,"size":21974,"timestamp":"2026-09-16T17:52:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":759.6615,"size":26523,"timestamp":"2026-09-16T17:52:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.46,"size":3608,"timestamp":"2026-09-16T17:52:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75366.494,"size":0,"timestamp":"2026-09-16T17:53:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":398.55,"size":23526,"timestamp":"2026-09-16T17:53:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":759.8,"size":40145,"timestamp":"2026-09-16T17:53:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.4,"size":3634,"timestamp":"2026-09-16T17:53:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75406.465,"size":0.001300289,"timestamp":"2026-09-16T17:54:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":398.7,"size":7644,"timestamp":"2026-09-16T17:54:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":759.82,"size":40812,"timestamp":"2026-09-16T17:54:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.4599,"size":2124,"timestamp":"2026-09-16T17:54:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75434.325,"size":0.000135,"timestamp":"2026-09-16T17:55:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":398.67,"size":7127,"timestamp":"2026-09-16T17:55:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":759.79,"size":40938,"timestamp":"2026-09-16T17:55:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.41,"size":8770,"timestamp":"2026-09-16T17:55:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75466.119,"size":0,"timestamp":"2026-09-16T17:56:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":398.68,"size":32138,"timestamp":"2026-09-16T17:56:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":759.69,"size":40387,"timestamp":"2026-09-16T17:56:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.44,"size":1877,"timestamp":"2026-09-16T17:56:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75516.252,"size":0,"timestamp":"2026-09-16T17:57:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":398.93,"size":21640,"timestamp":"2026-09-16T17:57:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":759.86,"size":22188,"timestamp":"2026-09-16T17:57:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.55,"size":8275,"timestamp":"2026-09-16T17:57:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75567.355,"size":0,"timestamp":"2026-09-16T17:58:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":399.2499,"size":37352,"timestamp":"2026-09-16T17:58:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":759.93,"size":51756,"timestamp":"2026-09-16T17:58:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.49,"size":18846,"timestamp":"2026-09-16T17:58:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75735.3945,"size":0,"timestamp":"2026-09-16T17:59:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":399.13,"size":26349,"timestamp":"2026-09-16T17:59:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":760.215,"size":65611,"timestamp":"2026-09-16T17:59:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.4,"size":2258,"timestamp":"2026-09-16T17:59:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75662.941,"size":0,"timestamp":"2026-09-16T18:00:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":399.91,"size":144741,"timestamp":"2026-09-16T18:00:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":760.28,"size":64888,"timestamp":"2026-09-16T18:00:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.45,"size":1867,"timestamp":"2026-09-16T18:00:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75511.095,"size":0.000260766,"timestamp":"2026-09-16T18:01:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":397.79,"size":431406,"timestamp":"2026-09-16T18:01:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":759.67,"size":556556,"timestamp":"2026-09-16T18:01:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.35,"size":10042,"timestamp":"2026-09-16T18:01:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75341.55,"size":0,"timestamp":"2026-09-16T18:02:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":395.94,"size":287467,"timestamp":"2026-09-16T18:02:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":758.93,"size":600164,"timestamp":"2026-09-16T18:02:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.32,"size":13851,"timestamp":"2026-09-16T18:02:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75546.695,"size":0,"timestamp":"2026-09-16T18:03:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":397.21,"size":206044,"timestamp":"2026-09-16T18:03:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":759.7,"size":297543,"timestamp":"2026-09-16T18:03:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.3671,"size":3810,"timestamp":"2026-09-16T18:03:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75709.282,"size":0,"timestamp":"2026-09-16T18:04:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":396.925,"size":121084,"timestamp":"2026-09-16T18:04:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":759.66,"size":199817,"timestamp":"2026-09-16T18:04:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.39,"size":10504,"timestamp":"2026-09-16T18:04:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75772.1475,"size":0.000206,"timestamp":"2026-09-16T18:05:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":396.55,"size":80267,"timestamp":"2026-09-16T18:05:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":760.21,"size":146666,"timestamp":"2026-09-16T18:05:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.41,"size":6061,"timestamp":"2026-09-16T18:05:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":76028.1305,"size":0.000064,"timestamp":"2026-09-16T18:06:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":397.235,"size":81017,"timestamp":"2026-09-16T18:06:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":760.465,"size":97876,"timestamp":"2026-09-16T18:06:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.3136,"size":11322,"timestamp":"2026-09-16T18:06:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":76160.18,"size":0,"timestamp":"2026-09-16T18:07:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":397.18,"size":63710,"timestamp":"2026-09-16T18:07:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":760.26,"size":210316,"timestamp":"2026-09-16T18:07:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.49,"size":1410,"timestamp":"2026-09-16T18:07:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":76319.7,"size":0.14067073,"timestamp":"2026-09-16T18:08:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":398.17,"size":83732,"timestamp":"2026-09-16T18:08:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":760.81,"size":157593,"timestamp":"2026-09-16T18:08:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.4762,"size":1178,"timestamp":"2026-09-16T18:08:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":76321.838,"size":0,"timestamp":"2026-09-16T18:09:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":397.905,"size":120163,"timestamp":"2026-09-16T18:09:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":760.885,"size":183407,"timestamp":"2026-09-16T18:09:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.39,"size":2034,"timestamp":"2026-09-16T18:09:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":76146.824,"size":0,"timestamp":"2026-09-16T18:10:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":397.115,"size":75879,"timestamp":"2026-09-16T18:10:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":760.6677,"size":137272,"timestamp":"2026-09-16T18:10:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.68,"size":2921,"timestamp":"2026-09-16T18:10:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":76076.3065,"size":0,"timestamp":"2026-09-16T18:11:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":396.785,"size":102447,"timestamp":"2026-09-16T18:11:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":760.38,"size":152648,"timestamp":"2026-09-16T18:11:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.6284,"size":1719,"timestamp":"2026-09-16T18:11:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":76006.1,"size":0.000257796,"timestamp":"2026-09-16T18:12:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":395.6356,"size":112613,"timestamp":"2026-09-16T18:12:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":760.21,"size":118346,"timestamp":"2026-09-16T18:12:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.66,"size":1883,"timestamp":"2026-09-16T18:12:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75929.259,"size":0,"timestamp":"2026-09-16T18:13:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":395.51,"size":53226,"timestamp":"2026-09-16T18:13:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":760.05,"size":102621,"timestamp":"2026-09-16T18:13:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.605,"size":1139,"timestamp":"2026-09-16T18:13:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75874.762,"size":0.00092957,"timestamp":"2026-09-16T18:14:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":395.22,"size":125403,"timestamp":"2026-09-16T18:14:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":760.3073,"size":87364,"timestamp":"2026-09-16T18:14:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.65,"size":848,"timestamp":"2026-09-16T18:14:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75725.9795,"size":0,"timestamp":"2026-09-16T18:15:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":395.2399,"size":56851,"timestamp":"2026-09-16T18:15:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":759.97,"size":56113,"timestamp":"2026-09-16T18:15:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.665,"size":1562,"timestamp":"2026-09-16T18:15:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75784.455,"size":0,"timestamp":"2026-09-16T18:16:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":395.09,"size":40408,"timestamp":"2026-09-16T18:16:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":759.895,"size":39952,"timestamp":"2026-09-16T18:16:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.47,"size":4409,"timestamp":"2026-09-16T18:16:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75743.3825,"size":0,"timestamp":"2026-09-16T18:17:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":394.96,"size":44220,"timestamp":"2026-09-16T18:17:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":759.99,"size":41464,"timestamp":"2026-09-16T18:17:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.46,"size":11234,"timestamp":"2026-09-16T18:17:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75784.725,"size":0,"timestamp":"2026-09-16T18:18:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":395.4288,"size":49399,"timestamp":"2026-09-16T18:18:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":759.9,"size":55103,"timestamp":"2026-09-16T18:18:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.48,"size":1182,"timestamp":"2026-09-16T18:18:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75778.945,"size":0,"timestamp":"2026-09-16T18:19:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":395.1,"size":24120,"timestamp":"2026-09-16T18:19:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":759.705,"size":57881,"timestamp":"2026-09-16T18:19:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.4,"size":1472,"timestamp":"2026-09-16T18:19:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75869.0305,"size":0,"timestamp":"2026-09-16T18:20:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":395.99,"size":63557,"timestamp":"2026-09-16T18:20:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":759.94,"size":89553,"timestamp":"2026-09-16T18:20:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.32,"size":22990,"timestamp":"2026-09-16T18:20:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75938.174,"size":0.000142,"timestamp":"2026-09-16T18:21:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":396.165,"size":53784,"timestamp":"2026-09-16T18:21:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":759.77,"size":59617,"timestamp":"2026-09-16T18:21:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.42,"size":2076,"timestamp":"2026-09-16T18:21:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75915.515,"size":0,"timestamp":"2026-09-16T18:22:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":396.305,"size":65863,"timestamp":"2026-09-16T18:22:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":760.01,"size":33910,"timestamp":"2026-09-16T18:22:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.47,"size":1051,"timestamp":"2026-09-16T18:22:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75974.48,"size":0,"timestamp":"2026-09-16T18:23:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":395.78,"size":66478,"timestamp":"2026-09-16T18:23:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":760.02,"size":45106,"timestamp":"2026-09-16T18:23:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.45,"size":1464,"timestamp":"2026-09-16T18:23:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75995.06,"size":0.00032,"timestamp":"2026-09-16T18:24:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":396.13,"size":31551,"timestamp":"2026-09-16T18:24:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":760.11,"size":45163,"timestamp":"2026-09-16T18:24:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.31,"size":2682,"timestamp":"2026-09-16T18:24:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75830.74,"size":0,"timestamp":"2026-09-16T18:25:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":395.75,"size":29958,"timestamp":"2026-09-16T18:25:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":759.85,"size":55785,"timestamp":"2026-09-16T18:25:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.495,"size":2139,"timestamp":"2026-09-16T18:25:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75788.29,"size":0,"timestamp":"2026-09-16T18:26:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":395.5,"size":41874,"timestamp":"2026-09-16T18:26:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":759.6,"size":64419,"timestamp":"2026-09-16T18:26:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.4505,"size":693,"timestamp":"2026-09-16T18:26:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75859.8635,"size":0,"timestamp":"2026-09-16T18:27:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":395.73,"size":64524,"timestamp":"2026-09-16T18:27:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":759.48,"size":113565,"timestamp":"2026-09-16T18:27:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.605,"size":3343,"timestamp":"2026-09-16T18:27:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75713.461,"size":0,"timestamp":"2026-09-16T18:28:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":395.625,"size":73796,"timestamp":"2026-09-16T18:28:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":758.985,"size":83315,"timestamp":"2026-09-16T18:28:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.68,"size":5806,"timestamp":"2026-09-16T18:28:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75727,"size":0.000811043,"timestamp":"2026-09-16T18:29:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":395.75,"size":36344,"timestamp":"2026-09-16T18:29:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":759.16,"size":110533,"timestamp":"2026-09-16T18:29:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.7,"size":6258,"timestamp":"2026-09-16T18:29:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75937.152,"size":0,"timestamp":"2026-09-16T18:30:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":396.35,"size":22934,"timestamp":"2026-09-16T18:30:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":759.68,"size":71887,"timestamp":"2026-09-16T18:30:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.62,"size":4329,"timestamp":"2026-09-16T18:30:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75808.65,"size":0,"timestamp":"2026-09-16T18:31:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":395.46,"size":51403,"timestamp":"2026-09-16T18:31:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":759.27,"size":66625,"timestamp":"2026-09-16T18:31:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.81,"size":10351,"timestamp":"2026-09-16T18:31:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75719.07,"size":0,"timestamp":"2026-09-16T18:32:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":394.995,"size":53904,"timestamp":"2026-09-16T18:32:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":758.8195,"size":111937,"timestamp":"2026-09-16T18:32:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.76,"size":9964,"timestamp":"2026-09-16T18:32:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75612.085,"size":0.002422361,"timestamp":"2026-09-16T18:33:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":393.5597,"size":91432,"timestamp":"2026-09-16T18:33:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":758.1,"size":171944,"timestamp":"2026-09-16T18:33:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.9776,"size":14402,"timestamp":"2026-09-16T18:33:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75527.515,"size":0,"timestamp":"2026-09-16T18:34:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":392.96,"size":170171,"timestamp":"2026-09-16T18:34:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":757.81,"size":324491,"timestamp":"2026-09-16T18:34:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.95,"size":13627,"timestamp":"2026-09-16T18:34:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75538.063,"size":0,"timestamp":"2026-09-16T18:35:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":392.845,"size":50124,"timestamp":"2026-09-16T18:35:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":757.65,"size":239566,"timestamp":"2026-09-16T18:35:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":157.0709,"size":14140,"timestamp":"2026-09-16T18:35:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75185.8835,"size":0.005130207,"timestamp":"2026-09-16T18:36:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":391.9618,"size":102988,"timestamp":"2026-09-16T18:36:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":756.95,"size":346287,"timestamp":"2026-09-16T18:36:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":157.17,"size":8240,"timestamp":"2026-09-16T18:36:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75046.995,"size":0.002707,"timestamp":"2026-09-16T18:37:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":391.21,"size":78761,"timestamp":"2026-09-16T18:37:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":756.14,"size":313756,"timestamp":"2026-09-16T18:37:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":157.1301,"size":12218,"timestamp":"2026-09-16T18:37:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75312.3895,"size":0,"timestamp":"2026-09-16T18:38:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":391.7111,"size":242181,"timestamp":"2026-09-16T18:38:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":756.32,"size":451340,"timestamp":"2026-09-16T18:38:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.93,"size":6254,"timestamp":"2026-09-16T18:38:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75627,"size":0,"timestamp":"2026-09-16T18:39:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":392.79,"size":96857,"timestamp":"2026-09-16T18:39:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":757.46,"size":383691,"timestamp":"2026-09-16T18:39:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.91,"size":6337,"timestamp":"2026-09-16T18:39:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75725.295,"size":0,"timestamp":"2026-09-16T18:40:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":393.4705,"size":59094,"timestamp":"2026-09-16T18:40:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":757.8901,"size":368445,"timestamp":"2026-09-16T18:40:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.71,"size":14950,"timestamp":"2026-09-16T18:40:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75833.372,"size":0,"timestamp":"2026-09-16T18:41:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":393.255,"size":57273,"timestamp":"2026-09-16T18:41:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":758.4451,"size":144281,"timestamp":"2026-09-16T18:41:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.72,"size":13652,"timestamp":"2026-09-16T18:41:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75870.2975,"size":0.00008,"timestamp":"2026-09-16T18:42:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":393.549,"size":65524,"timestamp":"2026-09-16T18:42:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":758.98,"size":227249,"timestamp":"2026-09-16T18:42:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.72,"size":6286,"timestamp":"2026-09-16T18:42:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":76229.9025,"size":0.000115,"timestamp":"2026-09-16T18:43:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":394.31,"size":73558,"timestamp":"2026-09-16T18:43:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":759.88,"size":160725,"timestamp":"2026-09-16T18:43:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.701,"size":869,"timestamp":"2026-09-16T18:43:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":76146.093,"size":0.006369024,"timestamp":"2026-09-16T18:44:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":395,"size":133562,"timestamp":"2026-09-16T18:44:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":759.88,"size":245495,"timestamp":"2026-09-16T18:44:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.645,"size":2075,"timestamp":"2026-09-16T18:44:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75901.81,"size":0,"timestamp":"2026-09-16T18:45:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":394.37,"size":156875,"timestamp":"2026-09-16T18:45:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":759,"size":189283,"timestamp":"2026-09-16T18:45:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.61,"size":6585,"timestamp":"2026-09-16T18:45:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75933.175,"size":0,"timestamp":"2026-09-16T18:46:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":394.78,"size":61665,"timestamp":"2026-09-16T18:46:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":759.1099,"size":160967,"timestamp":"2026-09-16T18:46:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.65,"size":5098,"timestamp":"2026-09-16T18:46:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75880.533,"size":0,"timestamp":"2026-09-16T18:47:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":394.495,"size":34443,"timestamp":"2026-09-16T18:47:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":758.59,"size":121372,"timestamp":"2026-09-16T18:47:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.61,"size":879,"timestamp":"2026-09-16T18:47:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75797.89,"size":0,"timestamp":"2026-09-16T18:48:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":393.94,"size":44224,"timestamp":"2026-09-16T18:48:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":758.055,"size":109066,"timestamp":"2026-09-16T18:48:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.62,"size":1331,"timestamp":"2026-09-16T18:48:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75818.53,"size":0,"timestamp":"2026-09-16T18:49:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":393.6,"size":31893,"timestamp":"2026-09-16T18:49:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":757.77,"size":200371,"timestamp":"2026-09-16T18:49:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.65,"size":487,"timestamp":"2026-09-16T18:49:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75851.2,"size":0,"timestamp":"2026-09-16T18:50:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":393.68,"size":39359,"timestamp":"2026-09-16T18:50:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":757.56,"size":110823,"timestamp":"2026-09-16T18:50:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.55,"size":3255,"timestamp":"2026-09-16T18:50:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75686.614,"size":0.003832199,"timestamp":"2026-09-16T18:51:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":393.19,"size":55023,"timestamp":"2026-09-16T18:51:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":757.12,"size":191892,"timestamp":"2026-09-16T18:51:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.51,"size":10457,"timestamp":"2026-09-16T18:51:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75830.0395,"size":0,"timestamp":"2026-09-16T18:52:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":393.035,"size":58365,"timestamp":"2026-09-16T18:52:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":757.22,"size":178636,"timestamp":"2026-09-16T18:52:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.55,"size":10680,"timestamp":"2026-09-16T18:52:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75588.192,"size":0,"timestamp":"2026-09-16T18:53:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":391.76,"size":83683,"timestamp":"2026-09-16T18:53:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":756.29,"size":304903,"timestamp":"2026-09-16T18:53:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.57,"size":12821,"timestamp":"2026-09-16T18:53:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75507.727,"size":0,"timestamp":"2026-09-16T18:54:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":391.17,"size":62158,"timestamp":"2026-09-16T18:54:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":755.52,"size":186305,"timestamp":"2026-09-16T18:54:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.73,"size":6609,"timestamp":"2026-09-16T18:54:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75472.7925,"size":0,"timestamp":"2026-09-16T18:55:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":391.21,"size":61533,"timestamp":"2026-09-16T18:55:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":755.16,"size":229620,"timestamp":"2026-09-16T18:55:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.7201,"size":3979,"timestamp":"2026-09-16T18:55:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75482.32,"size":0,"timestamp":"2026-09-16T18:56:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":391.485,"size":55864,"timestamp":"2026-09-16T18:56:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":755.26,"size":264155,"timestamp":"2026-09-16T18:56:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.72,"size":2028,"timestamp":"2026-09-16T18:56:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75505.8185,"size":0,"timestamp":"2026-09-16T18:57:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":391.11,"size":80448,"timestamp":"2026-09-16T18:57:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":754.63,"size":274899,"timestamp":"2026-09-16T18:57:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.83,"size":4506,"timestamp":"2026-09-16T18:57:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75460.6025,"size":0.006398215,"timestamp":"2026-09-16T18:58:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":391.19,"size":80146,"timestamp":"2026-09-16T18:58:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":754.275,"size":227569,"timestamp":"2026-09-16T18:58:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.81,"size":2876,"timestamp":"2026-09-16T18:58:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75596.311,"size":0,"timestamp":"2026-09-16T18:59:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":391.525,"size":40685,"timestamp":"2026-09-16T18:59:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":754.4,"size":174466,"timestamp":"2026-09-16T18:59:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":157.06,"size":2080,"timestamp":"2026-09-16T18:59:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75556.4315,"size":0,"timestamp":"2026-09-16T19:00:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":390.71,"size":79190,"timestamp":"2026-09-16T19:00:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":753.89,"size":342153,"timestamp":"2026-09-16T19:00:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":157.06,"size":3667,"timestamp":"2026-09-16T19:00:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75882.099,"size":0,"timestamp":"2026-09-16T19:01:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":392.2,"size":79900,"timestamp":"2026-09-16T19:01:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":754.905,"size":453245,"timestamp":"2026-09-16T19:01:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":157.3661,"size":16584,"timestamp":"2026-09-16T19:01:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75905.7205,"size":0,"timestamp":"2026-09-16T19:02:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":391.9,"size":116518,"timestamp":"2026-09-16T19:02:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":754.39,"size":405577,"timestamp":"2026-09-16T19:02:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":157.1682,"size":17526,"timestamp":"2026-09-16T19:02:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75935.75,"size":0,"timestamp":"2026-09-16T19:03:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":392.29,"size":61059,"timestamp":"2026-09-16T19:03:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":754.47,"size":176061,"timestamp":"2026-09-16T19:03:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":157.1,"size":4848,"timestamp":"2026-09-16T19:03:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":76048.99,"size":0,"timestamp":"2026-09-16T19:04:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":393.09,"size":83434,"timestamp":"2026-09-16T19:04:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":755.05,"size":174365,"timestamp":"2026-09-16T19:04:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.87,"size":4689,"timestamp":"2026-09-16T19:04:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75972.25,"size":0.000101,"timestamp":"2026-09-16T19:05:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":391.86,"size":60616,"timestamp":"2026-09-16T19:05:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":754.755,"size":390065,"timestamp":"2026-09-16T19:05:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.92,"size":3527,"timestamp":"2026-09-16T19:05:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75941.355,"size":0.000101,"timestamp":"2026-09-16T19:06:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":391.63,"size":31353,"timestamp":"2026-09-16T19:06:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":754.45,"size":194494,"timestamp":"2026-09-16T19:06:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.97,"size":2559,"timestamp":"2026-09-16T19:06:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75982.0965,"size":0.002680018,"timestamp":"2026-09-16T19:07:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":391.22,"size":56812,"timestamp":"2026-09-16T19:07:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":754.33,"size":153694,"timestamp":"2026-09-16T19:07:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":157.03,"size":4599,"timestamp":"2026-09-16T19:07:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75959.1195,"size":0,"timestamp":"2026-09-16T19:08:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":390.53,"size":864750,"timestamp":"2026-09-16T19:08:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":754.01,"size":288984,"timestamp":"2026-09-16T19:08:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":157.06,"size":7215,"timestamp":"2026-09-16T19:08:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75924.262,"size":0,"timestamp":"2026-09-16T19:09:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":390.2972,"size":216127,"timestamp":"2026-09-16T19:09:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":753.39,"size":219167,"timestamp":"2026-09-16T19:09:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.98,"size":3158,"timestamp":"2026-09-16T19:09:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75858.482,"size":0,"timestamp":"2026-09-16T19:10:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":389.77,"size":330806,"timestamp":"2026-09-16T19:10:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":753.195,"size":182155,"timestamp":"2026-09-16T19:10:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.93,"size":6797,"timestamp":"2026-09-16T19:10:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75720.825,"size":0,"timestamp":"2026-09-16T19:11:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":388.57,"size":285340,"timestamp":"2026-09-16T19:11:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":752.3199,"size":216877,"timestamp":"2026-09-16T19:11:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":157.03,"size":7238,"timestamp":"2026-09-16T19:11:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75761.3075,"size":0.000310892,"timestamp":"2026-09-16T19:12:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":389.31,"size":110423,"timestamp":"2026-09-16T19:12:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":751.89,"size":423304,"timestamp":"2026-09-16T19:12:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":157.0768,"size":4107,"timestamp":"2026-09-16T19:12:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75725.0105,"size":0,"timestamp":"2026-09-16T19:13:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":388.8513,"size":96209,"timestamp":"2026-09-16T19:13:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":751.73,"size":321151,"timestamp":"2026-09-16T19:13:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":157,"size":7467,"timestamp":"2026-09-16T19:13:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75725.9575,"size":0,"timestamp":"2026-09-16T19:14:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":389.39,"size":180796,"timestamp":"2026-09-16T19:14:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":751.4,"size":286965,"timestamp":"2026-09-16T19:14:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":157.09,"size":3898,"timestamp":"2026-09-16T19:14:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75879.975,"size":0.000099,"timestamp":"2026-09-16T19:15:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":390.03,"size":93342,"timestamp":"2026-09-16T19:15:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":751.31,"size":431405,"timestamp":"2026-09-16T19:15:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":157.06,"size":18385,"timestamp":"2026-09-16T19:15:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75864.15,"size":0,"timestamp":"2026-09-16T19:16:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":389.79,"size":54283,"timestamp":"2026-09-16T19:16:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":751.54,"size":348745,"timestamp":"2026-09-16T19:16:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.95,"size":2352,"timestamp":"2026-09-16T19:16:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75761.532,"size":0.000082,"timestamp":"2026-09-16T19:17:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":389.48,"size":64624,"timestamp":"2026-09-16T19:17:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":751.5,"size":314929,"timestamp":"2026-09-16T19:17:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.9,"size":6202,"timestamp":"2026-09-16T19:17:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75704.1705,"size":0.000097,"timestamp":"2026-09-16T19:18:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":389.225,"size":61743,"timestamp":"2026-09-16T19:18:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":751.2,"size":540684,"timestamp":"2026-09-16T19:18:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.96,"size":4278,"timestamp":"2026-09-16T19:18:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75661.66,"size":0.000098921,"timestamp":"2026-09-16T19:19:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":388.99,"size":52921,"timestamp":"2026-09-16T19:19:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":750.93,"size":251979,"timestamp":"2026-09-16T19:19:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.9,"size":3777,"timestamp":"2026-09-16T19:19:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75625.36,"size":0,"timestamp":"2026-09-16T19:20:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":389.51,"size":49073,"timestamp":"2026-09-16T19:20:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":750.945,"size":404178,"timestamp":"2026-09-16T19:20:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.92,"size":2361,"timestamp":"2026-09-16T19:20:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75568.15,"size":0.017342553,"timestamp":"2026-09-16T19:21:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":389.23,"size":57840,"timestamp":"2026-09-16T19:21:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":750.625,"size":331328,"timestamp":"2026-09-16T19:21:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.77,"size":3619,"timestamp":"2026-09-16T19:21:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75496.5785,"size":0,"timestamp":"2026-09-16T19:22:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":389.64,"size":51822,"timestamp":"2026-09-16T19:22:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":750.59,"size":327586,"timestamp":"2026-09-16T19:22:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.66,"size":16425,"timestamp":"2026-09-16T19:22:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75434.937,"size":0.000233,"timestamp":"2026-09-16T19:23:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":389.44,"size":46107,"timestamp":"2026-09-16T19:23:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":750.25,"size":319830,"timestamp":"2026-09-16T19:23:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.7,"size":21858,"timestamp":"2026-09-16T19:23:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75412.5575,"size":0.000041,"timestamp":"2026-09-16T19:24:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":389.9,"size":35099,"timestamp":"2026-09-16T19:24:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":750.255,"size":390925,"timestamp":"2026-09-16T19:24:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.77,"size":10019,"timestamp":"2026-09-16T19:24:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75352.451,"size":0,"timestamp":"2026-09-16T19:25:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":389.9325,"size":40406,"timestamp":"2026-09-16T19:25:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":750.68,"size":388411,"timestamp":"2026-09-16T19:25:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.7,"size":1185,"timestamp":"2026-09-16T19:25:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75267.47,"size":0,"timestamp":"2026-09-16T19:26:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":389.38,"size":48806,"timestamp":"2026-09-16T19:26:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":749.79,"size":371356,"timestamp":"2026-09-16T19:26:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.57,"size":8282,"timestamp":"2026-09-16T19:26:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75186.499,"size":0.000023855,"timestamp":"2026-09-16T19:27:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":389.19,"size":36282,"timestamp":"2026-09-16T19:27:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":749.8,"size":220715,"timestamp":"2026-09-16T19:27:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.48,"size":2442,"timestamp":"2026-09-16T19:27:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75396.48,"size":0,"timestamp":"2026-09-16T19:28:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":389.595,"size":77497,"timestamp":"2026-09-16T19:28:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":750.33,"size":409685,"timestamp":"2026-09-16T19:28:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.47,"size":7224,"timestamp":"2026-09-16T19:28:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75298.67,"size":0,"timestamp":"2026-09-16T19:29:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":389.08,"size":42231,"timestamp":"2026-09-16T19:29:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":750.199,"size":306018,"timestamp":"2026-09-16T19:29:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.6073,"size":1251,"timestamp":"2026-09-16T19:29:00.000Z"}
+{"instrument":"bitcoin","name":"Bitcoin","symbol":"BTC/USD","source":"trade","price":75465.7775,"size":0.003201397,"timestamp":"2026-09-16T19:30:00.000Z"}
+{"instrument":"gold","name":"Gold","symbol":"GLD","source":"trade","price":390.04,"size":51922,"timestamp":"2026-09-16T19:30:00.000Z"}
+{"instrument":"sp500","name":"S&P 500","symbol":"SPY","source":"trade","price":751.26,"size":359917,"timestamp":"2026-09-16T19:30:00.000Z"}
+{"instrument":"oil","name":"Oil","symbol":"USO","source":"trade","price":156.555,"size":2565,"timestamp":"2026-09-16T19:30:00.000Z"}

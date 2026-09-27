@@ -288,6 +288,7 @@ describe("parseJevArgs", () => {
         "--fast",
         "--audio-start=2026-09-16T18:30:00Z",
         "--lag=20",
+        "--tee",
         "--decider=script:plan.jsonl",
         "--model=jev-preview",
         "--cash=5000",
@@ -313,6 +314,7 @@ describe("parseJevArgs", () => {
         fast: true,
         audioStart: "2026-09-16T18:30:00.000Z",
         lagSeconds: 20,
+        tee: true,
       },
       id: "abc",
       decider: { kind: "script", path: "plan.jsonl" },
@@ -358,6 +360,9 @@ describe("parseJevArgs", () => {
       /only apply to --replay/
     );
     expect(() => parseJevArgs([url, "--lag=5"])).toThrow(
+      /only apply to --replay/
+    );
+    expect(() => parseJevArgs([url, "--tee"])).toThrow(
       /only apply to --replay/
     );
     expect(() =>

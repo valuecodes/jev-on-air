@@ -57,6 +57,25 @@ describe("RunRegistry", () => {
     expect(registry.list()[0]?.state).toBe("running");
   });
 
+  it("files a sample's run under the sample's ledger id", async () => {
+    const offsets: string[] = [];
+    const registry = new RunRegistry({
+      spawn: () => new FakeChild(),
+      killGroup: () => undefined,
+      offsets: (id) => {
+        offsets.push(id);
+        return Promise.resolve({ ledger: 0, transcript: 0 });
+      },
+    });
+    const run = await registry.start({
+      videoId: "fomc-2026-09-16",
+      reset: true,
+      sample: { mode: "fast", lagSeconds: 20 },
+    });
+    expect(run).toMatchObject({ videoId: "fomc-2026-09-16", mode: "fast" });
+    expect(offsets).toEqual(["fomc-2026-09-16"]);
+  });
+
   it("refuses a second run while one is active, even when both start at once", async () => {
     const { registry } = setup();
     const results = await Promise.allSettled([

@@ -1,6 +1,8 @@
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { formatCursor, parseCursor } from "./cursor";
+import { cliDir } from "./paths";
 import { jevArgv, parseStartRequest } from "./start";
 
 describe("parseStartRequest", () => {
@@ -43,6 +45,32 @@ describe("parseStartRequest", () => {
       expect(() => parseStartRequest({ url })).toThrow();
   });
 
+  it("replays a known sample on a scratch book", () => {
+    expect(
+      parseStartRequest({ sample: "fomc-2026-09-16", mode: "paced", size: 0.2 })
+    ).toEqual({
+      videoId: "fomc-2026-09-16",
+      size: 0.2,
+      reset: true,
+      sample: { mode: "paced", lagSeconds: 20 },
+    });
+  });
+
+  it("rejects unknown samples, modes and sample fields", () => {
+    for (const body of [
+      { sample: "../../etc/passwd", mode: "fast" },
+      { sample: "fomc-2026-09-16", mode: "slow" },
+      { sample: "fomc-2026-09-16" },
+      { sample: "fomc-2026-09-16", mode: "fast", reset: false },
+      {
+        sample: "fomc-2026-09-16",
+        mode: "fast",
+        url: "https://youtu.be/5vfaDsMhCF4",
+      },
+    ])
+      expect(() => parseStartRequest(body)).toThrow();
+  });
+
   it("rejects out-of-range options, wrong types and unknown fields", () => {
     const url = "https://youtu.be/5vfaDsMhCF4";
     for (const body of [
@@ -79,6 +107,26 @@ describe("jevArgv", () => {
         reset: true,
       }).slice(5)
     ).toEqual(["--size=0.2", "--min-signal=0.7", "--reset"]);
+  });
+
+  it("replays a sample's recordings from apps/cli/samples", () => {
+    const samples = join(cliDir, "samples");
+    const argv = (mode: "fast" | "paced") =>
+      jevArgv({
+        videoId: "fomc-2026-09-16",
+        reset: true,
+        sample: { mode, lagSeconds: 20 },
+      }).slice(4);
+    expect(argv("fast")).toEqual([
+      `--replay=${join(samples, "fomc-2026-09-16.jsonl")}`,
+      `--prices=${join(samples, "fomc-2026-09-16.ticks.jsonl")}`,
+      "--lag=20",
+      "--max-price-age=120",
+      "--tee",
+      "--fast",
+      "--reset",
+    ]);
+    expect(argv("paced")).not.toContain("--fast");
   });
 });
 
