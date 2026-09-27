@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import type { EngineEvent } from "./engine";
 import {
+  clipTimeline,
   fast,
   paced,
   parseTickLine,
@@ -52,6 +53,15 @@ describe("segmentTimeline", () => {
       segmentTimeline([{ start: 0, end: 8, text: "a" }], undefined, 20_000)[0]
         ?.at
     ).toBe(28_000);
+  });
+});
+
+describe("clipTimeline", () => {
+  it("keeps items inside the window, bounds included", () => {
+    const timeline = [-5, 0, 10, 20, 30].map((at) => ({ at, value: at }));
+    expect(clipTimeline(timeline, 0, 20).map((item) => item.at)).toEqual([
+      0, 10, 20,
+    ]);
   });
 });
 

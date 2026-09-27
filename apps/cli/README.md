@@ -81,7 +81,9 @@ saved after every fill and picked up again by the next run; `--reset` starts ove
 and `--state` points at another file. A lock file next to it keeps two runs from trading the same
 book at once. Live runs also save their transcript to
 `.cache/transcripts/<video-id>.jsonl` and the price ticks they saw to
-`.cache/prices/<video-id>.jsonl`, so any run can be replayed exactly.
+`.cache/prices/<video-id>.jsonl`, so a run can be replayed. Both files gather every session
+for the same video; a replay lines ticks up by the transcript's `.meta.json` and keeps only
+those around its transcript, so it is exact when the video was streamed once.
 
 ### Replay a recording
 

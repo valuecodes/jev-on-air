@@ -19,8 +19,10 @@ export type ChartLine = {
 const MARGIN_MS = 60_000;
 
 /**
- * Lines for points between `from` and `to` (ms; `to` open while live). A
- * bucket seen twice (split across stream batches) keeps its later price.
+ * Lines for points between `from` and `to` (ms; `to` open while live), plus
+ * a minute's margin either side to draw. % change and `last` use only points
+ * inside the run. A bucket seen twice (split across stream batches) keeps
+ * its later price.
  */
 export function chartLines(
   points: PricePoint[],
@@ -41,8 +43,13 @@ export function chartLines(
   const lines: ChartLine[] = [];
   for (const [instrument, prices] of byInstrument) {
     const sorted = [...prices].sort(([a], [b]) => a - b);
-    const base = sorted[0]?.[1];
-    const last = sorted.at(-1)?.[1];
+    // Base and last come from inside the run; the margin is only drawn.
+    const inside = sorted.filter(
+      ([time]) =>
+        time * 1000 >= from - 999 && (to === undefined || time * 1000 <= to)
+    );
+    const base = (inside[0] ?? sorted[0])?.[1];
+    const last = (inside.at(-1) ?? sorted.at(-1))?.[1];
     if (base === undefined || last === undefined) continue;
     lines.push({
       instrument,

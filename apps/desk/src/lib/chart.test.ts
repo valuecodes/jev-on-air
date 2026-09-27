@@ -39,6 +39,23 @@ describe("chartLines", () => {
     ]);
     expect(lines[0]?.last).toBe(71);
   });
+
+  it("measures change from the run's first price, not the margin's", () => {
+    const [line] = chartLines(
+      [
+        { instrument: "gold", t: at(-30), price: 90 },
+        { instrument: "gold", t: at(0), price: 100 },
+        { instrument: "gold", t: at(50), price: 110 },
+        { instrument: "gold", t: at(80), price: 200 },
+      ],
+      at(0),
+      at(60)
+    );
+    expect(line?.points.map((point) => point.time)).toHaveLength(4);
+    expect(line?.points[1]?.value).toBe(0);
+    expect(line?.last).toBe(110);
+    expect(line?.change).toBeCloseTo(10);
+  });
 });
 
 describe("nearestTime", () => {

@@ -108,6 +108,14 @@ export default function PriceChart({
   useEffect(() => {
     const api = chart.current;
     if (!api) return;
+    // Another run may lack an instrument the last one had: drop its line.
+    const present = new Set(data.map((line) => line.instrument));
+    for (const [instrument, line] of lines.current)
+      if (!present.has(instrument)) {
+        line.markers.detach();
+        api.removeSeries(line.series);
+        lines.current.delete(instrument);
+      }
     for (const { instrument, points: linePoints } of data) {
       let line = lines.current.get(instrument);
       if (!line) {
