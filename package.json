@@ -10,6 +10,7 @@
   "scripts": {
     "dev": "turbo run dev",
     "cli": "pnpm --silent --filter cli start",
+    "desk": "pnpm --filter desk dev",
     "build": "turbo run build",
     "typecheck": "turbo run typecheck",
     "lint": "oxlint --type-aware --report-unused-disable-directives",

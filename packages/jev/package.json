@@ -27,7 +27,7 @@
     "@repo/logger": "workspace:*",
     "@repo/transcriber": "workspace:*",
     "@typesafe-ai/sdk": "0.5.7",
-    "zod": "4.6.2"
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@repo/prettier": "workspace:*",

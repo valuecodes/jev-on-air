@@ -1,0 +1,33 @@
+{
+  "name": "desk",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "next dev -H 127.0.0.1",
+    "build": "next build",
+    "start": "next start -H 127.0.0.1",
+    "typecheck": "next typegen && tsc",
+    "test": "vitest run",
+    "format": "prettier --write .",
+    "clean": "rm -rf .turbo node_modules .next"
+  },
+  "dependencies": {
+    "@repo/jev": "workspace:*",
+    "next": "16.3.5",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@repo/prettier": "workspace:*",
+    "@repo/typescript": "workspace:*",
+    "@types/node": "catalog:",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "prettier": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "prettier": "@repo/prettier"
+}
