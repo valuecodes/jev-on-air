@@ -229,6 +229,22 @@ export function RunView({ id }: { id: string }) {
 
       {group ? (
         <>
+          <section className={card}>
+            <h2 className={heading}>
+              <ChartLine className="text-accent size-4" aria-hidden />
+              Prices
+              <span className="font-normal tracking-normal normal-case">
+                · % since the run started
+              </span>
+            </h2>
+            <PriceChart
+              points={stream.prices}
+              fills={fills}
+              from={Date.parse(group.run)}
+              to={last?.type === "end" ? Date.parse(last.time) : undefined}
+            />
+          </section>
+          {/* The video sets the row's height; the timeline scrolls within it. */}
           <div className={`grid gap-4 ${videoId ? "lg:grid-cols-2" : ""}`}>
             {videoId && (
               <section className={card}>
@@ -239,72 +255,59 @@ export function RunView({ id }: { id: string }) {
                 <VideoPlayer videoId={videoId} onReady={onPlayerReady} />
               </section>
             )}
-            <section className={card}>
-              <h2 className={heading}>
-                <ChartLine className="text-accent size-4" aria-hidden />
-                Prices
-                <span className="font-normal tracking-normal normal-case">
-                  · % since the run started
-                </span>
-              </h2>
-              <PriceChart
-                points={stream.prices}
-                fills={fills}
-                from={Date.parse(group.run)}
-                to={last?.type === "end" ? Date.parse(last.time) : undefined}
-              />
+            <section
+              className={`${card} ${videoId ? "lg:h-0 lg:min-h-full" : ""}`}
+            >
+              <div className={row}>
+                <h2 className={`${heading} flex-1`}>
+                  <Activity className="text-accent size-4" aria-hidden />
+                  Timeline
+                </h2>
+                {transcript.match === "approximate" && (
+                  <span
+                    className={badge("warn")}
+                    title="Matched to this run by order; the transcript file holds every session for this video"
+                  >
+                    <Mic className="size-3.5" aria-hidden />
+                    transcript approximate
+                  </span>
+                )}
+                <label
+                  className={`${toggle} ${showSnapshots ? "border-accent/50 bg-accent/10 text-accent" : "border-line text-muted"}`}
+                >
+                  <input
+                    type="checkbox"
+                    className="sr-only"
+                    checked={showSnapshots}
+                    onChange={(event) => setShowSnapshots(event.target.checked)}
+                  />
+                  <Camera className="size-3.5" aria-hidden />
+                  snapshots
+                </label>
+                <label
+                  className={`${toggle} ${follow ? "border-accent/50 bg-accent/10 text-accent" : "border-line text-muted"}`}
+                >
+                  <input
+                    type="checkbox"
+                    className="sr-only"
+                    checked={follow}
+                    onChange={(event) => setFollow(event.target.checked)}
+                  />
+                  <ArrowDownToLine className="size-3.5" aria-hidden />
+                  follow
+                </label>
+              </div>
+              <ol
+                ref={list}
+                className={`flex max-h-[70vh] flex-col gap-1 overflow-y-auto pr-1 ${videoId ? "lg:max-h-none lg:min-h-0 lg:flex-1" : ""}`}
+              >
+                {items.map((item) => (
+                  <Item key={item.key} item={item} onSeek={seek} />
+                ))}
+              </ol>
             </section>
           </div>
           <Summary start={start} book={book} events={events} />
-          <section className={card}>
-            <div className={row}>
-              <h2 className={`${heading} flex-1`}>
-                <Activity className="text-accent size-4" aria-hidden />
-                Timeline
-              </h2>
-              {transcript.match === "approximate" && (
-                <span
-                  className={badge("warn")}
-                  title="Matched to this run by order; the transcript file holds every session for this video"
-                >
-                  <Mic className="size-3.5" aria-hidden />
-                  transcript approximate
-                </span>
-              )}
-              <label
-                className={`${toggle} ${showSnapshots ? "border-accent/50 bg-accent/10 text-accent" : "border-line text-muted"}`}
-              >
-                <input
-                  type="checkbox"
-                  className="sr-only"
-                  checked={showSnapshots}
-                  onChange={(event) => setShowSnapshots(event.target.checked)}
-                />
-                <Camera className="size-3.5" aria-hidden />
-                snapshots
-              </label>
-              <label
-                className={`${toggle} ${follow ? "border-accent/50 bg-accent/10 text-accent" : "border-line text-muted"}`}
-              >
-                <input
-                  type="checkbox"
-                  className="sr-only"
-                  checked={follow}
-                  onChange={(event) => setFollow(event.target.checked)}
-                />
-                <ArrowDownToLine className="size-3.5" aria-hidden />
-                follow
-              </label>
-            </div>
-            <ol
-              ref={list}
-              className="flex max-h-[70vh] flex-col gap-1 overflow-y-auto pr-1"
-            >
-              {items.map((item) => (
-                <Item key={item.key} item={item} onSeek={seek} />
-              ))}
-            </ol>
-          </section>
         </>
       ) : (
         <section className={`${card} text-muted items-center py-10`}>

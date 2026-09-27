@@ -15,7 +15,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en">
       <body>
         <header className="border-line bg-page/80 sticky top-0 z-10 border-b backdrop-blur">
-          <div className="mx-auto flex max-w-275 items-center gap-3 px-4 py-3">
+          <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3">
             <Link
               href="/"
               className="flex items-center gap-2 hover:no-underline"
@@ -30,7 +30,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             </span>
           </div>
         </header>
-        <main className="mx-auto max-w-275 p-4">{children}</main>
+        <main className="mx-auto max-w-7xl p-4">{children}</main>
       </body>
     </html>
   );
