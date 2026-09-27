@@ -59,6 +59,7 @@ const deskRun = (ledgerStart: number, transcriptStart: number): RunSummary => ({
   exitCode: null,
   signal: null,
   error: null,
+  mode: "live",
   ledgerStart,
   transcriptStart,
 });
@@ -105,9 +106,19 @@ describe("transcriptForRun", () => {
     ).toEqual([10, 20]);
   });
 
-  it("gives replays no transcript", () => {
-    const replay = groupRuns(ledger([start("r", "replay:x.jsonl")]));
+  it("gives replays no transcript unless desk started them", () => {
+    const replay = groupRuns(
+      ledger([start("r", "replay:x.jsonl"), start("s", "replay:x.jsonl")])
+    );
     expect(transcriptForRun(replay, 0, lines, null)).toEqual({
+      lines: [],
+      match: "none",
+    });
+    // Desk's replays tee what they replay, recorded from its offsets.
+    const result = transcriptForRun(replay, 1, lines, deskRun(15, 20));
+    expect(result.match).toBe("exact");
+    expect(result.lines.map((line) => line.offset)).toEqual([30, 40]);
+    expect(transcriptForRun(replay, 0, lines, deskRun(15, 20))).toEqual({
       lines: [],
       match: "none",
     });

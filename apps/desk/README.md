@@ -24,6 +24,11 @@ that same CLI.
   in its own process group. Stop sends SIGTERM, which the CLI turns into a clean abort (the
   ledger ends with `"aborted"`); a second SIGTERM after 15 s and SIGKILL after 5 s more back
   it up. Its output is kept so start-up errors show on the run page.
+- **Sample events.** The home page lists the recordings in `apps/cli/samples/`. **Fast**
+  replays one as fast as Jev answers, on a virtual clock; **Watch along** plays it in real
+  time and starts the video with it. Both run the real TypeSafe decider on a fresh scratch
+  book (`--replay … --tee --reset`), never the shared portfolio, and the run page follows the
+  lines and ticks the replay records.
 - **One run at a time.** Every live run locks the shared `portfolio.json`; a run started
   from a terminal holds that lock too, so a desk start then fails with the CLI's lock error.
 - **Transcript matching.** The transcript file is appended by every session for a video. A

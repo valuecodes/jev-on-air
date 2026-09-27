@@ -43,6 +43,8 @@ Jev options (needs TYPESAFE_API_KEY and the Alpaca keys, e.g. in .env):
                       prices by wall-clock time (default: the transcript's .meta.json,
                       else both recordings start together)
   --lag=<seconds>     Delay every transcript line, like a live stream's delay (default: 0)
+  --tee               Record the replayed lines and ticks under .cache/transcripts/ and
+                      .cache/prices/ as a live run would, for desk to follow
   --decider=<kind>    typesafe (default), hold, or script:<decisions.jsonl>
   --model=<id>        TypeSafe model (default: $JEV_MODEL or ${DEFAULT_MODEL})
   --cash=<usd>        Starting cash for a fresh portfolio (default: 100000)
@@ -319,6 +321,8 @@ export type JevSource =
       /** RFC 3339 time the audio began, aligning it with the ticks. */
       audioStart?: string;
       lagSeconds: number;
+      /** Record what is replayed as a live run records what it hears. */
+      tee: boolean;
     };
 
 export type JevDecider =
@@ -369,6 +373,7 @@ export function parseJevArgs(argv: string[]): JevArgs {
       fast: { type: "boolean" },
       "audio-start": { type: "string" },
       lag: { type: "string" },
+      tee: { type: "boolean" },
       decider: { type: "string" },
       model: { type: "string" },
       whisper: { type: "string" },
@@ -407,10 +412,11 @@ export function parseJevArgs(argv: string[]): JevArgs {
       values.prices !== undefined ||
       values.fast ||
       values["audio-start"] !== undefined ||
-      values.lag !== undefined
+      values.lag !== undefined ||
+      values.tee
     )
       throw new Error(
-        "--prices, --fast, --audio-start and --lag only apply to --replay"
+        "--prices, --fast, --audio-start, --lag and --tee only apply to --replay"
       );
   } else if (
     values.whisper !== undefined ||
@@ -443,6 +449,7 @@ export function parseJevArgs(argv: string[]): JevArgs {
         ? {}
         : { audioStart: parseTime("audio-start", values["audio-start"]) }),
       lagSeconds: parseNumber("lag", values.lag, 0, { min: 0 }),
+      tee: values.tee ?? false,
     };
     id =
       transcript

@@ -30,6 +30,7 @@ import { parseSegmentLine, Transcriber } from "@repo/transcriber";
 import type { JevArgs, JevConfig } from "./cli";
 import { JsonlWriter, readJsonlAs } from "./jsonl";
 import { readSidecar, sidecarPath, writeSidecar } from "./sidecar";
+import type { Sidecar } from "./sidecar";
 import { childEnv } from "./time";
 import { describeVideo } from "./transcribe";
 
@@ -42,7 +43,10 @@ type Paths = {
   transcript?: string;
   prices?: string;
   script?: string;
-  /** Live runs tee their transcript here, so any run can be replayed. */
+  /**
+   * Live runs tee their transcript here, so any run can be replayed; a
+   * replay with `--tee` records what it replays, for desk to follow.
+   */
   tee?: string;
   /** ...and their price ticks here, in the `prices --json` format. */
   ticks?: string;
@@ -66,6 +70,10 @@ function paths(args: JevArgs): Paths {
   if (args.source.kind === "replay") {
     result.transcript = resolve(cwd, args.source.transcript);
     if (args.source.prices) result.prices = resolve(cwd, args.source.prices);
+    if (args.source.tee) {
+      result.tee = join(cacheDir, "transcripts", `${args.id}.jsonl`);
+      result.ticks = join(cacheDir, "prices", `${args.id}.jsonl`);
+    }
   } else {
     result.tee = join(cacheDir, "transcripts", `${args.source.videoId}.jsonl`);
     result.ticks = join(cacheDir, "prices", `${args.source.videoId}.jsonl`);
@@ -283,9 +291,9 @@ export class JevCommand {
 
     const { lagSeconds } = args.source;
     // The audio's start: given, or recorded next to the transcript.
+    const sidecar = await readSidecar(sidecarPath(files.transcript ?? ""));
     let audioStart = args.source.audioStart;
     if (audioStart === undefined) {
-      const sidecar = await readSidecar(sidecarPath(files.transcript ?? ""));
       audioStart = sidecar?.audioStart;
       if (audioStart !== undefined)
         this.logger.info("audio start from the transcript's sidecar", {
@@ -329,6 +337,9 @@ export class JevCommand {
       audioStart,
       lagSeconds,
     });
+    const record = args.source.tee
+      ? await this.tee(files, sidecar, audioStart)
+      : (events: Source<EngineEvent>) => events;
     if (args.source.fast) {
       const replay = fast([transcript, prices ?? []], {
         heartbeatMs: 1000,
@@ -336,7 +347,7 @@ export class JevCommand {
         primary: 0,
       });
       return {
-        events: replay.source,
+        events: record(replay.source),
         clock: replay.clock,
         awaitDecisions: true,
       };
@@ -344,17 +355,71 @@ export class JevCommand {
     // Each paced source counts from its own first item, so both timelines
     // are rebased to the earliest item of either before pacing.
     const [pacedTranscript, pacedPrices] = rebase([transcript, prices ?? []]);
+    const events = merge(
+      [
+        paced(pacedTranscript ?? []),
+        prices ? paced(pacedPrices ?? []) : ticks(),
+        heartbeat,
+      ],
+      { primary: 0 }
+    );
+    if (originMs === undefined)
+      return {
+        events: record(events),
+        clock: undefined,
+        awaitDecisions: false,
+      };
+    // With a known audio start the clock runs at real speed from the
+    // recording's own time, as the fast clock does, so the ledger's times
+    // line up with the recorded ticks.
+    const earliest = Math.min(0, transcript[0]?.at ?? 0, prices?.[0]?.at ?? 0);
+    let startedAt: number | undefined;
     return {
-      events: merge(
-        [
-          paced(pacedTranscript ?? []),
-          prices ? paced(pacedPrices ?? []) : ticks(),
-          heartbeat,
-        ],
-        { primary: 0 }
-      ),
-      clock: undefined,
+      events: record((signal) => {
+        startedAt = Date.now();
+        return events(signal);
+      }),
+      clock: () =>
+        originMs + earliest + (Date.now() - (startedAt ?? Date.now())),
       awaitDecisions: false,
     };
+  }
+
+  /**
+   * For `--tee`: writes the replay's sidecar with the audio start it uses,
+   * then returns a wrapper recording every segment and tick passed on.
+   */
+  private async tee(
+    files: Paths,
+    sidecar: Sidecar | undefined,
+    audioStart: string | undefined
+  ): Promise<(events: Source<EngineEvent>) => Source<EngineEvent>> {
+    const teePath = files.tee ?? "";
+    // Opened first: they create the directories the sidecar goes in.
+    const lines = await JsonlWriter.open(teePath);
+    const ticks = await JsonlWriter.open(files.ticks ?? "");
+    if (sidecar)
+      await writeSidecar(sidecarPath(teePath), {
+        video: sidecar.video,
+        transcribedAt: new Date().toISOString(),
+        ...(audioStart === undefined ? {} : { audioStart }),
+      });
+    this.logger.info("writing transcript and ticks", {
+      out: teePath,
+      ticks: files.ticks,
+    });
+    return (events) =>
+      async function* (signal) {
+        try {
+          for await (const event of events(signal)) {
+            if (event.kind === "segment") await lines.append(event.segment);
+            else if (event.kind === "tick") await ticks.append(event.tick);
+            yield event;
+          }
+        } finally {
+          await lines.close();
+          await ticks.close();
+        }
+      };
   }
 }

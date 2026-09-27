@@ -2,6 +2,7 @@
 
 import {
   ExternalLink,
+  FastForward,
   FileText,
   History,
   Library,
@@ -10,6 +11,7 @@ import {
   Rocket,
   RotateCcw,
   TriangleAlert,
+  Tv,
   Video,
 } from "lucide-react";
 import Link from "next/link";
@@ -17,6 +19,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 
+import { SAMPLES } from "../lib/samples";
+import type { Sample, SampleMode } from "../lib/samples";
 import type { LedgerInfo, RunSummary } from "../lib/types";
 import { postJson } from "./api";
 import { clock } from "./format";
@@ -82,6 +86,22 @@ export function Home() {
         ) : (
           <NewRunForm />
         )}
+      </section>
+
+      <section className={card}>
+        <h2 className={heading}>
+          <Tv className="text-accent size-4" aria-hidden />
+          Sample events
+        </h2>
+        <p className="text-muted text-xs">
+          A recorded transcript and prices, replayed through the real Jev on a
+          fresh scratch book.
+        </p>
+        <ul className="flex flex-col gap-2">
+          {SAMPLES.map((sample) => (
+            <SampleRow key={sample.id} sample={sample} disabled={!!active} />
+          ))}
+        </ul>
       </section>
 
       {overview && overview.runs.some((run) => run !== active) && (
@@ -159,6 +179,78 @@ export function Home() {
         </ul>
       </section>
     </div>
+  );
+}
+
+function SampleRow({
+  sample,
+  disabled,
+}: {
+  sample: Sample;
+  disabled: boolean;
+}) {
+  const router = useRouter();
+  const [busy, setBusy] = useState<SampleMode | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const start = async (mode: SampleMode): Promise<void> => {
+    setBusy(mode);
+    setError(null);
+    try {
+      const run = (await postJson("/api/runs", {
+        sample: sample.id,
+        mode,
+      })) as RunSummary;
+      router.push(`/runs/${run.videoId}`);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : String(caught));
+      setBusy(null);
+    }
+  };
+
+  const modes: { mode: SampleMode; label: string; icon: typeof Play }[] = [
+    { mode: "fast", label: "Fast", icon: FastForward },
+    { mode: "paced", label: "Watch along", icon: Play },
+  ];
+  return (
+    <li className={`${row} ${listRow}`}>
+      <span className="flex min-w-0 flex-1 flex-col">
+        <Link
+          href={`/runs/${sample.id}`}
+          className="text-ink font-medium wrap-anywhere"
+        >
+          {sample.title}
+        </Link>
+        <span className="text-muted text-xs">{sample.description}</span>
+      </span>
+      {modes.map(({ mode, label, icon: Icon }) => (
+        <button
+          key={mode}
+          type="button"
+          className={button}
+          disabled={disabled || busy !== null}
+          title={
+            mode === "fast"
+              ? "As fast as Jev answers, on a virtual clock"
+              : "In real time, next to the video"
+          }
+          onClick={() => void start(mode)}
+        >
+          {busy === mode ? (
+            <LoaderCircle className="size-4 animate-spin" aria-hidden />
+          ) : (
+            <Icon className="size-4 fill-current" aria-hidden />
+          )}
+          {label}
+        </button>
+      ))}
+      {error && (
+        <span className="text-bad flex items-center gap-1.5">
+          <TriangleAlert className="size-4" aria-hidden />
+          {error}
+        </span>
+      )}
+    </li>
   );
 }
 

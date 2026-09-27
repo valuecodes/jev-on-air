@@ -46,6 +46,9 @@ export function groupRuns(lines: LedgerLine[]): RunGroup[] {
 const isLive = (group: RunGroup): boolean =>
   group.start?.source.startsWith("youtube:") ?? false;
 
+const isReplay = (group: RunGroup): boolean =>
+  group.start?.source.startsWith("replay:") ?? false;
+
 /**
  * Splits a transcript into sessions: a new one begins wherever audio time
  * jumps back, because each transcriber process counts from zero.
@@ -76,11 +79,13 @@ export function transcriptForRun(
   deskRun: RunSummary | null
 ): RunTranscript {
   const group = groups[index];
-  if (!group || !isLive(group)) return { lines: [], match: "none" };
+  if (!group) return { lines: [], match: "none" };
 
   // Desk's run is the first group written after the ledger size it recorded.
+  // A replay desk started records its lines too (`--tee`), so it matches.
   if (
     deskRun &&
+    (isLive(group) || isReplay(group)) &&
     groups.find((candidate) => candidate.firstOffset > deskRun.ledgerStart) ===
       group
   ) {
@@ -91,6 +96,7 @@ export function transcriptForRun(
   }
 
   // Otherwise pair live runs and sessions from the newest back.
+  if (!isLive(group)) return { lines: [], match: "none" };
   const live = groups.filter(isLive);
   const sessions = transcriptSessions(transcript);
   const fromEnd = live.length - 1 - live.indexOf(group);
