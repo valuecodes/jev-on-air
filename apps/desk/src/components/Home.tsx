@@ -9,6 +9,7 @@ import type { LedgerInfo, RunSummary } from "../lib/types";
 import { postJson } from "./api";
 import { clock } from "./format";
 import { isActive, RunState, StopButton } from "./RunControls";
+import { badge, button, card, field, row } from "./ui";
 
 type Overview = { runs: RunSummary[]; ledgers: LedgerInfo[] };
 
@@ -45,11 +46,11 @@ export function Home() {
   const active = overview?.runs.find(isActive);
 
   return (
-    <div className="stack">
-      <section className="card">
-        <h2>New run</h2>
+    <div className="flex flex-col gap-4">
+      <section className={card}>
+        <h2 className="text-base font-semibold">New run</h2>
         {active ? (
-          <div className="row">
+          <div className={row}>
             <span>
               Running{" "}
               <Link href={`/runs/${active.videoId}`}>{active.videoId}</Link>
@@ -63,46 +64,46 @@ export function Home() {
       </section>
 
       {overview && overview.runs.some((run) => run !== active) && (
-        <section className="card">
-          <h2>Recent desk runs</h2>
-          <ul className="list">
+        <section className={card}>
+          <h2 className="text-base font-semibold">Recent desk runs</h2>
+          <ul className="flex flex-col gap-1.5">
             {overview.runs
               .filter((run) => run !== active)
               .map((run) => (
-                <li key={run.id} className="row">
+                <li key={run.id} className={row}>
                   <Link href={`/runs/${run.videoId}`}>{run.videoId}</Link>
-                  <span className="muted">{clock(run.startedAt)}</span>
+                  <span className="text-muted">{clock(run.startedAt)}</span>
                   <RunState run={run} />
-                  {run.error && <span className="bad">{run.error}</span>}
+                  {run.error && <span className="text-bad">{run.error}</span>}
                 </li>
               ))}
           </ul>
         </section>
       )}
 
-      <section className="card">
-        <h2>Ledgers</h2>
-        {loadError && <p className="bad">Could not load: {loadError}</p>}
+      <section className={card}>
+        <h2 className="text-base font-semibold">Ledgers</h2>
+        {loadError && <p className="text-bad">Could not load: {loadError}</p>}
         {overview?.ledgers.length === 0 && (
-          <p className="muted">
+          <p className="text-muted">
             No runs yet. Start one above or with <code>pnpm cli jev</code>.
           </p>
         )}
-        <ul className="list">
+        <ul className="flex flex-col gap-1.5">
           {overview?.ledgers.map((ledger) => (
-            <li key={ledger.id} className="row">
+            <li key={ledger.id} className={row}>
               <Link href={`/runs/${ledger.id}`}>
                 {ledger.title ?? ledger.id}
               </Link>
               {ledger.channel && (
-                <span className="muted">{ledger.channel}</span>
+                <span className="text-muted">{ledger.channel}</span>
               )}
               {ledger.live && (
-                <span className="badge live">
+                <span className={badge("good")}>
                   {active?.videoId === ledger.id ? "live" : "live · external"}
                 </span>
               )}
-              <span className="muted">
+              <span className="text-muted">
                 {new Date(ledger.updatedAt).toLocaleString("en-GB")}
               </span>
             </li>
@@ -141,22 +142,27 @@ function NewRunForm() {
   };
 
   return (
-    <form className="form" onSubmit={(event) => void submit(event)}>
-      <label>
+    <form
+      className="flex flex-col gap-3"
+      onSubmit={(event) => void submit(event)}
+    >
+      <label className="flex flex-col gap-1">
         YouTube URL
         <input
           type="url"
+          className={`${field} w-full`}
           required
           placeholder="https://www.youtube.com/watch?v=…"
           value={url}
           onChange={(event) => setUrl(event.target.value)}
         />
       </label>
-      <div className="row">
-        <label>
+      <div className={row}>
+        <label className="flex flex-col gap-1">
           Size
           <input
             type="number"
+            className={`${field} w-28`}
             step="any"
             min="0"
             max="1"
@@ -165,10 +171,11 @@ function NewRunForm() {
             onChange={(event) => setSize(event.target.value)}
           />
         </label>
-        <label>
+        <label className="flex flex-col gap-1">
           Min signal
           <input
             type="number"
+            className={`${field} w-28`}
             step="any"
             min="0"
             max="1"
@@ -177,7 +184,7 @@ function NewRunForm() {
             onChange={(event) => setMinSignal(event.target.value)}
           />
         </label>
-        <label className="check">
+        <label className="flex items-center gap-1.5">
           <input
             type="checkbox"
             checked={reset}
@@ -186,11 +193,11 @@ function NewRunForm() {
           Reset the shared portfolio
         </label>
       </div>
-      <div className="row">
-        <button type="submit" disabled={busy}>
+      <div className={row}>
+        <button type="submit" className={button} disabled={busy}>
           {busy ? "Starting…" : "Start"}
         </button>
-        {error && <span className="bad">{error}</span>}
+        {error && <span className="text-bad">{error}</span>}
       </div>
     </form>
   );

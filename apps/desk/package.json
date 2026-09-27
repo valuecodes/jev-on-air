@@ -22,10 +22,12 @@
   "devDependencies": {
     "@repo/prettier": "workspace:*",
     "@repo/typescript": "workspace:*",
+    "@tailwindcss/postcss": "4.3.3",
     "@types/node": "catalog:",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "prettier": "catalog:",
+    "tailwindcss": "4.3.3",
     "typescript": "catalog:",
     "vitest": "catalog:"
   },

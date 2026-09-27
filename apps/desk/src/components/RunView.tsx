@@ -15,7 +15,13 @@ import {
 import type { Book, TimelineItem } from "../lib/timeline";
 import { audio, clock, money, percent, signed } from "./format";
 import { RunState, StopButton } from "./RunControls";
+import { badge, card, field, row } from "./ui";
 import { useRunStream } from "./useRunStream";
+
+const entry =
+  "grid grid-cols-[4.5rem_1fr] gap-2 rounded px-1.5 py-0.5 [overflow-wrap:anywhere]";
+const time = "pt-0.5 font-mono text-xs text-muted";
+const cell = "border-b border-line py-1 pr-3 text-left whitespace-nowrap";
 
 const instrumentNames: Record<Decision["instrument"], string> = {
   gold: "Gold",
@@ -61,21 +67,24 @@ export function RunView({ id }: { id: string }) {
   const start = group?.start;
 
   return (
-    <div className="stack">
-      <section className="card">
-        <div className="row">
+    <div className="flex flex-col gap-4">
+      <section className={card}>
+        <div className={row}>
           <Link href="/">← all runs</Link>
-          <h2 className="grow">{id}</h2>
-          <span className={`badge ${stream.connected ? "running" : "failed"}`}>
+          <h2 className="min-w-0 flex-1 text-base font-semibold [overflow-wrap:anywhere]">
+            {id}
+          </h2>
+          <span className={badge(stream.connected ? "good" : "bad")}>
             {stream.connected ? "connected" : "disconnected"}
           </span>
           {stream.run && <RunState run={stream.run} />}
           {stream.run && <StopButton run={stream.run} />}
         </div>
         {groups.length > 1 && (
-          <label className="row">
+          <label className="flex items-center gap-1.5">
             Run
             <select
+              className={field}
               value={group?.run ?? ""}
               onChange={(event) => setPicked(event.target.value)}
             >
@@ -88,9 +97,9 @@ export function RunView({ id }: { id: string }) {
             </select>
           </label>
         )}
-        {stream.run?.error && <p className="bad">{stream.run.error}</p>}
+        {stream.run?.error && <p className="text-bad">{stream.run.error}</p>}
         {stream.notices.map((notice, key) => (
-          <p key={key} className="warn">
+          <p key={key} className="text-warn">
             {notice}
           </p>
         ))}
@@ -99,18 +108,20 @@ export function RunView({ id }: { id: string }) {
       {group ? (
         <>
           <Summary start={start} book={book} events={events} />
-          <section className="card">
-            <div className="row">
-              <h2 className="grow">Timeline</h2>
+          <section className={card}>
+            <div className={row}>
+              <h2 className="min-w-0 flex-1 text-base font-semibold [overflow-wrap:anywhere]">
+                Timeline
+              </h2>
               {transcript.match === "approximate" && (
                 <span
-                  className="badge stopping"
+                  className={badge("warn")}
                   title="Matched to this run by order; the transcript file holds every session for this video"
                 >
                   transcript approximate
                 </span>
               )}
-              <label className="check">
+              <label className="flex items-center gap-1.5">
                 <input
                   type="checkbox"
                   checked={showSnapshots}
@@ -118,7 +129,7 @@ export function RunView({ id }: { id: string }) {
                 />
                 snapshots
               </label>
-              <label className="check">
+              <label className="flex items-center gap-1.5">
                 <input
                   type="checkbox"
                   checked={follow}
@@ -127,7 +138,7 @@ export function RunView({ id }: { id: string }) {
                 follow
               </label>
             </div>
-            <ol className="timeline">
+            <ol className="flex flex-col gap-0.5">
               {items.map((item) => (
                 <Item key={item.key} item={item} />
               ))}
@@ -136,25 +147,30 @@ export function RunView({ id }: { id: string }) {
           </section>
         </>
       ) : (
-        <section className="card muted">
+        <section className={`${card} text-muted`}>
           {stream.connected ? "No ledger events yet." : "Connecting…"}
         </section>
       )}
 
-      <section className="card">
+      <section className={card}>
         <details open={stream.run?.state === "failed"}>
           <summary>CLI output ({stream.output.length} lines)</summary>
           {stream.output.length ? (
-            <pre className="output">
+            <pre className="mt-2 max-h-90 overflow-auto font-mono text-xs [overflow-wrap:anywhere] whitespace-pre-wrap">
               {stream.output.map((line) => (
-                <span key={line.seq} className={line.stream}>
+                <span
+                  key={line.seq}
+                  className={
+                    line.stream === "stderr" ? "text-muted" : undefined
+                  }
+                >
                   {line.text}
                   {"\n"}
                 </span>
               ))}
             </pre>
           ) : (
-            <p className="muted">
+            <p className="text-muted">
               Output is only captured for runs started from desk.
             </p>
           )}
@@ -177,8 +193,8 @@ function Summary({
   const equity = book?.equity ?? start?.equity;
   const pnl = equity !== undefined && start ? equity - start.equity : undefined;
   return (
-    <section className="card">
-      <div className="stats">
+    <section className={card}>
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(130px,1fr))] gap-3">
         <Stat
           label="Equity"
           value={equity === undefined ? "—" : money(equity)}
@@ -199,26 +215,28 @@ function Summary({
       </div>
       {curve.length > 1 && <Sparkline values={curve} />}
       {book && book.positions.length > 0 && (
-        <table className="positions">
+        <table className="block w-full border-collapse overflow-x-auto">
           <thead>
             <tr>
-              <th>Instrument</th>
-              <th>Side</th>
-              <th>Quantity</th>
-              <th>Avg price</th>
-              <th>Mark</th>
-              <th>Unrealized</th>
+              <th className={cell}>Instrument</th>
+              <th className={cell}>Side</th>
+              <th className={cell}>Quantity</th>
+              <th className={cell}>Avg price</th>
+              <th className={cell}>Mark</th>
+              <th className={cell}>Unrealized</th>
             </tr>
           </thead>
           <tbody>
             {book.positions.map((position) => (
               <tr key={position.instrument}>
-                <td>{instrumentNames[position.instrument]}</td>
-                <td>{position.side}</td>
-                <td>{position.quantity.toPrecision(6)}</td>
-                <td>{money(position.avgPrice)}</td>
-                <td>{money(position.price)}</td>
-                <td className={position.unrealizedPnl >= 0 ? "good" : "bad"}>
+                <td className={cell}>{instrumentNames[position.instrument]}</td>
+                <td className={cell}>{position.side}</td>
+                <td className={cell}>{position.quantity.toPrecision(6)}</td>
+                <td className={cell}>{money(position.avgPrice)}</td>
+                <td className={cell}>{money(position.price)}</td>
+                <td
+                  className={`${cell} ${position.unrealizedPnl >= 0 ? "text-good" : "text-bad"}`}
+                >
                   {signed(position.unrealizedPnl)}
                 </td>
               </tr>
@@ -240,9 +258,13 @@ function Stat({
   tone?: "good" | "bad" | undefined;
 }) {
   return (
-    <div className="stat">
-      <span className="muted">{label}</span>
-      <strong className={tone}>{value}</strong>
+    <div className="flex min-w-0 flex-col [overflow-wrap:anywhere]">
+      <span className="text-muted">{label}</span>
+      <strong
+        className={`text-lg ${tone === "good" ? "text-good" : tone === "bad" ? "text-bad" : ""}`}
+      >
+        {value}
+      </strong>
     </div>
   );
 }
@@ -258,8 +280,18 @@ function Sparkline({ values }: { values: number[] }) {
     )
     .join(" ");
   return (
-    <svg className="sparkline" viewBox="0 0 100 30" preserveAspectRatio="none">
-      <polyline points={points} fill="none" vectorEffect="non-scaling-stroke" />
+    <svg
+      className="h-15 w-full"
+      viewBox="0 0 100 30"
+      preserveAspectRatio="none"
+    >
+      <polyline
+        points={points}
+        fill="none"
+        strokeWidth={2}
+        className="stroke-accent"
+        vectorEffect="non-scaling-stroke"
+      />
     </svg>
   );
 }
@@ -267,17 +299,17 @@ function Sparkline({ values }: { values: number[] }) {
 function Item({ item }: { item: TimelineItem }) {
   if (item.kind === "segment")
     return (
-      <li className="segment">
-        <span className="time">{audio(item.segment.start)}</span>
+      <li className={`${entry} text-muted`}>
+        <span className={time}>{audio(item.segment.start)}</span>
         <span>{item.segment.text}</span>
       </li>
     );
   const { event } = item;
-  const at = <span className="time">{clock(event.time)}</span>;
+  const at = <span className={time}>{clock(event.time)}</span>;
   switch (event.type) {
     case "start":
       return (
-        <li className="event">
+        <li className={entry}>
           {at}
           <span>
             Started {event.source} with {money(event.equity)} equity
@@ -287,17 +319,19 @@ function Item({ item }: { item: TimelineItem }) {
       );
     case "decision":
       return (
-        <li className="event decision">
+        <li className={`${entry} border-accent border-l-3`}>
           {at}
           <div>
-            <div className="row">
+            <div className={row}>
               <strong>Turn {event.turn}</strong>
               {event.signal !== null && (
-                <span className={event.signal >= 0.5 ? "badge live" : "badge"}>
+                <span
+                  className={badge(event.signal >= 0.5 ? "good" : "neutral")}
+                >
                   signal {percent(event.signal)}
                 </span>
               )}
-              <span className="muted">
+              <span className="text-muted">
                 {event.latencyMs} ms · {event.segments} lines
                 {event.usage
                   ? ` · ${event.usage.inputTokens}/${event.usage.outputTokens} tokens`
@@ -305,16 +339,16 @@ function Item({ item }: { item: TimelineItem }) {
               </span>
             </div>
             {event.decisions.length === 0 ? (
-              <span className="muted">hold</span>
+              <span className="text-muted">hold</span>
             ) : (
-              <ul className="decisions">
+              <ul className="mt-1 list-disc pl-5">
                 {event.decisions.map((decision) => (
                   <li key={decision.instrument}>
                     <strong>{decision.action.toUpperCase()}</strong>{" "}
                     {instrumentNames[decision.instrument]}{" "}
                     {percent(decision.confidence)}
                     {decision.probabilities && (
-                      <span className="muted">
+                      <span className="text-muted">
                         {" "}
                         (
                         {Object.entries(decision.probabilities)
@@ -332,7 +366,7 @@ function Item({ item }: { item: TimelineItem }) {
       );
     case "fill":
       return (
-        <li className="event fill">
+        <li className={`${entry} bg-fill`}>
           {at}
           <span>
             <strong>FILL</strong> {event.action}{" "}
@@ -345,7 +379,7 @@ function Item({ item }: { item: TimelineItem }) {
       );
     case "reject":
       return (
-        <li className="event reject">
+        <li className={`${entry} bg-reject`}>
           {at}
           <span>
             <strong>REJECT</strong> {event.action}{" "}
@@ -356,9 +390,9 @@ function Item({ item }: { item: TimelineItem }) {
       );
     case "snapshot":
       return (
-        <li className="event snapshot">
+        <li className={entry}>
           {at}
-          <span className="muted">
+          <span className="text-muted">
             equity {money(event.equity)} · cash {money(event.cash)} · exposure{" "}
             {money(event.grossExposure)}
           </span>
@@ -366,7 +400,7 @@ function Item({ item }: { item: TimelineItem }) {
       );
     case "error":
       return (
-        <li className="event error">
+        <li className={`${entry} bg-error text-bad`}>
           {at}
           <span>
             <strong>ERROR</strong> {event.kind}: {event.message}
@@ -376,7 +410,7 @@ function Item({ item }: { item: TimelineItem }) {
       );
     case "end":
       return (
-        <li className="event">
+        <li className={entry}>
           {at}
           <span>
             Ended ({event.reason}) with {money(event.equity)} equity

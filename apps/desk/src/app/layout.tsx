@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import type { ReactNode } from "react";
 
 import "./globals.css";
@@ -12,13 +13,13 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <body>
-        <header className="topbar">
-          <a href="/" className="brand">
+        <header className="border-line bg-card flex items-baseline gap-3 border-b px-4 py-3">
+          <Link href="/" className="text-ink font-bold">
             Jev Desk
-          </a>
-          <span className="muted">paper trading · local only</span>
+          </Link>
+          <span className="text-muted">paper trading · local only</span>
         </header>
-        <main>{children}</main>
+        <main className="mx-auto max-w-275 p-4">{children}</main>
       </body>
     </html>
   );
