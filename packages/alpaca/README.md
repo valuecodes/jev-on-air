@@ -17,6 +17,8 @@ for await (const tick of feed.stream(signal)) {
 ```
 
 There is no index module. Import from `@repo/alpaca/prices` and `@repo/alpaca/instruments`.
+`@repo/alpaca/channel` exports the push-to-pull queue the feed is built on; `@repo/jev` uses it
+to merge streams.
 
 ## Instruments
 

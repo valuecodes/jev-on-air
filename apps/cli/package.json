@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@repo/alpaca": "workspace:*",
+    "@repo/jev": "workspace:*",
     "@repo/logger": "workspace:*",
     "@repo/transcriber": "workspace:*"
   }

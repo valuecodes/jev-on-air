@@ -1,30 +1,41 @@
 // Process entry point: reads argv, prints the result, and sets the exit code.
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { parseEnv } from "node:util";
 import { Logger } from "@repo/logger";
 
 import {
   alpacaCredentials,
+  jevConfig,
+  parseJevArgs,
   parsePricesArgs,
   parseTranscribeArgs,
   run,
   usage,
 } from "./cli";
+import { JevCommand } from "./jev";
 import { PricesCommand } from "./prices";
 import { TranscribeCommand } from "./transcribe";
 
 const argv = process.argv.slice(2);
 
 /**
- * Loads `.env` at the repo root, if there is one; values already in the
- * environment win. Only `prices` calls this, so the keys stay out of the
- * transcriber's child processes.
+ * The environment plus `.env` at the repo root, if there is one; values
+ * already in the environment win. `process.env` is left untouched, so the
+ * keys never reach the transcriber's child processes, which inherit it.
  */
-function loadEnvFile(): void {
+function readEnv(): NodeJS.ProcessEnv {
+  let text: string;
   try {
-    process.loadEnvFile(join(import.meta.dirname, "..", "..", "..", ".env"));
+    text = readFileSync(
+      join(import.meta.dirname, "..", "..", "..", ".env"),
+      "utf8"
+    );
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+    return { ...process.env };
   }
+  return { ...parseEnv(text), ...process.env };
 }
 
 function fail(error: unknown): void {
@@ -88,8 +99,7 @@ if (argv[0] === "transcribe") {
   let credentials;
   try {
     args = parsePricesArgs(argv.slice(1));
-    loadEnvFile();
-    credentials = alpacaCredentials(process.env);
+    credentials = alpacaCredentials(readEnv());
   } catch (error) {
     fail(error);
   }
@@ -98,6 +108,22 @@ if (argv[0] === "transcribe") {
     const alpaca = credentials;
     await runStreaming("prices", (logger, signal) =>
       new PricesCommand(logger).run(pricesArgs, alpaca, signal)
+    );
+  }
+} else if (argv[0] === "jev") {
+  let args;
+  let config;
+  try {
+    args = parseJevArgs(argv.slice(1));
+    config = jevConfig(args, readEnv());
+  } catch (error) {
+    fail(error);
+  }
+  if (args && config) {
+    const jevArgs = args;
+    const jevConfigured = config;
+    await runStreaming("jev", (logger, signal) =>
+      new JevCommand(logger).run(jevArgs, jevConfigured, signal)
     );
   }
 } else {

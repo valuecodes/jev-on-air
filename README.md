@@ -9,12 +9,16 @@ statements with Jev, and turns them into structured simulated trade signals.
 - Shared tooling: oxlint, Prettier, TypeScript 7, Turbo
 - `@repo/logger` — structured JSON logging for Cloud Run / Cloud Logging
 - `@repo/alpaca` — live Gold, Bitcoin, S&P 500 and Oil prices from Alpaca
+- `@repo/transcriber` — YouTube → faster-whisper live transcript
+- `@repo/jev` — the decision engine: transcript + prices → Jev (TypeSafe AI) → simulated portfolio
 - pnpm catalog for versions, with a 14-day release-age guard on new releases
 - Agent settings in `.claude/`, `.codex/`, and `.github/`
 
 ```text
-apps/cli               Node.js 24 CLI, hello world for now
+apps/cli               Node.js 24 CLI: transcribe, prices, jev
 packages/alpaca        Alpaca market data: live prices over WebSocket
+packages/jev           paper-trading decision engine, portfolio and ledger
+packages/transcriber   yt-dlp → ffmpeg → faster-whisper transcript stream
 packages/logger        pino logger, Cloud Logging shaped JSON
 tooling/prettier       shared Prettier config
 tooling/typescript     shared tsconfig presets (base, node, react)
@@ -29,6 +33,7 @@ Requires Node.js 24.12.0 (`.nvmrc`) and pnpm 11.24.0 (`packageManager` in `packa
 ```bash
 pnpm install
 pnpm cli --hello-world    # prints a greeting
+pnpm cli jev <youtube-url> # paper-trade a live stream (needs keys in .env)
 ```
 
 ## Commands
