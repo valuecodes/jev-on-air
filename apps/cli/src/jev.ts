@@ -2,6 +2,7 @@
 // recording, keeps the portfolio in a state file and writes every event to
 // a ledger and to stdout.
 import { once } from "node:events";
+import { rm } from "node:fs/promises";
 import { basename, join, resolve } from "node:path";
 import { PriceFeed } from "@repo/alpaca/prices";
 import { HoldDecider, ScriptedDecider } from "@repo/jev/decider";
@@ -395,9 +396,14 @@ export class JevCommand {
     audioStart: string | undefined
   ): Promise<(events: Source<EngineEvent>) => Source<EngineEvent>> {
     const teePath = files.tee ?? "";
+    const ticksPath = files.ticks ?? "";
+    // Every replay of a recording replays the same ticks, so each starts a
+    // new file rather than showing the last run's prices ahead of this one.
+    // The transcript keeps appending: desk matches runs by its offsets.
+    await rm(ticksPath, { force: true });
     // Opened first: they create the directories the sidecar goes in.
     const lines = await JsonlWriter.open(teePath);
-    const ticks = await JsonlWriter.open(files.ticks ?? "");
+    const ticks = await JsonlWriter.open(ticksPath);
     if (sidecar)
       await writeSidecar(sidecarPath(teePath), {
         video: sidecar.video,
@@ -406,7 +412,7 @@ export class JevCommand {
       });
     this.logger.info("writing transcript and ticks", {
       out: teePath,
-      ticks: files.ticks,
+      ticks: ticksPath,
     });
     return (events) =>
       async function* (signal) {

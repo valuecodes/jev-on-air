@@ -128,7 +128,8 @@ recording's own.
 `samples/` holds this event already recorded (see [`samples/README.md`](samples/README.md)),
 and desk replays it with one click. `--tee` records the replayed lines and ticks under
 `.cache/transcripts/<id>.jsonl` and `.cache/prices/<id>.jsonl` (and the sidecar next to them),
-as a live run records what it hears, so desk can follow a replay as it happens.
+as a live run records what it hears, so desk can follow a replay as it happens. The ticks
+file starts afresh each run, since every replay of a recording replays the same ticks.
 
 The root `cli` script runs `pnpm --silent --filter cli start`, so any arguments after
 `pnpm cli` are passed straight to `src/main.ts`.
