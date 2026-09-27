@@ -7,11 +7,12 @@ a Whisper setup. Each sample is three files named after its id:
 - `<id>.meta.json`: its sidecar (the video, and when its audio began)
 - `<id>.ticks.jsonl`: 1-minute Alpaca bars around the event, from `pnpm cli prices --json`
 
-Desk lists them under **Sample events** (see `apps/desk/src/lib/samples.ts`). From a terminal:
+Desk lists them under **Sample events** (see `apps/desk/src/lib/samples.ts`). From the repo
+root (`pnpm cli` resolves paths from where it is run):
 
 ```bash
-pnpm cli jev --replay=samples/fomc-2026-09-16.jsonl \
-  --prices=samples/fomc-2026-09-16.ticks.jsonl --fast --lag=20 --reset
+pnpm cli jev --replay=apps/cli/samples/fomc-2026-09-16.jsonl \
+  --prices=apps/cli/samples/fomc-2026-09-16.ticks.jsonl --fast --lag=20 --reset
 ```
 
 ## `fomc-2026-09-16`
@@ -26,8 +27,8 @@ The Fed's upload is trimmed, so yt-dlp reports no broadcast start. The sidecar's
 
 ```bash
 pnpm cli transcribe https://www.youtube.com/watch?v=ELU3u2Ny7r0 --language=en \
-  --out=samples/fomc-2026-09-16.jsonl
+  --out=apps/cli/samples/fomc-2026-09-16.jsonl
 pnpm cli prices --from=2026-09-16T17:50:00Z --to=2026-09-16T19:30:00Z --json \
-  | grep '^{' > samples/fomc-2026-09-16.ticks.jsonl   # drop any pnpm banner lines
-# then add "audioStart": "2026-09-16T18:30:00.000Z" to samples/fomc-2026-09-16.meta.json
+  | grep '^{' > apps/cli/samples/fomc-2026-09-16.ticks.jsonl   # drop any pnpm banner lines
+# then add "audioStart": "2026-09-16T18:30:00.000Z" to apps/cli/samples/fomc-2026-09-16.meta.json
 ```

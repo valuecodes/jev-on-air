@@ -292,8 +292,13 @@ export class JevCommand {
     }
 
     const { lagSeconds } = args.source;
-    // The audio's start: given, or recorded next to the transcript.
-    const sidecar = await readSidecar(sidecarPath(files.transcript ?? ""));
+    // The audio's start: given, or recorded next to the transcript. The
+    // sidecar is only read when it is needed, so a given --audio-start is
+    // never blocked by a bad one.
+    const sidecar =
+      args.source.audioStart === undefined || args.source.tee
+        ? await readSidecar(sidecarPath(files.transcript ?? ""))
+        : undefined;
     let audioStart = args.source.audioStart;
     if (audioStart === undefined) {
       audioStart = sidecar?.audioStart;
