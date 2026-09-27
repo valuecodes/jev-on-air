@@ -6,19 +6,43 @@ statements with Jev, and turns them into structured simulated trade signals.
 > **Disclaimer:** JevOnAir is a research and paper-trading tool. It never places real orders,
 > and nothing it produces is financial advice.
 
+![Jev Desk replaying the FOMC press conference of 16 September 2026](docs/demo-1.png)
+
+_Jev Desk: the video, Jev's timeline of decisions and fills, the paper portfolio and the prices
+it traded on._
+
+## How it works
+
+Speech from a live stream is transcribed as it happens, merged with live prices, and handed to
+Jev, whose decisions are applied to a simulated portfolio.
+
+```mermaid
+flowchart LR
+  YT[YouTube live stream] --> DL[yt-dlp] --> FF[ffmpeg] --> W[faster-whisper]
+  W -- transcript --> M[merge]
+  A["Alpaca WebSocket<br/>Gold · BTC · S&P 500 · Oil"] -- prices --> M
+  M --> T[trigger] --> J["Jev<br/>TypeSafe AI"]
+  J -- decisions --> P[paper portfolio]
+  P --> L[("ledger .jsonl")]
+  P --> C[CLI stdout]
+  L --> D[desk dashboard]
+```
+
 ## What's inside
 
 - Command-line app in `apps/cli` (Node.js 24, TypeScript run directly)
+- Local dashboard in `apps/desk` (Next.js): start/stop `jev` runs and watch them live
 - Shared tooling: oxlint, Prettier, TypeScript 7, Turbo
 - `@repo/logger` — structured JSON logging for Cloud Run / Cloud Logging
 - `@repo/alpaca` — live Gold, Bitcoin, S&P 500 and Oil prices from Alpaca
 - `@repo/transcriber` — YouTube → faster-whisper live transcript
 - `@repo/jev` — the decision engine: transcript + prices → Jev (TypeSafe AI) → simulated portfolio
 - pnpm catalog for versions, with a 14-day release-age guard on new releases
-- Agent settings in `.claude/` and `.github/`
+- Agent settings in `.claude/`, CI in `.github/`
 
 ```text
 apps/cli               Node.js 24 CLI: transcribe, prices, jev
+apps/desk              local Next.js dashboard: start/stop jev runs, watch them stream
 packages/alpaca        Alpaca market data: live prices over WebSocket
 packages/jev           paper-trading decision engine, portfolio and ledger
 packages/transcriber   yt-dlp → ffmpeg → faster-whisper transcript stream
@@ -54,6 +78,13 @@ Replace `VIDEO_ID` with the ID of a live stream. Jev's decisions and simulated f
 stdout and are appended to `apps/cli/.cache/jev/<video-id>.jsonl`; Ctrl+C stops the run. See
 [`apps/cli/README.md`](apps/cli/README.md) for replaying a recording and backtesting a past
 event.
+
+Or use the dashboard, which starts the same runs and shows them live (see
+[`apps/desk/README.md`](apps/desk/README.md)):
+
+```bash
+pnpm desk   # http://127.0.0.1:3000
+```
 
 ## Commands
 
