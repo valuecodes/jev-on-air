@@ -80,7 +80,8 @@ Every decision, fill, rejection, snapshot and error is printed and appended to
 saved after every fill and picked up again by the next run; `--reset` starts over with `--cash`
 and `--state` points at another file. A lock file next to it keeps two runs from trading the same
 book at once. Live runs also save their transcript to
-`.cache/transcripts/<video-id>.jsonl`, so any run can be replayed.
+`.cache/transcripts/<video-id>.jsonl` and the price ticks they saw to
+`.cache/prices/<video-id>.jsonl`, so any run can be replayed exactly.
 
 ### Replay a recording
 
@@ -88,6 +89,7 @@ book at once. Live runs also save their transcript to
 pnpm cli prices --json > ticks.jsonl                          # record prices for a while
 pnpm cli jev --replay .cache/transcripts/<id>.jsonl           # saved transcript, live prices
 pnpm cli jev --replay <transcript> --prices ticks.jsonl --fast --decider hold
+pnpm cli jev --replay .cache/transcripts/<id>.jsonl --prices .cache/prices/<id>.jsonl --fast
 pnpm cli jev --replay <transcript> --prices ticks.jsonl --fast --decider script:plan.jsonl
 ```
 
