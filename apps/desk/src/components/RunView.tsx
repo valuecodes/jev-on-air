@@ -255,7 +255,11 @@ export function RunView({ id }: { id: string }) {
                   <Tv className="text-accent size-4" aria-hidden />
                   {meta?.video.title ?? "Stream"}
                 </h2>
-                <VideoPlayer videoId={videoId} onReady={onPlayerReady} />
+                <VideoPlayer
+                  videoId={videoId}
+                  autoplay={start?.source.startsWith("youtube:") ?? false}
+                  onReady={onPlayerReady}
+                />
               </section>
             )}
             <section

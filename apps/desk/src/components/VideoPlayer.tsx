@@ -80,9 +80,12 @@ function handleFor(player: YTPlayer): PlayerHandle {
 
 export default function VideoPlayer({
   videoId,
+  autoplay = true,
   onReady,
 }: {
   videoId: string;
+  /** Off for replays, whose timeline does not follow the video's start. */
+  autoplay?: boolean;
   onReady: (handle: PlayerHandle | null) => void;
 }) {
   const host = useRef<HTMLDivElement>(null);
@@ -104,7 +107,12 @@ export default function VideoPlayer({
           host: "https://www.youtube-nocookie.com",
           width: "100%",
           height: "100%",
-          playerVars: { autoplay: 1, mute: 1, playsinline: 1, rel: 0 },
+          playerVars: {
+            autoplay: autoplay ? 1 : 0,
+            mute: 1,
+            playsinline: 1,
+            rel: 0,
+          },
           events: { onReady: () => onReady(handleFor(created)) },
         });
         player = created;
@@ -119,7 +127,7 @@ export default function VideoPlayer({
       player?.destroy();
       element.replaceChildren();
     };
-  }, [videoId, onReady]);
+  }, [videoId, autoplay, onReady]);
 
   return (
     <div className="border-line relative aspect-video w-full overflow-hidden rounded-lg border bg-black">

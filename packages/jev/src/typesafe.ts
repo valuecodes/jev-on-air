@@ -198,7 +198,9 @@ export class TypeSafeDecider implements Decider {
     );
     if (!isRecord(gate.answers))
       throw new DeciderError("unparseable", "reply carried no answers");
-    const read = readSignal(gate.answers);
+    // Clamped like the engine will clamp it, before it is compared or shown.
+    const raw = readSignal(gate.answers);
+    const read = raw === undefined ? undefined : Math.min(1, Math.max(0, raw));
     const flat = input.snapshot.positions.length === 0;
     let result: DecideResult;
     if (
