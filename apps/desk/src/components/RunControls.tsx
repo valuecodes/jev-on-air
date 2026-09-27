@@ -42,7 +42,7 @@ export function StopButton({ run }: { run: RunSummary }) {
   if (!isActive(run)) return null;
   const stop = async (): Promise<void> => {
     try {
-      await postJson("/api/runs/stop", {});
+      await postJson("/api/runs/stop", { id: run.id });
       setError(null);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : String(caught));

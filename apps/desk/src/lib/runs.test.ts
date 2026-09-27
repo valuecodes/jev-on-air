@@ -82,9 +82,9 @@ describe("RunRegistry", () => {
 
   it("stops with SIGTERM, again after the grace period, then SIGKILL", async () => {
     const { registry, children, kills } = setup();
-    await registry.start(request);
+    const run = await registry.start(request);
     children[0]?.emit("spawn");
-    expect(registry.stop()?.state).toBe("stopping");
+    expect(registry.stop(run.id)?.state).toBe("stopping");
     expect(kills).toEqual([[4242, "SIGTERM"]]);
     vi.advanceTimersByTime(STOP_GRACE_MS);
     expect(kills).toEqual([
@@ -97,9 +97,9 @@ describe("RunRegistry", () => {
 
   it("marks a stopped run exited and cancels the escalation", async () => {
     const { registry, children, kills } = setup();
-    await registry.start(request);
+    const run = await registry.start(request);
     children[0]?.emit("spawn");
-    registry.stop();
+    registry.stop(run.id);
     children[0]?.emit("close", null, "SIGTERM");
     vi.advanceTimersByTime(STOP_GRACE_MS + KILL_GRACE_MS);
     expect(kills).toHaveLength(1);
@@ -111,11 +111,21 @@ describe("RunRegistry", () => {
 
   it("signals a run stopped before its process spawned as soon as it does", async () => {
     const { registry, children, kills } = setup();
-    await registry.start(request);
-    registry.stop();
+    const run = await registry.start(request);
+    registry.stop(run.id);
     expect(kills).toEqual([]);
     children[0]?.emit("spawn");
     expect(kills).toEqual([[4242, "SIGTERM"]]);
+  });
+
+  it("refuses to stop a run other than the one asked for", async () => {
+    const { registry, children, kills } = setup();
+    const first = await registry.start(request);
+    children[0]?.emit("spawn");
+    children[0]?.emit("close", 0, null);
+    await registry.start(request);
+    expect(() => registry.stop(first.id)).toThrow(RunConflictError);
+    expect(kills).toEqual([]);
   });
 
   it("records a spawn failure", async () => {
@@ -134,7 +144,11 @@ describe("RunRegistry", () => {
     children[0]?.stderr.write("missing TYPESAFE_API_KEY\n");
     await vi.waitFor(() => {
       const events: RunEvent[] = [];
-      registry.subscribe(request.videoId, 0, (event) => events.push(event))();
+      registry.subscribe(
+        request.videoId,
+        { generation: registry.generation, seq: 0 },
+        (event) => events.push(event)
+      )();
       expect(events.at(-1)).toMatchObject({
         kind: "output",
         line: { stream: "stderr", text: "missing TYPESAFE_API_KEY" },
@@ -142,11 +156,34 @@ describe("RunRegistry", () => {
     });
   });
 
+  it("replays all output to a cursor from an earlier desk process", async () => {
+    const { registry, children } = setup();
+    await registry.start(request);
+    children[0]?.stderr.write("first\n");
+    await vi.waitFor(() => {
+      const outputs = (after: { generation: number; seq: number }) => {
+        const events: RunEvent[] = [];
+        registry.subscribe(request.videoId, after, (event) =>
+          events.push(event)
+        )();
+        return events.filter((event) => event.kind === "output");
+      };
+      expect(outputs({ generation: registry.generation, seq: 999 })).toEqual(
+        []
+      );
+      expect(
+        outputs({ generation: registry.generation - 1, seq: 999 })
+      ).toHaveLength(1);
+    });
+  });
+
   it("only forwards events for the subscribed video", async () => {
     const { registry } = setup();
     const events: RunEvent[] = [];
-    const unsubscribe = registry.subscribe("aaaaaaaaaaa", 0, (event) =>
-      events.push(event)
+    const unsubscribe = registry.subscribe(
+      "aaaaaaaaaaa",
+      { generation: registry.generation, seq: 0 },
+      (event) => events.push(event)
     );
     await registry.start(request);
     expect(events).toEqual([]);

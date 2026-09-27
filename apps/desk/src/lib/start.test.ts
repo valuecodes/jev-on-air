@@ -84,18 +84,15 @@ describe("jevArgv", () => {
 
 describe("parseCursor", () => {
   it("round-trips and treats junk as zero", () => {
-    expect(
-      parseCursor(formatCursor({ ledger: 12, transcript: 3, output: 7 }))
-    ).toEqual({
+    const cursor = {
       ledger: 12,
       transcript: 3,
+      generation: 1790000000000,
       output: 7,
-    });
-    expect(parseCursor(null)).toEqual({ ledger: 0, transcript: 0, output: 0 });
-    expect(parseCursor("x.-1.1e3")).toEqual({
-      ledger: 0,
-      transcript: 0,
-      output: 0,
-    });
+    };
+    expect(parseCursor(formatCursor(cursor))).toEqual(cursor);
+    const zero = { ledger: 0, transcript: 0, generation: 0, output: 0 };
+    expect(parseCursor(null)).toEqual(zero);
+    expect(parseCursor("x.-1.1e3.")).toEqual(zero);
   });
 });

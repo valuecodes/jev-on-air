@@ -100,6 +100,8 @@ describe("FileTailer", () => {
     const { tailer, lines, resets } = follow(path);
     await tailer.sync();
     await rm(path);
+    // Past the filesystem's timestamp tick, so the birth time differs.
+    await new Promise((resolve) => setTimeout(resolve, 20));
     await writeFile(path, "replacement\n");
     await tailer.sync();
     expect(resets()).toBe(1);

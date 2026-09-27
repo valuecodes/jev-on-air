@@ -20,6 +20,8 @@ export type RunSummary = {
 };
 
 export type OutputLine = {
+  /** The desk process's registry; `seq` counts from zero in each. */
+  generation: number;
   seq: number;
   stream: "stdout" | "stderr";
   text: string;

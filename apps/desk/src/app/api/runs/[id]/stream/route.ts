@@ -34,7 +34,13 @@ export async function GET(
     start(controller) {
       let closed = false;
       const write = (chunk: string): void => {
-        if (!closed) controller.enqueue(encoder.encode(chunk));
+        if (closed) return;
+        try {
+          controller.enqueue(encoder.encode(chunk));
+        } catch {
+          // The client went away before `cancel` ran.
+          cleanup();
+        }
       };
       const send = (event: string, data: unknown): void =>
         write(
@@ -72,8 +78,11 @@ export async function GET(
 
       const ledger = follow("ledger", ledgerPath(id));
       const transcript = follow("transcript", transcriptPath(id));
-      const unsubscribe = runs().subscribe(id, cursor.output, (event) => {
+      const registry = runs();
+      const after = { generation: cursor.generation, seq: cursor.output };
+      const unsubscribe = registry.subscribe(id, after, (event) => {
         if (event.kind === "output") {
+          cursor.generation = event.line.generation;
           cursor.output = event.line.seq;
           send("output", event.line);
         } else {

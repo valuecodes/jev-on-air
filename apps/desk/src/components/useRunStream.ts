@@ -46,7 +46,7 @@ function apply(state: StreamState, messages: Message[]): StreamState {
   // Copied once per batch, then appended to in place.
   let ledger = [...state.ledger];
   let transcript = [...state.transcript];
-  const output = [...state.output];
+  let output = [...state.output];
   const notices = [...state.notices];
   let { run, connected } = state;
   for (const message of messages) {
@@ -57,10 +57,14 @@ function apply(state: StreamState, messages: Message[]): StreamState {
       case "transcript":
         transcript.push(message.line);
         break;
-      case "output":
-        if ((output.at(-1)?.seq ?? 0) < message.line.seq)
-          output.push(message.line);
+      case "output": {
+        const last = output.at(-1);
+        // A new generation means desk restarted and counts from zero again.
+        if (last && last.generation !== message.line.generation)
+          output = [message.line];
+        else if ((last?.seq ?? 0) < message.line.seq) output.push(message.line);
         break;
+      }
       case "state":
         run = message.run;
         break;
