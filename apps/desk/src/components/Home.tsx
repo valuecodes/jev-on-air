@@ -1,5 +1,17 @@
 "use client";
 
+import {
+  ExternalLink,
+  FileText,
+  History,
+  Library,
+  LoaderCircle,
+  Play,
+  Rocket,
+  RotateCcw,
+  TriangleAlert,
+  Video,
+} from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -9,7 +21,10 @@ import type { LedgerInfo, RunSummary } from "../lib/types";
 import { postJson } from "./api";
 import { clock } from "./format";
 import { isActive, RunState, StopButton } from "./RunControls";
-import { badge, button, card, field, row } from "./ui";
+import { badge, button, card, field, heading, mono, row } from "./ui";
+import { LiveDot } from "./visuals";
+
+const listRow = "rounded-lg px-2 py-1.5 transition hover:bg-raised";
 
 type Overview = { runs: RunSummary[]; ledgers: LedgerInfo[] };
 
@@ -48,12 +63,18 @@ export function Home() {
   return (
     <div className="flex flex-col gap-4">
       <section className={card}>
-        <h2 className="text-base font-semibold">New run</h2>
+        <h2 className={heading}>
+          <Rocket className="text-accent size-4" aria-hidden />
+          New run
+        </h2>
         {active ? (
           <div className={row}>
+            <LiveDot />
             <span>
               Running{" "}
-              <Link href={`/runs/${active.videoId}`}>{active.videoId}</Link>
+              <Link href={`/runs/${active.videoId}`} className="font-mono">
+                {active.videoId}
+              </Link>
             </span>
             <RunState run={active} />
             <StopButton run={active} />
@@ -65,14 +86,21 @@ export function Home() {
 
       {overview && overview.runs.some((run) => run !== active) && (
         <section className={card}>
-          <h2 className="text-base font-semibold">Recent desk runs</h2>
-          <ul className="flex flex-col gap-1.5">
+          <h2 className={heading}>
+            <History className="text-accent-2 size-4" aria-hidden />
+            Recent desk runs
+          </h2>
+          <ul className="flex flex-col gap-1">
             {overview.runs
               .filter((run) => run !== active)
               .map((run) => (
-                <li key={run.id} className={row}>
-                  <Link href={`/runs/${run.videoId}`}>{run.videoId}</Link>
-                  <span className="text-muted">{clock(run.startedAt)}</span>
+                <li key={run.id} className={`${row} ${listRow}`}>
+                  <Link href={`/runs/${run.videoId}`} className="font-mono">
+                    {run.videoId}
+                  </Link>
+                  <span className={`${mono} text-muted`}>
+                    {clock(run.startedAt)}
+                  </span>
                   <RunState run={run} />
                   {run.error && <span className="text-bad">{run.error}</span>}
                 </li>
@@ -82,17 +110,29 @@ export function Home() {
       )}
 
       <section className={card}>
-        <h2 className="text-base font-semibold">Ledgers</h2>
-        {loadError && <p className="text-bad">Could not load: {loadError}</p>}
+        <h2 className={heading}>
+          <Library className="text-accent size-4" aria-hidden />
+          Ledgers
+        </h2>
+        {loadError && (
+          <p className="text-bad flex items-center gap-2">
+            <TriangleAlert className="size-4" aria-hidden />
+            Could not load: {loadError}
+          </p>
+        )}
         {overview?.ledgers.length === 0 && (
           <p className="text-muted">
             No runs yet. Start one above or with <code>pnpm cli jev</code>.
           </p>
         )}
-        <ul className="flex flex-col gap-1.5">
+        <ul className="flex flex-col gap-1">
           {overview?.ledgers.map((ledger) => (
-            <li key={ledger.id} className={row}>
-              <Link href={`/runs/${ledger.id}`}>
+            <li key={ledger.id} className={`${row} ${listRow}`}>
+              <FileText className="text-muted size-4 shrink-0" aria-hidden />
+              <Link
+                href={`/runs/${ledger.id}`}
+                className="text-ink min-w-0 font-medium wrap-anywhere"
+              >
                 {ledger.title ?? ledger.id}
               </Link>
               {ledger.channel && (
@@ -100,10 +140,18 @@ export function Home() {
               )}
               {ledger.live && (
                 <span className={badge("good")}>
-                  {active?.videoId === ledger.id ? "live" : "live · external"}
+                  <LiveDot />
+                  LIVE
+                  {active?.videoId !== ledger.id && (
+                    <>
+                      {" "}
+                      · external
+                      <ExternalLink className="size-3" aria-hidden />
+                    </>
+                  )}
                 </span>
               )}
-              <span className="text-muted">
+              <span className={`${mono} text-muted ml-auto text-xs`}>
                 {new Date(ledger.updatedAt).toLocaleString("en-GB")}
               </span>
             </li>
@@ -147,19 +195,25 @@ function NewRunForm() {
       onSubmit={(event) => void submit(event)}
     >
       <label className="flex flex-col gap-1">
-        YouTube URL
-        <input
-          type="url"
-          className={`${field} w-full`}
-          required
-          placeholder="https://www.youtube.com/watch?v=…"
-          value={url}
-          onChange={(event) => setUrl(event.target.value)}
-        />
+        <span className="text-muted text-xs">YouTube URL</span>
+        <span className="relative">
+          <Video
+            className="text-muted pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2"
+            aria-hidden
+          />
+          <input
+            type="url"
+            className={`${field} w-full pl-8`}
+            required
+            placeholder="https://www.youtube.com/watch?v=…"
+            value={url}
+            onChange={(event) => setUrl(event.target.value)}
+          />
+        </span>
       </label>
       <div className={row}>
         <label className="flex flex-col gap-1">
-          Size
+          <span className="text-muted text-xs">Size</span>
           <input
             type="number"
             className={`${field} w-28`}
@@ -172,7 +226,7 @@ function NewRunForm() {
           />
         </label>
         <label className="flex flex-col gap-1">
-          Min signal
+          <span className="text-muted text-xs">Min signal</span>
           <input
             type="number"
             className={`${field} w-28`}
@@ -184,20 +238,33 @@ function NewRunForm() {
             onChange={(event) => setMinSignal(event.target.value)}
           />
         </label>
-        <label className="flex items-center gap-1.5">
+        <label
+          className={`flex items-center gap-1.5 self-end rounded-lg border px-2.5 py-1.5 ${reset ? "border-warn/50 bg-warn/10 text-warn" : "border-line text-muted"}`}
+        >
           <input
             type="checkbox"
             checked={reset}
             onChange={(event) => setReset(event.target.checked)}
           />
+          <RotateCcw className="size-3.5" aria-hidden />
           Reset the shared portfolio
         </label>
       </div>
       <div className={row}>
         <button type="submit" className={button} disabled={busy}>
+          {busy ? (
+            <LoaderCircle className="size-4 animate-spin" aria-hidden />
+          ) : (
+            <Play className="size-4 fill-current" aria-hidden />
+          )}
           {busy ? "Starting…" : "Start"}
         </button>
-        {error && <span className="text-bad">{error}</span>}
+        {error && (
+          <span className="text-bad flex items-center gap-1.5">
+            <TriangleAlert className="size-4" aria-hidden />
+            {error}
+          </span>
+        )}
       </div>
     </form>
   );

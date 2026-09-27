@@ -1,48 +1,90 @@
 @import "tailwindcss";
 
-/* Colour tokens, used as `bg-card`, `text-muted`, `border-line`, ... */
+/*
+ * Colour tokens, used as `bg-card`, `text-muted`, `border-line`, ... Dark is
+ * the default (a trading terminal); a light palette follows the OS below.
+ */
 @theme {
-  --color-page: #f6f7f9;
-  --color-card: #ffffff;
-  --color-ink: #1b1f24;
-  --color-muted: #6a737d;
-  --color-line: #d8dde3;
-  --color-accent: #2f6fdb;
-  --color-good: #1a7f37;
-  --color-bad: #cf222e;
-  --color-warn: #9a6700;
-  --color-fill: #e8f5ec;
-  --color-reject: #fdf3e2;
-  --color-error: #fdecec;
+  --color-page: #07090d;
+  --color-card: #0e1219;
+  --color-raised: #151b25;
+  --color-ink: #e8edf4;
+  --color-muted: #7d8898;
+  --color-line: #1f2733;
+  --color-accent: #38bdf8;
+  --color-accent-2: #a78bfa;
+
+  --color-good: #22e584;
+  --color-bad: #ff4d6a;
+  --color-warn: #fbbf24;
+
+  /* One accent per instrument. */
+  --color-gold: #facc15;
+  --color-bitcoin: #fb923c;
+  --color-sp500: #60a5fa;
+  --color-oil: #2dd4bf;
+
+  /* Actions. */
+  --color-buy: #22e584;
+  --color-sell: #ff4d6a;
+  --color-short: #f472b6;
+  --color-close: #94a3b8;
+
+  --animate-glow: glow 2s ease-in-out infinite;
+
+  @keyframes glow {
+    0%,
+    100% {
+      opacity: 1;
+      box-shadow: 0 0 0 0 currentColor;
+    }
+    50% {
+      opacity: 0.6;
+      box-shadow: 0 0 10px 2px currentColor;
+    }
+  }
 }
 
-@media (prefers-color-scheme: dark) {
+@media (prefers-color-scheme: light) {
   :root {
-    --color-page: #0f1216;
-    --color-card: #171b21;
-    --color-ink: #e6e9ed;
-    --color-muted: #8b949e;
-    --color-line: #2b3139;
-    --color-accent: #5b9cff;
-    --color-good: #3fb950;
-    --color-bad: #f85149;
-    --color-warn: #d29922;
-    --color-fill: #13261a;
-    --color-reject: #2a2113;
-    --color-error: #2d1517;
+    color-scheme: light;
+    --color-page: #f3f5f9;
+    --color-card: #ffffff;
+    --color-raised: #eef1f6;
+    --color-ink: #0f172a;
+    --color-muted: #5b6678;
+    --color-line: #dbe1ea;
+    --color-accent: #0284c7;
+    --color-accent-2: #7c3aed;
+    --color-good: #059669;
+    --color-bad: #e11d48;
+    --color-warn: #b45309;
+    --color-gold: #a16207;
+    --color-bitcoin: #c2410c;
+    --color-sp500: #1d4ed8;
+    --color-oil: #0f766e;
+    --color-buy: #059669;
+    --color-sell: #e11d48;
+    --color-short: #be185d;
+    --color-close: #475569;
   }
 }
 
 @layer base {
   :root {
-    color-scheme: light dark;
+    color-scheme: dark;
   }
 
   body {
-    @apply bg-page text-ink text-sm;
+    @apply bg-page text-ink min-h-screen text-sm antialiased;
+    background-image: radial-gradient(
+      ellipse 80% 40% at 50% -10%,
+      color-mix(in oklab, var(--color-accent) 12%, transparent),
+      transparent
+    );
   }
 
   a {
-    @apply text-accent;
+    @apply text-accent hover:underline;
   }
 }
