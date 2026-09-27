@@ -43,6 +43,8 @@ type Paths = {
   script?: string;
   /** Live runs tee their transcript here, so any run can be replayed. */
   tee?: string;
+  /** ...and their price ticks here, in the `prices --json` format. */
+  ticks?: string;
 };
 
 function paths(args: JevArgs): Paths {
@@ -65,6 +67,7 @@ function paths(args: JevArgs): Paths {
     if (args.source.prices) result.prices = resolve(cwd, args.source.prices);
   } else {
     result.tee = join(cacheDir, "transcripts", `${args.source.videoId}.jsonl`);
+    result.ticks = join(cacheDir, "prices", `${args.source.videoId}.jsonl`);
   }
   if (args.decider.kind === "script")
     result.script = resolve(cwd, args.decider.path);
@@ -257,8 +260,21 @@ export class JevCommand {
           await tee.close();
         }
       };
+      const prices = ticks();
+      const record = await JsonlWriter.open(files.ticks ?? "");
+      this.logger.info("writing ticks", { out: files.ticks });
+      const recorded: Source<EngineEvent> = async function* (signal) {
+        try {
+          for await (const event of prices(signal)) {
+            if (event.kind === "tick") await record.append(event.tick);
+            yield event;
+          }
+        } finally {
+          await record.close();
+        }
+      };
       return {
-        events: merge([segments, ticks(), heartbeat], { primary: 0 }),
+        events: merge([segments, recorded, heartbeat], { primary: 0 }),
         clock: undefined,
         awaitDecisions: false,
       };

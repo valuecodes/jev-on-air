@@ -58,7 +58,9 @@ Jev options (needs TYPESAFE_API_KEY and the Alpaca keys, e.g. in .env):
   --state=<path>      Portfolio file (default: .cache/jev/portfolio.json; a replay
                       uses a scratch file under .cache/jev/replay/)
   --reset             Start a fresh portfolio with --cash, ignoring the state file
-  --out=<path>        Ledger file (default: .cache/jev/<id>.jsonl)
+  --out=<path>        Ledger file (default: .cache/jev/<id>.jsonl). A live run also
+                      records its transcript and ticks under .cache/transcripts/ and
+                      .cache/prices/, replayable with --replay and --prices
   --json              Print ledger events as JSON lines
   --whisper=<name> --language=<code> --chunk=<seconds>   Transcriber options (live only)`;
 
