@@ -10,6 +10,7 @@ node_modules
 .cache
 
 # Build Outputs
+next-env.d.ts
 .next
 dist
 build

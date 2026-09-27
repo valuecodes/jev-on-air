@@ -12,9 +12,10 @@ into simulated trade signals.
 
 ### Apps (`apps/`)
 
-| Name | Filter | Description                                          |
-| ---- | ------ | ---------------------------------------------------- |
-| cli  | `cli`  | Node.js 24 command-line app, runs TypeScript via tsx |
+| Name | Filter | Description                                                            |
+| ---- | ------ | ---------------------------------------------------------------------- |
+| cli  | `cli`  | Node.js 24 command-line app, runs TypeScript via tsx                   |
+| desk | `desk` | Local-only Next.js dashboard: start/stop `jev` runs, watch them stream |
 
 ### Packages (`packages/`)
 
@@ -51,6 +52,7 @@ pnpm cli transcribe <youtube-url> # Stream a live/video transcript
 pnpm cli prices                  # Stream live prices from Alpaca
 pnpm cli prices --from=<iso> --to=<iso> --json  # Past prices for a window
 pnpm cli jev <youtube-url>       # Paper-trade a stream with Jev (see apps/cli/README.md)
+pnpm desk                        # Dashboard at http://127.0.0.1:3000 (see apps/desk/README.md)
 
 pnpm lint                        # oxlint, one process over the whole repo
 pnpm typecheck                   # turbo run typecheck
