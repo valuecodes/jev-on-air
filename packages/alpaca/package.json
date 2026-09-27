@@ -4,6 +4,7 @@
   "type": "module",
   "exports": {
     "./channel": "./src/channel.ts",
+    "./history": "./src/history.ts",
     "./instruments": "./src/instruments.ts",
     "./prices": "./src/prices.ts"
   },

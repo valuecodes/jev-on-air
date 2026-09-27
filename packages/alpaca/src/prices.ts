@@ -23,7 +23,7 @@ export type PriceTick = {
   /** Latest bid and ask for the symbol, once a quote has arrived. */
   bid?: number;
   ask?: number;
-  /** Shares or coins traded; trades only. */
+  /** Shares or coins traded; trades only. A historical bar reports its volume. */
   size?: number;
   /** RFC 3339 exchange time of the trade or quote. */
   timestamp: string;

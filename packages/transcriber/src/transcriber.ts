@@ -27,6 +27,49 @@ export type TranscriberOptions = {
 
 const whisperDir = join(import.meta.dirname, "..", "whisper");
 
+export type VideoInfo = {
+  id: string;
+  title: string;
+  channel?: string;
+  durationSeconds?: number;
+  /** Live now, an archive of a live stream, or a plain upload. */
+  live: "is_live" | "was_live" | "not_live";
+  /** When the live broadcast began, for a stream or its archive. */
+  startedAt?: string;
+};
+
+/** Parses yt-dlp's `--dump-single-json` output. Throws if it is not a video. */
+export function parseVideoInfo(json: string): VideoInfo {
+  const value: unknown = JSON.parse(json);
+  if (typeof value !== "object" || value === null)
+    throw new Error("not a video description");
+  const record = value as Record<string, unknown>;
+  const { id, title, channel, duration, live_status: status } = record;
+  if (typeof id !== "string" || typeof title !== "string")
+    throw new Error("not a video description");
+  const started = record.release_timestamp;
+  const live: VideoInfo["live"] =
+    status === "is_live" || status === "is_upcoming"
+      ? "is_live"
+      : status === "was_live" ||
+          status === "post_live" ||
+          record.was_live === true
+        ? "was_live"
+        : "not_live";
+  return {
+    id,
+    title,
+    ...(typeof channel === "string" ? { channel } : {}),
+    ...(typeof duration === "number" && Number.isFinite(duration)
+      ? { durationSeconds: duration }
+      : {}),
+    live,
+    ...(typeof started === "number" && Number.isFinite(started)
+      ? { startedAt: new Date(started * 1000).toISOString() }
+      : {}),
+  };
+}
+
 /** Parses one JSON line from the worker. Throws if it is not a segment. */
 export function parseSegmentLine(line: string): Segment {
   const value: unknown = JSON.parse(line);
@@ -54,6 +97,41 @@ export class Transcriber {
     this.logger = logger;
     this.options = options;
     this.pipeline = new Pipeline(logger);
+  }
+
+  /** The yt-dlp command that describes `url` without downloading it. */
+  infoCommand(url: string): Command {
+    return {
+      name: "yt-dlp",
+      file: "uv",
+      args: [
+        "run",
+        "--project",
+        whisperDir,
+        "--quiet",
+        "yt-dlp",
+        "--quiet",
+        "--no-warnings",
+        "--no-playlist",
+        "--js-runtimes",
+        "node",
+        "--dump-single-json",
+        "--skip-download",
+        "--",
+        url,
+      ],
+    };
+  }
+
+  /**
+   * Describes the video at `url`: its title, whether it is or was live and,
+   * for a live stream or its archive, when the broadcast began.
+   */
+  async info(url: string, signal?: AbortSignal): Promise<VideoInfo> {
+    let json = "";
+    for await (const line of this.pipeline.run([this.infoCommand(url)], signal))
+      json += line;
+    return parseVideoInfo(json);
   }
 
   /** The yt-dlp → ffmpeg → worker commands for `url`. */

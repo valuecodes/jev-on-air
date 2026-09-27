@@ -16,7 +16,8 @@ for await (const tick of feed.stream(signal)) {
 }
 ```
 
-There is no index module. Import from `@repo/alpaca/prices` and `@repo/alpaca/instruments`.
+There is no index module. Import from `@repo/alpaca/prices`, `@repo/alpaca/history` and
+`@repo/alpaca/instruments`.
 `@repo/alpaca/channel` exports the push-to-pull queue the feed is built on; `@repo/jev` uses it
 to merge streams.
 
@@ -66,6 +67,26 @@ To add an instrument, add a row to `INSTRUMENTS` in `src/instruments.ts`.
   doesn't include (409/410). The one exception is a 406 on a reconnect. After an unclean
   drop, Alpaca can briefly keep counting the dead connection, so that case is retried.
 
+## Historical prices
+
+`PriceHistory` (`@repo/alpaca/history`) fetches a past window from the historical bars API and
+yields the same `PriceTick` shape as the live feed: one tick per bar for every instrument,
+priced at the bar's close and stamped with the bar's end, all in time order. Stocks come from
+`/v2/stocks/bars` (SIP by default) and crypto from `/v1beta3/crypto/{venue}/bars`, paged until
+`next_page_token` is empty. A rejected request throws `HistoryError` with the API's message.
+
+```ts
+import { PriceHistory } from "@repo/alpaca/history";
+
+const history = new PriceHistory(logger, { credentials, barMinutes: 1 });
+for await (const tick of history.ticks({
+  from: "2026-09-16T18:20:00Z",
+  to: "2026-09-16T19:10:00Z",
+})) {
+  // { instrument: "gold", symbol: "GLD", source: "trade", price: 243.1, size: 1200, timestamp: "2026-09-16T18:21:00.000Z" }
+}
+```
+
 ## Plan limits
 
 The free Basic plan gives real-time stock data from the IEX exchange only. IEX is a small
@@ -73,7 +94,8 @@ share of US volume, so stock ticks are sparser than on the full tape. The plan a
 symbols and **one connection per endpoint**. If another client using the same keys is
 already connected, the stream fails with error 406. Passing `stockFeed: "sip"` switches to
 the all-exchange feed, which needs a paid plan. Keys from a paper-trading account work for
-market data.
+market data. Historical bars cover the whole market since 2016, except the most recent 15
+minutes, which the free plan only serves from IEX.
 
 ## Common commands
 

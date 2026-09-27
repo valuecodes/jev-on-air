@@ -124,6 +124,77 @@ describe("formatSegment", () => {
 });
 
 describe("parsePricesArgs", () => {
+  it("reads a past window", () => {
+    expect(
+      parsePricesArgs([
+        "--from=2026-09-16T18:25:00Z",
+        "--to=2026-09-16T19:05:00Z",
+        "--bars=5",
+        "--json",
+      ])
+    ).toEqual({
+      json: true,
+      history: {
+        from: "2026-09-16T18:25:00.000Z",
+        to: "2026-09-16T19:05:00.000Z",
+        barMinutes: 5,
+        feed: "sip",
+      },
+    });
+    expect(() => parsePricesArgs(["--from=2026-09-16T18:25:00Z"])).toThrow(
+      /--from and --to go together/
+    );
+    expect(() =>
+      parsePricesArgs(["--from=yesterday", "--to=2026-09-16T19:05:00Z"])
+    ).toThrow(/--from must be an RFC 3339 time with a zone/);
+    // A zone-less time would be read in local time and shift the window.
+    expect(() =>
+      parsePricesArgs([
+        "--from=2026-09-16T18:25:00",
+        "--to=2026-09-16T19:05:00Z",
+      ])
+    ).toThrow(/--from must be an RFC 3339 time with a zone/);
+    expect(
+      parsePricesArgs([
+        "--from=2026-09-16T20:25:00+02:00",
+        "--to=2026-09-16T19:05:00Z",
+        "--feed=iex",
+      ]).history
+    ).toMatchObject({ from: "2026-09-16T18:25:00.000Z", feed: "iex" });
+    expect(() =>
+      parsePricesArgs([
+        "--from=2026-09-15T18:25:00Z",
+        "--to=2026-09-16T19:05:00Z",
+      ])
+    ).toThrow(/at most 24 hours apart/);
+    expect(() =>
+      parsePricesArgs([
+        "--from=2026-09-16T18:25:00Z",
+        "--to=2026-09-16T19:05:00Z",
+        "--feed=boats",
+      ])
+    ).toThrow(/--feed must be sip or iex/);
+    expect(() => parsePricesArgs(["--feed=iex"])).toThrow(
+      /--bars and --feed only apply/
+    );
+    expect(() =>
+      parsePricesArgs([
+        "--from=2026-09-16T19:05:00Z",
+        "--to=2026-09-16T18:25:00Z",
+      ])
+    ).toThrow(/--from must be earlier than --to/);
+    expect(() => parsePricesArgs(["--bars=5"])).toThrow(
+      /--bars and --feed only apply/
+    );
+    expect(() =>
+      parsePricesArgs([
+        "--from=2026-09-16T18:25:00Z",
+        "--to=2026-09-16T19:05:00Z",
+        "--bars=60",
+      ])
+    ).toThrow(/--bars must be an integer at least 1 and at most 59/);
+  });
+
   it("defaults to formatted output", () => {
     expect(parsePricesArgs([])).toEqual({ json: false });
     expect(parsePricesArgs(["--json"])).toEqual({ json: true });
@@ -215,6 +286,8 @@ describe("parseJevArgs", () => {
         "--replay=rec/abc.jsonl",
         "--prices=ticks.jsonl",
         "--fast",
+        "--audio-start=2026-09-16T18:30:00Z",
+        "--lag=20",
         "--decider=script:plan.jsonl",
         "--model=jev-preview",
         "--cash=5000",
@@ -238,6 +311,8 @@ describe("parseJevArgs", () => {
         transcript: "rec/abc.jsonl",
         prices: "ticks.jsonl",
         fast: true,
+        audioStart: "2026-09-16T18:30:00.000Z",
+        lagSeconds: 20,
       },
       id: "abc",
       decider: { kind: "script", path: "plan.jsonl" },
@@ -281,6 +356,15 @@ describe("parseJevArgs", () => {
     );
     expect(() => parseJevArgs([url, "--fast"])).toThrow(
       /only apply to --replay/
+    );
+    expect(() => parseJevArgs([url, "--lag=5"])).toThrow(
+      /only apply to --replay/
+    );
+    expect(() =>
+      parseJevArgs(["--replay=a.jsonl", "--audio-start=noon"])
+    ).toThrow(/--audio-start must be an RFC 3339 time with a zone/);
+    expect(() => parseJevArgs(["--replay=a.jsonl", "--lag=-1"])).toThrow(
+      /--lag must be a number at least 0/
     );
     expect(() => parseJevArgs(["--replay=a.jsonl", "--fast"])).toThrow(
       /--fast needs --prices/

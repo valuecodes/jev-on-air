@@ -1,7 +1,7 @@
 import { createTestLogger } from "@repo/logger/testing";
 import { describe, expect, it } from "vitest";
 
-import { parseSegmentLine, Transcriber } from "./transcriber";
+import { parseSegmentLine, parseVideoInfo, Transcriber } from "./transcriber";
 
 describe("parseSegmentLine", () => {
   it("parses a worker segment line", () => {
@@ -48,5 +48,64 @@ describe("Transcriber.commands", () => {
       "--chunk",
       "5",
     ]);
+  });
+});
+
+describe("parseVideoInfo", () => {
+  it("reads the title, live status and broadcast start", () => {
+    expect(
+      parseVideoInfo(
+        JSON.stringify({
+          id: "H8FlQPYHGA4",
+          title: "Site Visit",
+          channel: "The White House",
+          duration: 1055,
+          was_live: true,
+          live_status: "was_live",
+          timestamp: 1790352795,
+          release_timestamp: 1790350993,
+        })
+      )
+    ).toEqual({
+      id: "H8FlQPYHGA4",
+      title: "Site Visit",
+      channel: "The White House",
+      durationSeconds: 1055,
+      live: "was_live",
+      startedAt: "2026-09-25T15:43:13.000Z",
+    });
+    expect(
+      parseVideoInfo(
+        JSON.stringify({ id: "x", title: "Upload", live_status: "not_live" })
+      )
+    ).toEqual({ id: "x", title: "Upload", live: "not_live" });
+    expect(
+      parseVideoInfo(
+        JSON.stringify({ id: "x", title: "Live", live_status: "is_live" })
+      ).live
+    ).toBe("is_live");
+  });
+
+  it("throws on anything else", () => {
+    expect(() => parseVideoInfo("[]")).toThrow(/not a video/);
+    expect(() => parseVideoInfo('{"title": "no id"}')).toThrow(/not a video/);
+    expect(() => parseVideoInfo("nope")).toThrow();
+  });
+});
+
+describe("Transcriber.infoCommand", () => {
+  it("asks yt-dlp for a description only", () => {
+    const { logger } = createTestLogger();
+    const command = new Transcriber(logger).infoCommand("https://youtu.be/x");
+    expect(command.file).toBe("uv");
+    expect(command.args).toEqual(
+      expect.arrayContaining([
+        "--dump-single-json",
+        "--skip-download",
+        "--",
+        "https://youtu.be/x",
+      ])
+    );
+    expect(command.args.at(-1)).toBe("https://youtu.be/x");
   });
 });

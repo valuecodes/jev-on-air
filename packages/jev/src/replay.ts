@@ -19,7 +19,9 @@ export type Timed<T> = { at: number; value: T };
  */
 export function segmentTimeline(
   segments: readonly Segment[],
-  warn?: (message: string, fields: Record<string, unknown>) => void
+  warn?: (message: string, fields: Record<string, unknown>) => void,
+  /** Delay applied to every line, like a live stream's delay. */
+  lagMs = 0
 ): Timed<EngineEvent>[] {
   let sessionStart = 0;
   segments.forEach((segment, index) => {
@@ -37,23 +39,29 @@ export function segmentTimeline(
       skipped: sessionStart,
     });
   return segments.slice(sessionStart).map((segment) => ({
-    at: segment.end * 1000,
+    at: segment.end * 1000 + lagMs,
     value: { kind: "segment", segment },
   }));
 }
 
-/** Ticks on a timeline relative to the first tick's exchange time. */
+/**
+ * Ticks on a timeline relative to `originMs` (epoch milliseconds: when the
+ * audio began), or to the first tick's exchange time. Ticks from before the
+ * origin keep their negative offsets, so the book has prices before the
+ * first line and still knows how old they are.
+ */
 export function tickTimeline(
-  ticks: readonly PriceTick[]
+  ticks: readonly PriceTick[],
+  originMs?: number
 ): Timed<EngineEvent>[] {
   const first = ticks[0];
   if (!first) return [];
-  const origin = Date.parse(first.timestamp);
+  const origin = originMs ?? Date.parse(first.timestamp);
   return ticks.map((tick, index) => {
     const at = Date.parse(tick.timestamp) - origin;
     if (!Number.isFinite(at))
       throw new Error(`invalid tick timestamp at line ${index + 1}`);
-    return { at: Math.max(0, at), value: { kind: "tick", tick } };
+    return { at, value: { kind: "tick", tick } };
   });
 }
 

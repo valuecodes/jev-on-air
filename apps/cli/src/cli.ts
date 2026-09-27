@@ -1,13 +1,14 @@
 // Argument parsing and commands. Pure: returns the output instead of printing it,
 // so tests can call `run` directly. `main.ts` is the process entry point.
 import { parseArgs } from "node:util";
-import type { PriceTick } from "@repo/alpaca/prices";
+import type { PriceTick, StockFeed } from "@repo/alpaca/prices";
 import { DEFAULT_MODEL } from "@repo/jev/typesafe";
 import type { Segment } from "@repo/transcriber";
 
 export const usage = `Usage: pnpm cli [options]
        pnpm cli transcribe <youtube-url> [transcribe options]
        pnpm cli prices [--json]
+       pnpm cli prices --from=<iso> --to=<iso> [--bars=<minutes>] [--json]
        pnpm cli jev <youtube-url> [jev options]
        pnpm cli jev --replay=<transcript.jsonl> [--prices=<ticks.jsonl>] [--fast] [jev options]
 
@@ -26,11 +27,20 @@ Transcribe options:
 
 Prices options (needs ALPACA_API_KEY_ID and ALPACA_API_SECRET_KEY, e.g. in .env):
   --json              Print ticks as JSON lines
+  --from=<iso> --to=<iso>  Past prices for a window instead of a live stream: one tick
+                      per bar at its close (all but the last 15 minutes on the free plan)
+  --bars=<minutes>    Bar length for --from/--to (default: 1)
+  --feed=<sip|iex>    Stock feed for --from/--to (default: sip; the free plan needs
+                      iex for the last 15 minutes)
 
 Jev options (needs TYPESAFE_API_KEY and the Alpaca keys, e.g. in .env):
   --replay=<path>     Replay a saved transcript instead of a live stream
   --prices=<path>     Replay recorded ticks (from \`prices --json\`) instead of live ones
   --fast              Replay without waiting, on a virtual clock (needs --prices)
+  --audio-start=<iso> When the transcript's audio began, to line it up with recorded
+                      prices by wall-clock time (default: the transcript's .meta.json,
+                      else both recordings start together)
+  --lag=<seconds>     Delay every transcript line, like a live stream's delay (default: 0)
   --decider=<kind>    typesafe (default), hold, or script:<decisions.jsonl>
   --model=<id>        TypeSafe model (default: $JEV_MODEL or ${DEFAULT_MODEL})
   --cash=<usd>        Starting cash for a fresh portfolio (default: 100000)
@@ -174,82 +184,6 @@ export function formatSegment(segment: Segment): string {
   return `[${clock}] ${segment.text}`;
 }
 
-export type PricesArgs = { json: boolean };
-
-/** Parses the arguments after `prices`. Throws on invalid input. */
-export function parsePricesArgs(argv: string[]): PricesArgs {
-  const { values } = parseArgs({
-    args: argv,
-    options: { json: { type: "boolean" } },
-    strict: true,
-  });
-  return { json: values.json ?? false };
-}
-
-export type AlpacaCredentials = { keyId: string; secretKey: string };
-
-/** Reads the Alpaca API keys from `env`. Throws naming any that are missing. */
-export function alpacaCredentials(env: NodeJS.ProcessEnv): AlpacaCredentials {
-  const keyId = env.ALPACA_API_KEY_ID;
-  const secretKey = env.ALPACA_API_SECRET_KEY;
-  if (!keyId || !secretKey) {
-    const missing = [
-      keyId ? undefined : "ALPACA_API_KEY_ID",
-      secretKey ? undefined : "ALPACA_API_SECRET_KEY",
-    ].filter(Boolean);
-    throw new Error(
-      `missing ${missing.join(" and ")}: set ${missing.length > 1 ? "them" : "it"} in the environment or in .env at the repo root`
-    );
-  }
-  return { keyId, secretKey };
-}
-
-/**
- * Formats a tick as `hh:mm:ss  name  symbol  price  kind`, with the UTC
- * exchange time; kind is `mid` for a quote midpoint or `trade`.
- */
-export function formatTick(tick: PriceTick): string {
-  return [
-    tick.timestamp.slice(11, 19),
-    tick.name.padEnd(8),
-    tick.symbol.padEnd(8),
-    tick.price.toFixed(2).padStart(10),
-    tick.source === "quote" ? "mid" : "trade",
-  ].join("  ");
-}
-
-export type JevSource =
-  | { kind: "live"; url: string; videoId: string }
-  | { kind: "replay"; transcript: string; prices?: string; fast: boolean };
-
-export type JevDecider =
-  { kind: "typesafe" } | { kind: "hold" } | { kind: "script"; path: string };
-
-export type JevArgs = {
-  source: JevSource;
-  /** Names the ledger and scratch state: the video id or the transcript's stem. */
-  id: string;
-  decider: JevDecider;
-  model?: string;
-  whisper?: string;
-  language?: string;
-  chunkSeconds?: number;
-  cash: number;
-  size: number;
-  minChars: number;
-  intervalSeconds: number;
-  contextSeconds: number;
-  minConfidence: number;
-  minSignal: number;
-  maxLeverage: number;
-  maxPriceAgeSeconds: number;
-  snapshotSeconds: number;
-  state?: string;
-  reset: boolean;
-  out?: string;
-  json: boolean;
-};
-
 type Range = {
   min?: number;
   max?: number;
@@ -286,6 +220,146 @@ function parseNumber(
   return number;
 }
 
+export type PricesArgs = {
+  json: boolean;
+  /** A past window to fetch instead of streaming live. */
+  history?: { from: string; to: string; barMinutes: number; feed: StockFeed };
+};
+
+// A date, a time and a zone: without the zone `Date.parse` would read the
+// value in local time and shift every price by the machine's offset.
+const rfc3339 =
+  /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:\d{2})$/i;
+
+/** Parses an RFC 3339 time with a zone and returns it normalised. */
+function parseTime(name: string, value: string): string {
+  const ms = Date.parse(value);
+  if (!rfc3339.test(value) || !Number.isFinite(ms))
+    throw new Error(
+      `--${name} must be an RFC 3339 time with a zone, like 2026-09-16T18:30:00Z, got ${value}`
+    );
+  return new Date(ms).toISOString();
+}
+
+/** Longest past window `prices` fetches in one go. */
+export const MAX_HISTORY_MS = 24 * 60 * 60 * 1000;
+
+/** Parses the arguments after `prices`. Throws on invalid input. */
+export function parsePricesArgs(argv: string[]): PricesArgs {
+  const { values } = parseArgs({
+    args: argv,
+    options: {
+      json: { type: "boolean" },
+      from: { type: "string" },
+      to: { type: "string" },
+      bars: { type: "string" },
+      feed: { type: "string" },
+    },
+    strict: true,
+  });
+  const json = values.json ?? false;
+  if (values.from === undefined && values.to === undefined) {
+    if (values.bars !== undefined || values.feed !== undefined)
+      throw new Error("--bars and --feed only apply with --from and --to");
+    return { json };
+  }
+  if (values.from === undefined || values.to === undefined)
+    throw new Error("--from and --to go together");
+  const from = parseTime("from", values.from);
+  const to = parseTime("to", values.to);
+  if (!(from < to)) throw new Error("--from must be earlier than --to");
+  if (Date.parse(to) - Date.parse(from) > MAX_HISTORY_MS)
+    throw new Error("--from and --to may be at most 24 hours apart");
+  const feed = values.feed ?? "sip";
+  if (feed !== "sip" && feed !== "iex")
+    throw new Error(`--feed must be sip or iex, got ${feed}`);
+  return {
+    json,
+    history: {
+      from,
+      to,
+      feed,
+      barMinutes: parseNumber("bars", values.bars, 1, {
+        min: 1,
+        max: 59,
+        integer: true,
+      }),
+    },
+  };
+}
+
+export type AlpacaCredentials = { keyId: string; secretKey: string };
+
+/** Reads the Alpaca API keys from `env`. Throws naming any that are missing. */
+export function alpacaCredentials(env: NodeJS.ProcessEnv): AlpacaCredentials {
+  const keyId = env.ALPACA_API_KEY_ID;
+  const secretKey = env.ALPACA_API_SECRET_KEY;
+  if (!keyId || !secretKey) {
+    const missing = [
+      keyId ? undefined : "ALPACA_API_KEY_ID",
+      secretKey ? undefined : "ALPACA_API_SECRET_KEY",
+    ].filter(Boolean);
+    throw new Error(
+      `missing ${missing.join(" and ")}: set ${missing.length > 1 ? "them" : "it"} in the environment or in .env at the repo root`
+    );
+  }
+  return { keyId, secretKey };
+}
+
+/**
+ * Formats a tick as `hh:mm:ss  name  symbol  price  kind`, with the UTC
+ * exchange time; kind is `mid` for a quote midpoint or `trade`.
+ */
+export function formatTick(tick: PriceTick): string {
+  return [
+    tick.timestamp.slice(11, 19),
+    tick.name.padEnd(8),
+    tick.symbol.padEnd(8),
+    tick.price.toFixed(2).padStart(10),
+    tick.source === "quote" ? "mid" : "trade",
+  ].join("  ");
+}
+
+export type JevSource =
+  | { kind: "live"; url: string; videoId: string }
+  | {
+      kind: "replay";
+      transcript: string;
+      prices?: string;
+      fast: boolean;
+      /** RFC 3339 time the audio began, aligning it with the ticks. */
+      audioStart?: string;
+      lagSeconds: number;
+    };
+
+export type JevDecider =
+  { kind: "typesafe" } | { kind: "hold" } | { kind: "script"; path: string };
+
+export type JevArgs = {
+  source: JevSource;
+  /** Names the ledger and scratch state: the video id or the transcript's stem. */
+  id: string;
+  decider: JevDecider;
+  model?: string;
+  whisper?: string;
+  language?: string;
+  chunkSeconds?: number;
+  cash: number;
+  size: number;
+  minChars: number;
+  intervalSeconds: number;
+  contextSeconds: number;
+  minConfidence: number;
+  minSignal: number;
+  maxLeverage: number;
+  maxPriceAgeSeconds: number;
+  snapshotSeconds: number;
+  state?: string;
+  reset: boolean;
+  out?: string;
+  json: boolean;
+};
+
 function parseDecider(value: string | undefined): JevDecider {
   if (value === undefined || value === "typesafe") return { kind: "typesafe" };
   if (value === "hold") return { kind: "hold" };
@@ -304,6 +378,8 @@ export function parseJevArgs(argv: string[]): JevArgs {
       replay: { type: "string" },
       prices: { type: "string" },
       fast: { type: "boolean" },
+      "audio-start": { type: "string" },
+      lag: { type: "string" },
       decider: { type: "string" },
       model: { type: "string" },
       whisper: { type: "string" },
@@ -338,8 +414,15 @@ export function parseJevArgs(argv: string[]): JevArgs {
   if (url === undefined && values.replay === undefined)
     throw new Error("jev needs a YouTube URL or --replay=<transcript.jsonl>");
   if (values.replay === undefined) {
-    if (values.prices !== undefined || values.fast)
-      throw new Error("--prices and --fast only apply to --replay");
+    if (
+      values.prices !== undefined ||
+      values.fast ||
+      values["audio-start"] !== undefined ||
+      values.lag !== undefined
+    )
+      throw new Error(
+        "--prices, --fast, --audio-start and --lag only apply to --replay"
+      );
   } else if (
     values.whisper !== undefined ||
     values.language !== undefined ||
@@ -367,6 +450,10 @@ export function parseJevArgs(argv: string[]): JevArgs {
       transcript,
       ...(values.prices === undefined ? {} : { prices: values.prices }),
       fast: values.fast ?? false,
+      ...(values["audio-start"] === undefined
+        ? {}
+        : { audioStart: parseTime("audio-start", values["audio-start"]) }),
+      lagSeconds: parseNumber("lag", values.lag, 0, { min: 0 }),
     };
     id =
       transcript
