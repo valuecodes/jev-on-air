@@ -164,16 +164,17 @@ export function RunView({ id }: { id: string }) {
         : undefined,
     [playerReady, runStart, meta]
   );
-  // Watching a sample along: start the video at the first line replayed.
-  const firstLine = transcript.lines[0]?.segment.end;
+  // Watching a sample along: once the player is ready, start the video at
+  // the latest line replayed, so a page opened mid-run joins where it is.
+  const latestLine = transcript.lines.at(-1)?.segment.end;
   const watching = stream.run?.mode === "paced" && live;
   const started = useRef<string | null>(null);
   useEffect(() => {
-    if (!watching || !seek || firstLine === undefined || !runStart) return;
+    if (!watching || !seek || latestLine === undefined || !runStart) return;
     if (started.current === runStart) return;
     started.current = runStart;
-    seek(firstLine);
-  }, [watching, seek, firstLine, runStart]);
+    seek(latestLine);
+  }, [watching, seek, latestLine, runStart]);
   const fills = useMemo(
     () => events.filter((event): event is FillEvent => event.type === "fill"),
     [events]
