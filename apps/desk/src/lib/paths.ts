@@ -21,6 +21,7 @@ const repoRoot = findRepoRoot(process.cwd());
 export const cliDir = join(repoRoot, "apps", "cli");
 export const ledgerDir = join(cliDir, ".cache", "jev");
 export const transcriptDir = join(cliDir, ".cache", "transcripts");
+export const pricesDir = join(cliDir, ".cache", "prices");
 
 /**
  * A ledger's name: the video id for live runs, the transcript's stem for
@@ -38,3 +39,4 @@ export const transcriptPath = (id: string): string =>
   join(transcriptDir, `${id}.jsonl`);
 export const metaPath = (id: string): string =>
   join(transcriptDir, `${id}.meta.json`);
+export const ticksPath = (id: string): string => join(pricesDir, `${id}.jsonl`);

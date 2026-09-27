@@ -18,7 +18,12 @@ import { mono } from "./ui";
 type Instrument = Decision["instrument"];
 type Action = Decision["action"];
 
-type Look = { name: string; icon: LucideIcon; chip: string; bar: string };
+type Look = {
+  name: string;
+  icon: LucideIcon;
+  chip: string;
+  bar: string;
+};
 
 export const instruments: Record<Instrument, Look> = {
   gold: {

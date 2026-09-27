@@ -15,6 +15,11 @@ that same CLI.
 - **Reads the CLI's files.** Each run page follows `apps/cli/.cache/jev/<id>.jsonl` (the
   ledger) and `apps/cli/.cache/transcripts/<id>.jsonl` over server-sent events. Runs started
   from a terminal show up too, marked `live · external`.
+- **Video and prices.** The run page embeds the YouTube stream and charts the prices the run
+  saw, from the tick file live runs record in `apps/cli/.cache/prices/<id>.jsonl` (downsampled
+  to one point per second, as % change since the run started, with its fills marked). Clicking
+  a transcript line's or decision's time seeks the video there: from the live edge on a live
+  stream, by broadcast time on an archive.
 - **Starts the CLI.** The form runs `node --import tsx src/main.ts jev <url>` in `apps/cli`,
   in its own process group. Stop sends SIGTERM, which the CLI turns into a clean abort (the
   ledger ends with `"aborted"`); a second SIGTERM after 15 s and SIGKILL after 5 s more back

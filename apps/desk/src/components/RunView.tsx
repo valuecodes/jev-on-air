@@ -1,6 +1,6 @@
 "use client";
 
-import type { JevEvent } from "@repo/jev/ledger";
+import type { FillEvent, JevEvent } from "@repo/jev/ledger";
 import {
   Activity,
   ArrowDownToLine,
@@ -8,11 +8,12 @@ import {
   Ban,
   Banknote,
   Camera,
+  ChartLine,
+  ChevronRight,
   CircleCheck,
   Cpu,
   Mic,
   Pause,
-  Percent,
   Play,
   Radio,
   Square,
@@ -21,13 +22,22 @@ import {
   TrendingDown,
   TrendingUp,
   TriangleAlert,
+  Tv,
   Wallet,
   WifiOff,
   Zap,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import type { ReactNode } from "react";
 
 import {
@@ -38,10 +48,13 @@ import {
   transcriptForRun,
 } from "../lib/timeline";
 import type { Book, TimelineItem } from "../lib/timeline";
+import type { VideoMeta } from "../lib/types";
+import { seekTarget } from "../lib/video";
 import { audio, clock, money, percent, signed } from "./format";
 import { RunState, StopButton } from "./RunControls";
 import { badge, card, field, heading, mono, row } from "./ui";
 import { useRunStream } from "./useRunStream";
+import type { PlayerHandle } from "./VideoPlayer";
 import {
   ActionPill,
   InstrumentChip,
@@ -54,6 +67,18 @@ import {
 const cell = "border-b border-line py-1.5 pr-4 text-left whitespace-nowrap";
 const toggle =
   "flex cursor-pointer items-center gap-1.5 rounded-lg border px-2 py-1 text-xs select-none";
+
+// Both need `window`, so they only render in the browser.
+const VideoPlayer = dynamic(() => import("./VideoPlayer"), {
+  ssr: false,
+  loading: () => (
+    <div className="bg-raised aspect-video w-full animate-pulse rounded-lg" />
+  ),
+});
+const PriceChart = dynamic(() => import("./PriceChart"), {
+  ssr: false,
+  loading: () => <div className="bg-raised h-72 animate-pulse rounded-lg" />,
+});
 
 export function RunView({ id }: { id: string }) {
   const stream = useRunStream(id);
@@ -83,15 +108,60 @@ export function RunView({ id }: { id: string }) {
     [events, transcript.lines, showSnapshots]
   );
 
-  const end = useRef<HTMLDivElement>(null);
+  // Follow within the timeline, so the page (and the video) stays put.
+  const list = useRef<HTMLOListElement>(null);
   useEffect(() => {
-    if (follow) end.current?.scrollIntoView({ block: "end" });
+    const element = list.current;
+    if (follow && element) element.scrollTop = element.scrollHeight;
   }, [follow, items.length]);
 
   const book = latestBook(events);
   const start = group?.start;
-  const live =
-    stream.connected && group !== undefined && events.at(-1)?.type !== "end";
+  const last = events.at(-1);
+  const live = stream.connected && group !== undefined && last?.type !== "end";
+
+  // The transcript's sidecar, for mapping transcript time to video time.
+  // Fetched again when a new run appears, since each session rewrites it.
+  const [meta, setMeta] = useState<VideoMeta | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`/api/runs/${id}/meta`, { cache: "no-store" })
+      .then(async (response) =>
+        response.ok ? ((await response.json()) as VideoMeta) : null
+      )
+      .then((value) => {
+        if (!cancelled) setMeta(value);
+      })
+      .catch(() => {
+        if (!cancelled) setMeta(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [id, groups.length]);
+
+  const videoId = start?.source.startsWith("youtube:")
+    ? start.source.slice("youtube:".length)
+    : undefined;
+  const player = useRef<PlayerHandle | null>(null);
+  const [playerReady, setPlayerReady] = useState(false);
+  const onPlayerReady = useCallback((handle: PlayerHandle | null) => {
+    player.current = handle;
+    setPlayerReady(handle !== null);
+  }, []);
+  const runStart = group?.run;
+  const seek = useMemo(
+    () =>
+      playerReady && runStart
+        ? (audioTime: number) =>
+            player.current?.seek(seekTarget(audioTime, meta, runStart))
+        : undefined,
+    [playerReady, runStart, meta]
+  );
+  const fills = useMemo(
+    () => events.filter((event): event is FillEvent => event.type === "fill"),
+    [events]
+  );
 
   return (
     <div className="flex flex-col gap-4">
@@ -159,6 +229,32 @@ export function RunView({ id }: { id: string }) {
 
       {group ? (
         <>
+          <div className={`grid gap-4 ${videoId ? "lg:grid-cols-2" : ""}`}>
+            {videoId && (
+              <section className={card}>
+                <h2 className={heading}>
+                  <Tv className="text-accent size-4" aria-hidden />
+                  {meta?.video.title ?? "Stream"}
+                </h2>
+                <VideoPlayer videoId={videoId} onReady={onPlayerReady} />
+              </section>
+            )}
+            <section className={card}>
+              <h2 className={heading}>
+                <ChartLine className="text-accent size-4" aria-hidden />
+                Prices
+                <span className="font-normal tracking-normal normal-case">
+                  · % since the run started
+                </span>
+              </h2>
+              <PriceChart
+                points={stream.prices}
+                fills={fills}
+                from={Date.parse(group.run)}
+                to={last?.type === "end" ? Date.parse(last.time) : undefined}
+              />
+            </section>
+          </div>
           <Summary start={start} book={book} events={events} />
           <section className={card}>
             <div className={row}>
@@ -200,12 +296,14 @@ export function RunView({ id }: { id: string }) {
                 follow
               </label>
             </div>
-            <ol className="flex flex-col gap-1">
+            <ol
+              ref={list}
+              className="flex max-h-[70vh] flex-col gap-1 overflow-y-auto pr-1"
+            >
               {items.map((item) => (
-                <Item key={item.key} item={item} />
+                <Item key={item.key} item={item} onSeek={seek} />
               ))}
             </ol>
-            <div ref={end} />
           </section>
         </>
       ) : (
@@ -259,50 +357,71 @@ function Summary({
   const equity = book?.equity ?? start?.equity;
   const pnl = equity !== undefined && start ? equity - start.equity : undefined;
   const up = pnl === undefined || pnl >= 0;
+  const change =
+    pnl === undefined || !start || start.equity === 0
+      ? undefined
+      : `${pnl >= 0 ? "+" : ""}${((pnl / start.equity) * 100).toFixed(2)}%`;
+  const tone = pnl === undefined ? "text-ink" : up ? "text-good" : "text-bad";
   return (
     <section className={card}>
-      <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-3">
-        <Stat
-          icon={Wallet}
-          label="Equity"
-          value={equity === undefined ? "—" : money(equity)}
-        />
-        <Stat
-          icon={up ? TrendingUp : TrendingDown}
-          label="Run P&L"
-          value={pnl === undefined ? "—" : signed(pnl)}
-          detail={
-            pnl === undefined || !start || start.equity === 0
-              ? undefined
-              : `${pnl >= 0 ? "+" : ""}${((pnl / start.equity) * 100).toFixed(2)}%`
-          }
-          tone={pnl === undefined ? undefined : up ? "good" : "bad"}
-        />
-        <Stat
-          icon={Banknote}
-          label="Cash"
-          value={book ? money(book.cash) : start ? money(start.cash) : "—"}
-        />
-        <Stat
-          icon={Target}
-          label="Realized"
-          value={book ? signed(book.realized) : "—"}
-          tone={book ? (book.realized >= 0 ? "good" : "bad") : undefined}
-        />
-        <Stat
-          icon={Activity}
-          label="Unrealized"
-          value={book ? signed(book.unrealized) : "—"}
-          tone={book ? (book.unrealized >= 0 ? "good" : "bad") : undefined}
-        />
-        <Stat icon={Cpu} label="Model" value={start?.model ?? "—"} />
-        <Stat
-          icon={Percent}
-          label="Size"
-          value={start ? percent(start.size) : "—"}
-        />
-      </div>
-      {curve.length > 1 && <EquityChart values={curve} up={up} />}
+      {/* Collapsed by default: equity and P&L stay in the summary line. */}
+      <details className="group">
+        <summary className="flex cursor-pointer list-none flex-wrap items-center gap-x-4 gap-y-1 [&::-webkit-details-marker]:hidden">
+          <span className={heading}>
+            <ChevronRight
+              className="size-4 transition group-open:rotate-90"
+              aria-hidden
+            />
+            <Wallet className="text-accent size-4" aria-hidden />
+            Portfolio
+          </span>
+          <span className={`${mono} text-ink`}>
+            {equity === undefined ? "—" : money(equity)}
+          </span>
+          <span className={`${mono} ${tone}`}>
+            {pnl === undefined ? "" : signed(pnl)}
+            {change ? ` (${change})` : ""}
+          </span>
+        </summary>
+        <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+          <Stat
+            icon={Wallet}
+            label="Equity"
+            value={equity === undefined ? "—" : money(equity)}
+          />
+          <Stat
+            icon={up ? TrendingUp : TrendingDown}
+            label="Run P&L"
+            value={pnl === undefined ? "—" : signed(pnl)}
+            detail={change}
+            tone={pnl === undefined ? undefined : up ? "good" : "bad"}
+          />
+          <Stat
+            icon={Banknote}
+            label="Cash"
+            value={book ? money(book.cash) : start ? money(start.cash) : "—"}
+          />
+          <Stat
+            icon={Target}
+            label="Realized"
+            value={book ? signed(book.realized) : "—"}
+            tone={book ? (book.realized >= 0 ? "good" : "bad") : undefined}
+          />
+          <Stat
+            icon={Activity}
+            label="Unrealized"
+            value={book ? signed(book.unrealized) : "—"}
+            tone={book ? (book.unrealized >= 0 ? "good" : "bad") : undefined}
+          />
+          <Stat
+            icon={Cpu}
+            label="Model"
+            value={start?.model ?? "—"}
+            detail={start ? `size ${percent(start.size)} of equity` : undefined}
+          />
+        </div>
+        {curve.length > 1 && <EquityChart values={curve} up={up} />}
+      </details>
       {book && book.positions.length > 0 && (
         <table className="block w-full border-collapse overflow-x-auto">
           <thead className="text-muted text-xs tracking-wider uppercase">
@@ -434,42 +553,86 @@ function EquityChart({ values, up }: { values: number[]; up: boolean }) {
   );
 }
 
+/** A row's time; a button that seeks the video when there is one. */
+function Stamp({
+  label,
+  onSeek,
+  className,
+}: {
+  label: string;
+  onSeek: (() => void) | undefined;
+  className: string;
+}) {
+  if (!onSeek) return <span className={className}>{label}</span>;
+  return (
+    <button
+      type="button"
+      onClick={onSeek}
+      title="Play the video from here"
+      className={`group hover:text-accent inline-flex cursor-pointer items-center gap-1 text-left ${className}`}
+    >
+      {label}
+      <Play
+        className="size-3 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100"
+        aria-hidden
+      />
+    </button>
+  );
+}
+
 /** One timeline row: time, an icon on a coloured rail, then the content. */
 function Row({
   at,
   icon: Icon,
   rail,
   tint = "",
+  onSeek,
   children,
 }: {
   at: string;
   icon: LucideIcon;
   rail: string;
   tint?: string;
+  onSeek?: (() => void) | undefined;
   children: ReactNode;
 }) {
   return (
     <li
-      className={`grid grid-cols-[4.5rem_1.5rem_1fr] items-start gap-2 rounded-lg border-l-2 px-2 py-1.5 wrap-anywhere ${rail} ${tint}`}
+      className={`grid grid-cols-[5rem_1.5rem_1fr] items-start gap-2 rounded-lg border-l-2 px-2 py-1.5 wrap-anywhere ${rail} ${tint}`}
     >
-      <span className={`${mono} text-muted pt-0.5 text-xs`}>{at}</span>
+      <Stamp
+        label={at}
+        onSeek={onSeek}
+        className={`${mono} text-muted pt-0.5 text-xs`}
+      />
       <Icon className="mt-0.5 size-4" aria-hidden />
       <div className="min-w-0">{children}</div>
     </li>
   );
 }
 
-function Item({ item }: { item: TimelineItem }) {
-  if (item.kind === "segment")
+function Item({
+  item,
+  onSeek,
+}: {
+  item: TimelineItem;
+  /** Seeks the video to a transcript time; absent without a video. */
+  onSeek: ((audioTime: number) => void) | undefined;
+}) {
+  if (item.kind === "segment") {
+    const { start, text } = item.segment;
     return (
-      <li className="text-muted grid grid-cols-[4.5rem_1.5rem_1fr] items-start gap-2 px-2 py-0.5 wrap-anywhere">
-        <span className={`${mono} pt-0.5 text-xs opacity-70`}>
-          {audio(item.segment.start)}
-        </span>
+      <li className="text-muted grid grid-cols-[5rem_1.5rem_1fr] items-start gap-2 px-2 py-0.5 wrap-anywhere">
+        <Stamp
+          label={audio(start)}
+          onSeek={onSeek && (() => onSeek(start))}
+          className={`${mono} pt-0.5 text-xs opacity-70`}
+        />
         <Mic className="mt-1 size-3 opacity-50" aria-hidden />
-        <span>{item.segment.text}</span>
+        <span>{text}</span>
       </li>
     );
+  }
   const { event } = item;
   const at = clock(event.time);
   switch (event.type) {
@@ -490,6 +653,11 @@ function Item({ item }: { item: TimelineItem }) {
           icon={Zap}
           rail="border-accent-2 text-accent-2"
           tint="bg-accent-2/5"
+          onSeek={
+            onSeek && event.audioTime !== null
+              ? () => onSeek(event.audioTime ?? 0)
+              : undefined
+          }
         >
           <div className="text-ink flex flex-col gap-1.5">
             <div className={row}>
