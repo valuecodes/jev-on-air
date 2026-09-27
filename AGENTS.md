@@ -49,6 +49,7 @@ pnpm install                     # Install all dependencies
 pnpm cli --hello-world           # Run the CLI (args go to apps/cli)
 pnpm cli transcribe <youtube-url> # Stream a live/video transcript
 pnpm cli prices                  # Stream live prices from Alpaca
+pnpm cli prices --from=<iso> --to=<iso> --json  # Past prices for a window
 pnpm cli jev <youtube-url>       # Paper-trade a stream with Jev (see apps/cli/README.md)
 
 pnpm lint                        # oxlint, one process over the whole repo

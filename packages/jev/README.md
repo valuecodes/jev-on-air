@@ -78,8 +78,10 @@ audio at the last line consumed) and `turn`. Types: `start`, `decision`, `fill`,
 
 `./replay` turns a saved transcript (`pnpm cli transcribe`) and recorded ticks
 (`pnpm cli prices --json`) into timelines, either paced by their own timestamps or merged as fast
-as possible on a virtual clock. Both recordings are assumed to have started at the same moment.
-A transcript file appended across several sessions restarts at zero each time; only the last
+as possible on a virtual clock. Without an origin both recordings are assumed to have started at
+the same moment; `tickTimeline` takes the audio's start time to align a past window of prices
+instead, and `segmentTimeline` takes a lag to stand in for a live stream's delay. A transcript
+file appended across several sessions restarts at zero each time; only the last
 session is replayed.
 
 ## Cost

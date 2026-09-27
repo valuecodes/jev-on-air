@@ -27,6 +27,8 @@ import { parseSegmentLine, Transcriber } from "@repo/transcriber";
 
 import type { JevArgs, JevConfig } from "./cli";
 import { JsonlWriter, readJsonlAs } from "./jsonl";
+import { readSidecar, sidecarPath, writeSidecar } from "./sidecar";
+import { describeVideo } from "./transcribe";
 
 const cacheDir = join(import.meta.dirname, "..", ".cache");
 
@@ -234,10 +236,18 @@ export class JevCommand {
       });
       const tee = await JsonlWriter.open(files.tee ?? "");
       this.logger.info("writing transcript", { out: files.tee });
+      const logger = this.logger;
+      const teePath = files.tee ?? "";
       const segments: Source<EngineEvent> = async function* (signal) {
         try {
+          const sidecar = await describeVideo(logger, transcriber, url, signal);
+          let described = false;
           for await (const segment of transcriber.transcribe(url, signal)) {
             await tee.append(segment);
+            if (sidecar && !described) {
+              described = true;
+              await writeSidecar(sidecarPath(teePath), sidecar);
+            }
             yield { kind: "segment", segment };
           }
         } finally {
@@ -251,27 +261,47 @@ export class JevCommand {
       };
     }
 
+    const { lagSeconds } = args.source;
+    // The audio's start: given, or recorded next to the transcript.
+    let audioStart = args.source.audioStart;
+    if (audioStart === undefined) {
+      const sidecar = await readSidecar(sidecarPath(files.transcript ?? ""));
+      audioStart = sidecar?.audioStart;
+      if (audioStart !== undefined)
+        this.logger.info("audio start from the transcript's sidecar", {
+          audioStart,
+          title: sidecar?.video.title,
+        });
+    }
+    const originMs =
+      audioStart === undefined ? undefined : Date.parse(audioStart);
     const transcript = segmentTimeline(
       await readJsonlAs(files.transcript ?? "", parseSegmentLine),
       (message, fields) => {
         this.logger.warn(message, fields);
-      }
+      },
+      lagSeconds * 1000
     );
     const prices =
       files.prices === undefined
         ? undefined
-        : tickTimeline(await readJsonlAs(files.prices, parseTickLine));
+        : tickTimeline(
+            await readJsonlAs(files.prices, parseTickLine),
+            originMs
+          );
     this.logger.info("replaying", {
       transcript: files.transcript,
       segments: transcript.length,
       prices: files.prices,
       ticks: prices?.length,
       fast: args.source.fast,
+      audioStart,
+      lagSeconds,
     });
     if (args.source.fast) {
       const replay = fast([transcript, prices ?? []], {
         heartbeatMs: 1000,
-        startAt: Date.now(),
+        startAt: originMs ?? Date.now(),
         primary: 0,
       });
       return {

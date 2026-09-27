@@ -47,6 +47,10 @@ describe("segmentTimeline", () => {
     expect(() => segmentTimeline([{ start: 5, end: 4, text: "" }])).toThrow(
       /line 1/
     );
+    expect(
+      segmentTimeline([{ start: 0, end: 8, text: "a" }], undefined, 20_000)[0]
+        ?.at
+    ).toBe(28_000);
   });
 });
 
@@ -57,8 +61,15 @@ describe("tickTimeline", () => {
       tick("2026-09-26T12:00:01.500Z"),
       tick("2026-09-26T11:59:59.000Z"),
     ]);
-    expect(timeline.map((item) => item.at)).toEqual([0, 1500, 0]);
+    expect(timeline.map((item) => item.at)).toEqual([0, 1500, -1000]);
     expect(tickTimeline([])).toEqual([]);
+    // With an origin, ticks sit on the audio's clock; earlier ones come first.
+    expect(
+      tickTimeline(
+        [tick("2026-09-26T11:59:00.000Z"), tick("2026-09-26T12:00:30.000Z")],
+        Date.parse("2026-09-26T12:00:00.000Z")
+      ).map((item) => item.at)
+    ).toEqual([-60_000, 30_000]);
     expect(() => tickTimeline([tick("nope")])).toThrow(/line 1/);
   });
 });
