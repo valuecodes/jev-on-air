@@ -121,8 +121,11 @@ export function RunView({ id }: { id: string }) {
   const live = stream.connected && group !== undefined && last?.type !== "end";
 
   // The transcript's sidecar, for mapping transcript time to video time.
-  // Fetched again when a new run appears, since each session rewrites it.
+  // Fetched again when a new run appears, since each session rewrites it,
+  // and once its first transcript line lands: the CLI writes the sidecar
+  // just before that line, so an earlier fetch finds nothing.
   const [meta, setMeta] = useState<VideoMeta | null>(null);
+  const hasTranscript = stream.transcript.length > 0;
   useEffect(() => {
     let cancelled = false;
     fetch(`/api/runs/${id}/meta`, { cache: "no-store" })
@@ -138,7 +141,7 @@ export function RunView({ id }: { id: string }) {
     return () => {
       cancelled = true;
     };
-  }, [id, groups.length]);
+  }, [id, groups.length, hasTranscript]);
 
   const videoId = start?.source.startsWith("youtube:")
     ? start.source.slice("youtube:".length)

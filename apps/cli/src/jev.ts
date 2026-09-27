@@ -13,6 +13,7 @@ import { interval, mapSource, merge } from "@repo/jev/merge";
 import type { Source } from "@repo/jev/merge";
 import { fractionOfEquity, Portfolio } from "@repo/jev/portfolio";
 import {
+  clipTimeline,
   fast,
   paced,
   parseTickLine,
@@ -301,13 +302,24 @@ export class JevCommand {
       },
       lagSeconds * 1000
     );
-    const prices =
+    const allPrices =
       files.prices === undefined
         ? undefined
         : tickTimeline(
             await readJsonlAs(files.prices, parseTickLine),
             originMs
           );
+    // A live run's tick file holds every session for its video. Lined up by
+    // the audio start, keep the ticks this transcript could have seen: from
+    // the oldest price a fill may use until a minute after its last line.
+    const prices =
+      allPrices && originMs !== undefined
+        ? clipTimeline(
+            allPrices,
+            -args.maxPriceAgeSeconds * 1000,
+            (transcript.at(-1)?.at ?? 0) + 60_000
+          )
+        : allPrices;
     this.logger.info("replaying", {
       transcript: files.transcript,
       segments: transcript.length,

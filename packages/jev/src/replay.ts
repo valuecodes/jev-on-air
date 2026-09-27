@@ -66,6 +66,19 @@ export function tickTimeline(
 }
 
 /**
+ * The items with `from <= at <= to`. A live run's tick file holds every
+ * session for its video, so a replay keeps only the ticks around its own
+ * transcript.
+ */
+export function clipTimeline<T>(
+  timeline: readonly Timed<T>[],
+  from: number,
+  to: number
+): Timed<T>[] {
+  return timeline.filter((item) => item.at >= from && item.at <= to);
+}
+
+/**
  * Shifts timelines so the earliest item of any of them sits at zero, keeping
  * their relative timing; for pacing several of them side by side.
  */
