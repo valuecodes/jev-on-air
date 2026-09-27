@@ -217,6 +217,7 @@ export class JevCommand {
         return new TypeSafeDecider(this.logger, {
           apiKey: config.typesafeApiKey,
           model: config.model,
+          skipBelowSignal: args.minSignal,
         });
     }
   }

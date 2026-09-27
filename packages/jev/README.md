@@ -40,8 +40,13 @@ that wires everything together lives in [`apps/cli`](../../apps/cli/README.md).
   lines, prices, the book and recent fills and rejections, since the model remembers nothing
   between calls) and asks one `choice` question per instrument, offering only the actions the
   book would accept for its current position, plus a yes/no gate: did the new lines hold a
-  market-moving statement? `./typesafe` sends that in one call and turns the answers into
-  decisions, each with the model's confidence and probabilities.
+  market-moving statement? Each instrument question also lists how news usually reaches the
+  instruments (a hawkish Fed weighs on stocks, gold and bitcoin; supply cuts lift oil), since a
+  speaker rarely names what is traded. `./typesafe` asks the gate first, then the instrument
+  questions with that read in the state; with a flat book and a read below `minSignal` it stops
+  after the gate, since every entry would be rejected. The answers become decisions, each with
+  the model's confidence and probabilities, and the holds are kept with their odds too, so the
+  ledger shows how close a quiet turn came to trading.
 - **Execution.** Decisions are applied when the answer arrives, at the prices current then. An
   entry is rejected when the gate says no (`minSignal`); any decision is rejected below the
   confidence threshold, when the instrument has no price or a stale one, or when the book says

@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  buildInstrumentQuestions,
   buildQuestions,
+  buildSignalQuestion,
   buildState,
   choicesFor,
   formatClock,
@@ -225,6 +227,28 @@ describe("buildQuestions", () => {
     expect(questions.sp500.instructions).toMatchObject({ position: "none" });
     expect(questions.gold.criteria.buy).toMatchObject({
       what: expect.stringContaining("Gold (GLD)") as unknown,
+    });
+    expect(questions.gold.instructions).toMatchObject({
+      how_news_moves_markets: expect.arrayContaining([
+        expect.stringContaining("Hawkish central-bank news") as unknown,
+      ]) as unknown,
+    });
+  });
+
+  it("splits into the signal question and the instrument questions", () => {
+    expect(Object.keys(buildSignalQuestion())).toEqual([SIGNAL_QUESTION]);
+    expect(Object.keys(buildInstrumentQuestions(input)).toSorted()).toEqual([
+      "bitcoin",
+      "gold",
+      "oil",
+      "sp500",
+    ]);
+  });
+
+  it("tells the instrument questions the desk's signal read", () => {
+    expect(buildState(input)).not.toHaveProperty("market_moving");
+    expect(buildState(input, 0.8612)).toMatchObject({
+      market_moving: { probability: 0.86 },
     });
   });
 });

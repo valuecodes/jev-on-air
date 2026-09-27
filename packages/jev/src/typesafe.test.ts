@@ -106,11 +106,17 @@ function fakeClient(replies: unknown[], status = 200) {
 }
 
 describe("TypeSafeDecider", () => {
-  it("sends the state and questions and maps the answers to decisions", async () => {
+  it("asks the signal first, then the instruments with that read, and keeps the holds", async () => {
+    const { signal, ...choices } = answers;
     const { client, requests } = fakeClient([
       {
         model: "jev-1.13.0",
-        answers,
+        answers: { signal },
+        usage: { input_tokens: 300, output_tokens: 2 },
+      },
+      {
+        model: "jev-1.13.0",
+        answers: choices,
         usage: { input_tokens: 900, output_tokens: 12 },
       },
     ]);
@@ -118,6 +124,7 @@ describe("TypeSafeDecider", () => {
     const decider = new TypeSafeDecider(logger, {
       client,
       model: "jev-preview",
+      skipBelowSignal: 0.5,
     });
 
     const result = await decider.decide(input);
@@ -137,18 +144,34 @@ describe("TypeSafeDecider", () => {
         },
       ],
       signal: 0.93,
+      holds: [
+        {
+          instrument: "bitcoin",
+          confidence: 0.9,
+          probabilities: { hold: 0.9, buy: 0.05, short: 0.05 },
+        },
+        {
+          instrument: "sp500",
+          confidence: 0.9,
+          probabilities: { hold: 0.9, buy: 0.05, short: 0.05 },
+        },
+      ],
     });
     expect(result.model).toBe("jev-1.13.0");
-    expect(result.usage).toEqual({ inputTokens: 900, outputTokens: 12 });
+    expect(result.usage).toEqual({ inputTokens: 1200, outputTokens: 14 });
 
-    const [request] = requests;
-    expect(request?.url).toBe("https://api.typesafe.ai/v1/systemone");
-    expect(request?.headers.get("authorization")).toBe("Bearer ts-test");
-    expect(request?.body.model).toBe("jev-preview");
+    expect(requests).toHaveLength(2);
+    const [gate, request] = requests;
+    expect(gate?.url).toBe("https://api.typesafe.ai/v1/systemone");
+    expect(gate?.headers.get("authorization")).toBe("Bearer ts-test");
+    expect(gate?.body.model).toBe("jev-preview");
+    expect(Object.keys(gate?.body.questions as object)).toEqual(["signal"]);
+    expect(gate?.body.state).not.toHaveProperty("market_moving");
     expect(request?.body.state).toMatchObject({
       new_transcript: [
         { time: "00:00:00", text: "Tariffs on steel double tomorrow." },
       ],
+      market_moving: { probability: 0.93 },
     });
     const questions = request?.body.questions as Record<
       string,
@@ -158,7 +181,6 @@ describe("TypeSafeDecider", () => {
       "bitcoin",
       "gold",
       "oil",
-      "signal",
       "sp500",
     ]);
     expect(questions.gold).toMatchObject({
@@ -173,8 +195,52 @@ describe("TypeSafeDecider", () => {
       message: "turn decided",
       signal: 0.93,
       decisions: 2,
-      inputTokens: 900,
+      inputTokens: 1200,
     });
+  });
+
+  it("skips the instrument questions on a low signal with a flat book", async () => {
+    const { client, requests } = fakeClient([
+      { model: "jev-1.13.0", answers: { signal: { type: "noul", noul: 0.2 } } },
+    ]);
+    const decider = new TypeSafeDecider(createTestLogger().logger, {
+      client,
+      skipBelowSignal: 0.5,
+    });
+    const result = await decider.decide(input);
+    expect(requests).toHaveLength(1);
+    expect(result.output).toEqual({ decisions: [], signal: 0.2, holds: [] });
+  });
+
+  it("still asks on a low signal while a position is open, so it can be closed", async () => {
+    const { signal: _, ...choices } = answers;
+    const { client, requests } = fakeClient([
+      { model: "jev-1.13.0", answers: { signal: { type: "noul", noul: 0.2 } } },
+      { model: "jev-1.13.0", answers: choices },
+    ]);
+    const decider = new TypeSafeDecider(createTestLogger().logger, {
+      client,
+      skipBelowSignal: 0.5,
+    });
+    const holding: TurnInput = {
+      ...input,
+      snapshot: {
+        ...input.snapshot,
+        positions: [
+          {
+            instrument: "gold",
+            side: "long",
+            quantity: 1,
+            avgPrice: 240,
+            price: 243.1,
+            unrealizedPnl: 3.1,
+          },
+        ],
+      },
+    };
+    const result = await decider.decide(holding);
+    expect(requests).toHaveLength(2);
+    expect(result.output.signal).toBe(0.2);
   });
 
   it("maps HTTP failures onto decider errors", async () => {
