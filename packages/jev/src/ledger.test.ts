@@ -62,6 +62,18 @@ describe("formatEvent", () => {
         ...base,
         type: "decision",
         decisions: [],
+        holds: [
+          {
+            instrument: "gold",
+            confidence: 0.9,
+            probabilities: { hold: 0.9, short: 0.1 },
+          },
+          {
+            instrument: "sp500",
+            confidence: 0.7,
+            probabilities: { hold: 0.7, buy: 0.05, short: 0.25 },
+          },
+        ],
         signal: 0.12,
         model: null,
         latencyMs: 0,
@@ -117,7 +129,7 @@ describe("formatEvent", () => {
     expect(events.map(formatEvent)).toEqual([
       "14:31:07  start     youtube:abc  model jev-latest  cash 100000.00  equity 100000.00  size 0.1  (resumed)",
       "14:31:07  decision  #4 buy gold 0.90 (buy 0.62, hold 0.30)  signal 0.91",
-      "14:31:07  decision  #4 hold  signal 0.12",
+      "14:31:07  decision  #4 hold  signal 0.12  closest sp500 short 0.25",
       "14:31:07  fill      #4 buy gold 41.1354 @ 243.10  10000.00  cash 90000.00",
       "14:31:07  fill      #4 close gold 41.1354 @ 246.00  10119.30  realized +119.30  cash 100119.30",
       "14:31:07  reject    #4 buy sp500 — no price yet for sp500",

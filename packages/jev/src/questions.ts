@@ -100,8 +100,15 @@ function feedbackEntry(item: Feedback): Record<string, JsonValue> {
   };
 }
 
-/** The state the questions are asked about. */
-export function buildState(input: TurnInput): Record<string, JsonValue> {
+/**
+ * The state the questions are asked about. `signal` is the answer to the
+ * signal question, when it was asked first: the instrument questions then
+ * see the desk's own read of whether the new lines moved markets.
+ */
+export function buildState(
+  input: TurnInput,
+  signal?: number
+): Record<string, JsonValue> {
   const { snapshot } = input;
   return {
     about:
@@ -135,6 +142,15 @@ export function buildState(input: TurnInput): Record<string, JsonValue> {
       })),
     },
     recent_decisions: input.feedback.map(feedbackEntry),
+    ...(signal === undefined
+      ? {}
+      : {
+          market_moving: {
+            probability: round(signal),
+            meaning:
+              "The desk's read of whether the new lines hold a concrete, new, market-moving statement. When it is high, decide which way that statement moves each instrument.",
+          },
+        }),
   };
 }
 
@@ -157,7 +173,19 @@ const RULES = [
   "Reversing is two steps: close first, reverse on a later turn if the case still holds.",
   "Do not repeat an action already taken on the same statement, and do not reverse a recent position without new, contradicting information.",
   "An instrument without a fresh price cannot be filled; the ETFs only trade in US market hours.",
-  "hold is the normal answer. Act only on the new transcript lines; earlier lines are context.",
+  "Act only on the new transcript lines; earlier lines are context. Hold when they carry nothing concrete and new; when they do, act in the direction it implies for this instrument.",
+];
+
+/**
+ * How news usually reaches each instrument. A speaker rarely names the ETF
+ * being traded, so the model is reminded that the implication is what counts.
+ */
+const TRANSMISSION = [
+  "A statement moves an instrument through what it implies; it need not name it.",
+  "Hawkish central-bank news (a hike, rates higher for longer, worry that inflation is not falling) tends to push the S&P 500, gold and bitcoin down; dovish news (cuts, easing, confidence that inflation is beaten) tends to push them up.",
+  "Tariffs, sanctions and trade or military escalation tend to push the S&P 500 down and gold up; de-escalation does the reverse.",
+  "Supply cuts, export bans and conflict near producers tend to push oil up; added supply or weaker demand pushes it down.",
+  "Crypto-specific policy (approvals, bans, reserves) moves bitcoin most.",
 ];
 
 type Descriptions = Partial<Record<Choice, Record<string, JsonValue>>>;
@@ -209,17 +237,31 @@ function question(view: PriceView, snapshot: Snapshot): ChoiceQuestion {
         ? `${position.side} ${round(position.quantity, 4)} at ${round(position.avgPrice)}, now ${round(position.price)}`
         : "none",
       rules: RULES,
+      how_news_moves_markets: TRANSMISSION,
     },
     criteria
   );
 }
 
-/** One question per instrument plus the signal gate. */
-export function buildQuestions(input: TurnInput): TurnQuestions {
-  const questions: Partial<TurnQuestions> = {
-    [SIGNAL_QUESTION]: noul(SIGNAL_INSTRUCTIONS),
-  };
+/** The signal question alone, asked before the instrument questions. */
+export function buildSignalQuestion(): Pick<
+  TurnQuestions,
+  typeof SIGNAL_QUESTION
+> {
+  return { [SIGNAL_QUESTION]: noul(SIGNAL_INSTRUCTIONS) };
+}
+
+/** One choice question per instrument with a price view. */
+export function buildInstrumentQuestions(
+  input: TurnInput
+): Omit<TurnQuestions, typeof SIGNAL_QUESTION> {
+  const questions: Partial<Record<InstrumentId, ChoiceQuestion>> = {};
   for (const view of input.prices)
     questions[view.instrument] = question(view, input.snapshot);
-  return questions as TurnQuestions;
+  return questions as Record<InstrumentId, ChoiceQuestion>;
+}
+
+/** One question per instrument plus the signal gate. */
+export function buildQuestions(input: TurnInput): TurnQuestions {
+  return { ...buildSignalQuestion(), ...buildInstrumentQuestions(input) };
 }

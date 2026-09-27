@@ -4,7 +4,7 @@ import type { InstrumentId } from "@repo/alpaca/instruments";
 
 import type { DeciderFailure, Usage } from "./decider";
 import type { Fill, Snapshot } from "./portfolio";
-import type { Action, Decision } from "./schema";
+import type { Action, Choice, Decision, Hold } from "./schema";
 
 export type EventBase = {
   /** Id of the run (its ISO start time), so appended runs can be told apart. */
@@ -30,6 +30,8 @@ export type StartEvent = EventBase & {
 export type DecisionEvent = EventBase & {
   type: "decision";
   decisions: Decision[];
+  /** Instruments held on, with their odds; absent in older ledgers. */
+  holds?: Hold[];
   /** Probability that the new lines held a market-moving statement. */
   signal: number | null;
   model: string | null;
@@ -75,6 +77,18 @@ const money = (value: number): string => value.toFixed(2);
 const signed = (value: number): string =>
   `${value >= 0 ? "+" : "-"}${Math.abs(value).toFixed(2)}`;
 
+/** The likeliest action among the holds, e.g. `  closest sp500 short 0.31`. */
+function closestMiss(holds: readonly Hold[]): string {
+  let best: { instrument: InstrumentId; choice: Choice; p: number } | undefined;
+  for (const hold of holds)
+    for (const [choice, p] of Object.entries(hold.probabilities ?? {}))
+      if (choice !== "hold" && p !== undefined && (!best || p > best.p))
+        best = { instrument: hold.instrument, choice: choice as Choice, p };
+  return best
+    ? `  closest ${best.instrument} ${best.choice} ${best.p.toFixed(2)}`
+    : "";
+}
+
 function book(snapshot: Snapshot): string {
   const positions = snapshot.positions.map(
     (position) =>
@@ -111,9 +125,10 @@ export function formatEvent(event: JevEvent): string {
     case "decision": {
       const signal =
         event.signal === null ? "" : `  signal ${event.signal.toFixed(2)}`;
+      const miss = closestMiss(event.holds ?? []);
       detail =
         event.decisions.length === 0
-          ? `hold${signal}`
+          ? `hold${signal}${miss}`
           : `${event.decisions.map(decision).join("; ")}${signal}`;
       break;
     }

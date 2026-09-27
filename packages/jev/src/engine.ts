@@ -298,6 +298,7 @@ export class Engine {
         ...this.base(turn),
         type: "decision",
         decisions: result.output.decisions,
+        ...(result.output.holds ? { holds: result.output.holds } : {}),
         signal: result.output.signal ?? null,
         model: result.model ?? null,
         latencyMs: result.latencyMs,
