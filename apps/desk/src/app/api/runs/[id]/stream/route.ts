@@ -1,13 +1,15 @@
 // GET: server-sent events for one ledger id — its ledger lines, transcript
-// lines, and the state and output of desk's run for it. Each event's id is a
-// cursor over all three (lib/cursor.ts).
+// lines, downsampled prices, and the state and output of desk's run for it.
+// Each event's id is a cursor over all of them (lib/cursor.ts).
 import { formatCursor, parseCursor } from "../../../../../lib/cursor";
 import { guard } from "../../../../../lib/guard";
 import {
   isLedgerId,
   ledgerPath,
+  ticksPath,
   transcriptPath,
 } from "../../../../../lib/paths";
+import { downsample } from "../../../../../lib/prices";
 import { runs } from "../../../../../lib/runs";
 import { FileTailer } from "../../../../../lib/tail";
 import type { TailLine } from "../../../../../lib/tail";
@@ -48,24 +50,13 @@ export async function GET(
         );
 
       const follow = (
-        file: "ledger" | "transcript",
-        path: string
+        file: "ledger" | "transcript" | "ticks",
+        path: string,
+        onLines: (lines: TailLine[]) => void
       ): FileTailer =>
         new FileTailer(path, {
           from: cursor[file],
-          onLines: (lines: TailLine[]) => {
-            for (const line of lines) {
-              cursor[file] = line.end;
-              let value: unknown;
-              try {
-                value = JSON.parse(line.text);
-              } catch {
-                send("invalid", { file, offset: line.end });
-                continue;
-              }
-              send(file, { offset: line.end, value });
-            }
-          },
+          onLines,
           onReset: () => {
             cursor[file] = 0;
             send("reset", { file });
@@ -76,8 +67,38 @@ export async function GET(
             }),
         });
 
-      const ledger = follow("ledger", ledgerPath(id));
-      const transcript = follow("transcript", transcriptPath(id));
+      // One event per JSON line.
+      const eachLine =
+        (file: "ledger" | "transcript") =>
+        (lines: TailLine[]): void => {
+          for (const line of lines) {
+            cursor[file] = line.end;
+            let value: unknown;
+            try {
+              value = JSON.parse(line.text);
+            } catch {
+              send("invalid", { file, offset: line.end });
+              continue;
+            }
+            send(file, { offset: line.end, value });
+          }
+        };
+      const ledger = follow("ledger", ledgerPath(id), eachLine("ledger"));
+      const transcript = follow(
+        "transcript",
+        transcriptPath(id),
+        eachLine("transcript")
+      );
+      // Ticks come many a second: one event per read, a point per second.
+      const ticks = follow("ticks", ticksPath(id), (lines) => {
+        const last = lines.at(-1);
+        if (!last) return;
+        cursor.ticks = last.end;
+        const { points, invalid } = downsample(lines.map((line) => line.text));
+        if (invalid)
+          send("notice", { message: `skipped ${invalid} bad tick lines` });
+        if (points.length) send("prices", { offset: last.end, points });
+      });
       const registry = runs();
       const after = { generation: cursor.generation, seq: cursor.output };
       const unsubscribe = registry.subscribe(id, after, (event) => {
@@ -92,12 +113,14 @@ export async function GET(
       const ping = setInterval(() => write(": ping\n\n"), PING_MS);
       ledger.start();
       transcript.start();
+      ticks.start();
 
       cleanup = () => {
         if (closed) return;
         closed = true;
         ledger.stop();
         transcript.stop();
+        ticks.stop();
         unsubscribe();
         clearInterval(ping);
         try {

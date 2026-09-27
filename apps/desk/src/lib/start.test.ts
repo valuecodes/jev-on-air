@@ -87,11 +87,18 @@ describe("parseCursor", () => {
     const cursor = {
       ledger: 12,
       transcript: 3,
+      ticks: 4096,
       generation: 1790000000000,
       output: 7,
     };
     expect(parseCursor(formatCursor(cursor))).toEqual(cursor);
-    const zero = { ledger: 0, transcript: 0, generation: 0, output: 0 };
+    const zero = {
+      ledger: 0,
+      transcript: 0,
+      ticks: 0,
+      generation: 0,
+      output: 0,
+    };
     expect(parseCursor(null)).toEqual(zero);
     expect(parseCursor("x.-1.1e3.")).toEqual(zero);
   });

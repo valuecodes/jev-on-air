@@ -1,6 +1,7 @@
 // Shapes shared by the API routes and the browser. No Node imports here, so
 // client components can use them.
 import type { JevEvent } from "@repo/jev/ledger";
+import type { Decision } from "@repo/jev/schema";
 
 export type RunState =
   "starting" | "running" | "stopping" | "exited" | "failed";
@@ -39,4 +40,27 @@ export type LedgerInfo = {
 export type Segment = { start: number; end: number; text: string };
 
 export type LedgerLine = { offset: number; event: JevEvent };
+
+/** The last price of an instrument in one time bucket. */
+export type PricePoint = {
+  instrument: Decision["instrument"];
+  /** Bucket start, in milliseconds since the epoch. */
+  t: number;
+  price: number;
+};
+
+/** A transcript's `.meta.json`, as written by the CLI. */
+export type VideoMeta = {
+  video: {
+    id: string;
+    title?: string;
+    channel?: string;
+    /** `is_live`, `was_live`, `not_live`, ... as yt-dlp reports it. */
+    live?: string;
+    /** When the broadcast began, for streams. */
+    startedAt?: string;
+  };
+  transcribedAt: string;
+  audioStart?: string;
+};
 export type TranscriptLine = { offset: number; segment: Segment };

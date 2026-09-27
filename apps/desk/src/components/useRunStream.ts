@@ -6,6 +6,7 @@ import { useEffect, useReducer } from "react";
 import type {
   LedgerLine,
   OutputLine,
+  PricePoint,
   RunSummary,
   Segment,
   TranscriptLine,
@@ -15,6 +16,8 @@ export type StreamState = {
   ledger: LedgerLine[];
   transcript: TranscriptLine[];
   output: OutputLine[];
+  /** Downsampled prices from the CLI's tick file, in time order per batch. */
+  prices: PricePoint[];
   /** Desk's latest run for this id, if desk started one. */
   run: RunSummary | null;
   connected: boolean;
@@ -25,8 +28,9 @@ type Message =
   | { type: "ledger"; line: LedgerLine }
   | { type: "transcript"; line: TranscriptLine }
   | { type: "output"; line: OutputLine }
+  | { type: "prices"; points: PricePoint[] }
   | { type: "state"; run: RunSummary }
-  | { type: "reset"; file: "ledger" | "transcript" }
+  | { type: "reset"; file: "ledger" | "transcript" | "ticks" }
   | { type: "notice"; message: string }
   | { type: "connected"; connected: boolean };
 
@@ -37,6 +41,7 @@ const initial: StreamState = {
   ledger: [],
   transcript: [],
   output: [],
+  prices: [],
   run: null,
   connected: false,
   notices: [],
@@ -47,6 +52,7 @@ function apply(state: StreamState, messages: Message[]): StreamState {
   let ledger = [...state.ledger];
   let transcript = [...state.transcript];
   let output = [...state.output];
+  let prices = [...state.prices];
   const notices = [...state.notices];
   let { run, connected } = state;
   for (const message of messages) {
@@ -65,12 +71,17 @@ function apply(state: StreamState, messages: Message[]): StreamState {
         else if ((last?.seq ?? 0) < message.line.seq) output.push(message.line);
         break;
       }
+      case "prices":
+        // A loop: spreading tens of thousands of points overflows the stack.
+        for (const point of message.points) prices.push(point);
+        break;
       case "state":
         run = message.run;
         break;
       case "reset":
         if (message.file === "ledger") ledger = [];
-        else transcript = [];
+        else if (message.file === "transcript") transcript = [];
+        else prices = [];
         break;
       case "notice":
         notices.push(message.message);
@@ -84,6 +95,7 @@ function apply(state: StreamState, messages: Message[]): StreamState {
     ledger,
     transcript,
     output: output.slice(-OUTPUT_LIMIT),
+    prices,
     run,
     connected,
     notices: notices.slice(-NOTICE_LIMIT),
@@ -125,6 +137,10 @@ export function useRunStream(id: string): StreamState {
       const { offset, value } = JSON.parse(data) as Payload<Segment>;
       push({ type: "transcript", line: { offset, segment: value } });
     });
+    on("prices", (data) => {
+      const { points } = JSON.parse(data) as { points: PricePoint[] };
+      push({ type: "prices", points });
+    });
     on("output", (data) =>
       push({ type: "output", line: JSON.parse(data) as OutputLine })
     );
@@ -132,7 +148,9 @@ export function useRunStream(id: string): StreamState {
       push({ type: "state", run: JSON.parse(data) as RunSummary })
     );
     on("reset", (data) => {
-      const { file } = JSON.parse(data) as { file: "ledger" | "transcript" };
+      const { file } = JSON.parse(data) as {
+        file: "ledger" | "transcript" | "ticks";
+      };
       push({ type: "reset", file });
     });
     on("invalid", (data) => {
