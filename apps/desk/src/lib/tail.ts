@@ -58,7 +58,11 @@ export class FileTailer {
   /** Bytes read so far, including `pending`. */
   private readFrom: number;
   private pending: Buffer = Buffer.alloc(0);
-  /** Inode plus birth time: a recreated file can reuse the inode. */
+  /**
+   * Inode plus birth time: a recreated file can reuse the inode. Birth time
+   * is coarse on some filesystems (~4 ms on WSL2), so a file replaced within
+   * one tick by one at least as long goes unnoticed; the CLI only appends.
+   */
   private identity: string | undefined;
   private chain: Promise<void> = Promise.resolve();
   private watcher: FSWatcher | undefined;

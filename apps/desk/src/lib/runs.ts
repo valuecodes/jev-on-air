@@ -58,6 +58,11 @@ export class RunRegistry {
   private readonly deps: RegistryDeps;
   private readonly runs: Run[] = [];
   private active: Run | undefined;
+  /**
+   * Identifies this registry, so a client whose output cursor came from an
+   * earlier desk process (whose `seq` counted separately) starts over.
+   */
+  readonly generation = Date.now();
   private seq = 0;
   private readonly listeners = new Set<
     (videoId: string, event: RunEvent) => void
@@ -138,10 +143,19 @@ export class RunRegistry {
     return { ...run.summary };
   }
 
-  /** Stops the active run: SIGTERM, again after a grace period, then SIGKILL. */
-  stop(): RunSummary | undefined {
+  /**
+   * Stops the active run if it is `id`: SIGTERM, again after a grace period,
+   * then SIGKILL. The id keeps a stale page from stopping a newer run.
+   * Returns `undefined` if nothing is active; throws `RunConflictError` if
+   * another run is.
+   */
+  stop(id: string): RunSummary | undefined {
     const run = this.active;
     if (!run) return undefined;
+    if (run.summary.id !== id)
+      throw new RunConflictError(
+        `the active run is for ${run.summary.videoId}, not the one shown; reload`
+      );
     if (!run.stopRequested) {
       run.stopRequested = true;
       if (run.summary.state === "running") this.signal(run);
@@ -151,14 +165,16 @@ export class RunRegistry {
   }
 
   /**
-   * Streams a video's run events: first the state and buffered output (after
-   * `afterSeq`) of desk's latest run for it, then everything live.
+   * Streams a video's run events: first the state and buffered output of
+   * desk's latest run for it (after `after.seq`, if the cursor is from this
+   * registry), then everything live.
    */
   subscribe(
     videoId: string,
-    afterSeq: number,
+    after: { generation: number; seq: number },
     listener: (event: RunEvent) => void
   ): () => void {
+    const afterSeq = after.generation === this.generation ? after.seq : 0;
     const latest = this.runs.findLast((run) => run.summary.videoId === videoId);
     if (latest) {
       listener({ kind: "state", run: { ...latest.summary } });
@@ -217,6 +233,7 @@ export class RunRegistry {
     const lines = createInterface({ input: stream, crlfDelay: Infinity });
     lines.on("line", (text) => {
       const line: OutputLine = {
+        generation: this.generation,
         seq: ++this.seq,
         stream: name,
         text: text.length > LINE_LIMIT ? `${text.slice(0, LINE_LIMIT)}…` : text,
