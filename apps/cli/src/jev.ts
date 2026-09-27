@@ -16,6 +16,7 @@ import {
   fast,
   paced,
   parseTickLine,
+  rebase,
   segmentTimeline,
   tickTimeline,
 } from "@repo/jev/replay";
@@ -28,6 +29,7 @@ import { parseSegmentLine, Transcriber } from "@repo/transcriber";
 import type { JevArgs, JevConfig } from "./cli";
 import { JsonlWriter, readJsonlAs } from "./jsonl";
 import { readSidecar, sidecarPath, writeSidecar } from "./sidecar";
+import { childEnv } from "./time";
 import { describeVideo } from "./transcribe";
 
 const cacheDir = join(import.meta.dirname, "..", ".cache");
@@ -233,6 +235,7 @@ export class JevCommand {
         model: args.whisper,
         language: args.language,
         chunkSeconds: args.chunkSeconds,
+        env: childEnv(process.env),
       });
       const tee = await JsonlWriter.open(files.tee ?? "");
       this.logger.info("writing transcript", { out: files.tee });
@@ -310,9 +313,16 @@ export class JevCommand {
         awaitDecisions: true,
       };
     }
+    // Each paced source counts from its own first item, so both timelines
+    // are rebased to the earliest item of either before pacing.
+    const [pacedTranscript, pacedPrices] = rebase([transcript, prices ?? []]);
     return {
       events: merge(
-        [paced(transcript), prices ? paced(prices) : ticks(), heartbeat],
+        [
+          paced(pacedTranscript ?? []),
+          prices ? paced(pacedPrices ?? []) : ticks(),
+          heartbeat,
+        ],
         { primary: 0 }
       ),
       clock: undefined,

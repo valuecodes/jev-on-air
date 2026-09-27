@@ -21,8 +21,9 @@ const argv = process.argv.slice(2);
 
 /**
  * The environment plus `.env` at the repo root, if there is one; values
- * already in the environment win. `process.env` is left untouched, so the
- * keys never reach the transcriber's child processes, which inherit it.
+ * already in the environment win. `process.env` is left untouched, and the
+ * transcriber's child processes get a scrubbed copy, so credentials from
+ * either source stay in this process.
  */
 function readEnv(): NodeJS.ProcessEnv {
   let text: string;

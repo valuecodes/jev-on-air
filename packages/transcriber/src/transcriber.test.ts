@@ -84,6 +84,12 @@ describe("parseVideoInfo", () => {
         JSON.stringify({ id: "x", title: "Live", live_status: "is_live" })
       ).live
     ).toBe("is_live");
+    // An announced stream has no audio yet, so it is not live.
+    expect(
+      parseVideoInfo(
+        JSON.stringify({ id: "x", title: "Soon", live_status: "is_upcoming" })
+      ).live
+    ).toBe("not_live");
   });
 
   it("throws on anything else", () => {

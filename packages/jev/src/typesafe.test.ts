@@ -248,6 +248,19 @@ describe("interpretAnswers", () => {
     ).toHaveLength(2);
   });
 
+  it("fails the turn on a malformed signal rather than dropping the gate", () => {
+    const bad = {
+      ...answers,
+      signal: { type: "noul", noul: "high" },
+    } as unknown as TurnAnswers;
+    expect(() => interpretAnswers(bad, instruments, meta)).toThrow(
+      expect.objectContaining({
+        kind: "unparseable",
+        message: "invalid signal answer",
+      })
+    );
+  });
+
   it("rejects missing or unknown answers", () => {
     expect(() =>
       interpretAnswers({ ...answers, oil: undefined }, instruments, meta)

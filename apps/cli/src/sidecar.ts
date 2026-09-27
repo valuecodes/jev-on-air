@@ -3,6 +3,8 @@
 import { readFile, writeFile } from "node:fs/promises";
 import type { VideoInfo } from "@repo/transcriber";
 
+import { isZonedTime } from "./time";
+
 export type Sidecar = {
   video: VideoInfo;
   /** When transcription started, in wall-clock time. */
@@ -67,7 +69,7 @@ export async function readSidecar(path: string): Promise<Sidecar | undefined> {
     return fail();
   if (
     audioStart !== undefined &&
-    (typeof audioStart !== "string" || !Number.isFinite(Date.parse(audioStart)))
+    (typeof audioStart !== "string" || !isZonedTime(audioStart))
   )
     return fail();
   return value as Sidecar;

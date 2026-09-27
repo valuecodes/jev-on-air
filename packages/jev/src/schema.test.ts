@@ -27,6 +27,14 @@ describe("TurnOutputSchema", () => {
 });
 
 describe("normalizeTurnOutput", () => {
+  it("clamps the signal and drops one that is not a number", () => {
+    expect(normalizeTurnOutput({ decisions: [], signal: 2 }).signal).toBe(1);
+    expect(normalizeTurnOutput({ decisions: [], signal: -1 }).signal).toBe(0);
+    expect(
+      normalizeTurnOutput({ decisions: [], signal: NaN }).signal
+    ).toBeUndefined();
+  });
+
   it("clamps confidence and keeps the most confident decision per instrument", () => {
     const output = normalizeTurnOutput({
       decisions: [

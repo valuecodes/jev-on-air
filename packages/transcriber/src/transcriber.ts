@@ -23,6 +23,8 @@ export type TranscriberOptions = {
   chunkSeconds?: number;
   /** Decode at playback speed, so a finished video behaves like a live stream. */
   realtime?: boolean;
+  /** Environment for yt-dlp, ffmpeg and the worker (default: this process's). */
+  env?: NodeJS.ProcessEnv;
 };
 
 const whisperDir = join(import.meta.dirname, "..", "whisper");
@@ -49,7 +51,7 @@ export function parseVideoInfo(json: string): VideoInfo {
     throw new Error("not a video description");
   const started = record.release_timestamp;
   const live: VideoInfo["live"] =
-    status === "is_live" || status === "is_upcoming"
+    status === "is_live"
       ? "is_live"
       : status === "was_live" ||
           status === "post_live" ||
@@ -96,7 +98,7 @@ export class Transcriber {
   constructor(logger: LoggerLike, options: TranscriberOptions = {}) {
     this.logger = logger;
     this.options = options;
-    this.pipeline = new Pipeline(logger);
+    this.pipeline = new Pipeline(logger, { env: options.env });
   }
 
   /** The yt-dlp command that describes `url` without downloading it. */
