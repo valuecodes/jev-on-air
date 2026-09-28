@@ -54,8 +54,9 @@ export type EngineOptions = {
   /** Fills on a price that arrived longer ago are rejected (default 10 min). */
   maxPriceAgeMs?: number;
   /**
-   * Ticks from before the run, oldest first, so market features are ready
-   * from the first turn. They set no prices: fills never use them.
+   * Ticks from before the run, so market features are ready from the first
+   * turn. They count at their exchange time, so the clock must run on it (a
+   * replay with a known start); they set no prices, so fills never use them.
    */
   marketHistory?: readonly PriceTick[];
   /**
@@ -217,7 +218,7 @@ export class Engine {
     switch (event.kind) {
       case "tick":
         this.prices.update(event.tick, this.clock());
-        this.tape.update(event.tick);
+        this.tape.update(event.tick, this.clock());
         return;
       case "segment":
         this.pending.push(event.segment);
@@ -479,6 +480,7 @@ export class Engine {
     const stopZ = this.options.stopZ ?? 0;
     const takeProfitZ = this.options.takeProfitZ ?? 0;
     if ((stopZ <= 0 && takeProfitZ <= 0) || this.fatal) return;
+    if (!this.options.portfolio.position(instrument)) return;
     const now = this.clock();
     this.track(instrument, this.tape.features(instrument, now)?.volatility);
     const position = this.options.portfolio.position(instrument);
