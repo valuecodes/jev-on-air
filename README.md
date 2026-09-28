@@ -55,7 +55,7 @@ tooling/github         composite action: pnpm + Node + install; secrets-scan scr
 
 ## Getting started
 
-Requires Node.js 24.12.0 (`.nvmrc`) and pnpm 11.24.0 (`packageManager` in `package.json`).
+Requires Node.js 24.21.0 (`.nvmrc`) and pnpm 11.24.0 (`packageManager` in `package.json`).
 
 ```bash
 pnpm install
