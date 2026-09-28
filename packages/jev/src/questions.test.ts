@@ -27,6 +27,14 @@ const input: TurnInput = {
       symbol: "GLD",
       price: 243.1,
       ageSeconds: 2.4,
+      market: {
+        return5m: 0.41234,
+        return15m: undefined,
+        volatility: 0.05,
+        moveZ5m: 3.6877,
+        relativeVolume: 2.44,
+        spreadBps: 0.412,
+      },
     },
     {
       instrument: "bitcoin",
@@ -122,6 +130,13 @@ describe("buildState", () => {
           name: "Gold",
           price_usd: 243.1,
           seconds_since_update: 2,
+          market: {
+            move_5m_pct: 0.412,
+            move_15m_pct: null,
+            move_vs_usual: 3.7,
+            volume_vs_usual: 2.4,
+            spread_bps: 0.4,
+          },
         },
         {
           instrument: "bitcoin",
@@ -129,6 +144,7 @@ describe("buildState", () => {
           name: "Bitcoin",
           price_usd: 64000.25,
           seconds_since_update: 0,
+          market: null,
         },
         {
           instrument: "sp500",
@@ -136,6 +152,7 @@ describe("buildState", () => {
           name: "S&P 500",
           price_usd: null,
           seconds_since_update: null,
+          market: null,
         },
         {
           instrument: "oil",
@@ -143,8 +160,12 @@ describe("buildState", () => {
           name: "Oil",
           price_usd: 71.02,
           seconds_since_update: 700,
+          market: null,
         },
       ],
+      market_meaning: expect.objectContaining({
+        move_vs_usual: expect.stringContaining("usual") as unknown,
+      }) as unknown,
       portfolio: {
         cash: 90_000,
         equity: 100_119.3,
@@ -190,6 +211,28 @@ describe("buildState", () => {
       ],
     });
     expect(buildState({ ...input, audioEnd: undefined }).audio_time).toBeNull();
+  });
+
+  it("leaves out how markets move when asked to, for the signal gate", () => {
+    const state = buildState(input, undefined, { market: false });
+    expect(state).not.toHaveProperty("market_meaning");
+    expect(JSON.stringify(state.prices)).not.toContain("market");
+  });
+
+  it("shows an exit the engine made itself", () => {
+    const [fill] = input.feedback;
+    if (!fill) throw new Error("fixture has no fill");
+    const state = buildState({
+      ...input,
+      feedback: [{ ...fill, action: "close", exit: "stop" }],
+    });
+    expect(state.recent_decisions).toEqual([
+      expect.objectContaining({
+        action: "close",
+        result: "filled",
+        by: "stop",
+      }),
+    ]);
   });
 });
 

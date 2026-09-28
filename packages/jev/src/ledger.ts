@@ -3,7 +3,9 @@
 import type { InstrumentId } from "@repo/alpaca/instruments";
 
 import type { DeciderFailure, Usage } from "./decider";
+import type { MarketFeatures } from "./market";
 import type { Fill, Snapshot } from "./portfolio";
+import type { Exit } from "./questions";
 import type { Action, Choice, Decision, Hold } from "./schema";
 
 export type EventBase = {
@@ -25,6 +27,17 @@ export type StartEvent = EventBase & {
   equity: number;
   size: number;
   resumed: boolean;
+  /** The market rules in force; absent in older ledgers. */
+  strategy?: Strategy;
+};
+
+/** The settings of the market rules; a threshold of 0 is off. */
+export type Strategy = {
+  /** How fills are sized, e.g. `fixed` or `vol risk 0.002`. */
+  sizing: string;
+  maxChaseZ: number;
+  stopZ: number;
+  takeProfitZ: number;
 };
 
 export type DecisionEvent = EventBase & {
@@ -38,9 +51,21 @@ export type DecisionEvent = EventBase & {
   latencyMs: number;
   segments: number;
   usage: Usage | null;
+  /** How each market was moving in the state the model saw. */
+  market?: Partial<Record<InstrumentId, MarketFeatures | null>>;
 };
 
-export type FillEvent = EventBase & { type: "fill"; confidence: number } & Fill;
+export type FillEvent = EventBase & {
+  type: "fill";
+  /** The model's confidence; null for an exit the engine made itself. */
+  confidence: number | null;
+  /** Set when the engine closed the position on its own. */
+  exit?: Exit;
+  /** The move from the average price, in percent, that triggered `exit`. */
+  exitThresholdPct?: number;
+  /** The one-minute volatility (percent) the fill was sized with, if any. */
+  volatility?: number;
+} & Fill;
 
 export type RejectEvent = EventBase & {
   type: "reject";
@@ -120,7 +145,7 @@ export function formatEvent(event: JevEvent): string {
   let detail: string;
   switch (event.type) {
     case "start":
-      detail = `${event.source}  model ${event.model}  cash ${money(event.cash)}  equity ${money(event.equity)}  size ${event.size}${event.resumed ? "  (resumed)" : ""}`;
+      detail = `${event.source}  model ${event.model}  cash ${money(event.cash)}  equity ${money(event.equity)}  size ${event.size}${event.strategy ? `  sizing ${event.strategy.sizing}  chase ${event.strategy.maxChaseZ}  stop ${event.strategy.stopZ}  take ${event.strategy.takeProfitZ}` : ""}${event.resumed ? "  (resumed)" : ""}`;
       break;
     case "decision": {
       const signal =
@@ -133,7 +158,7 @@ export function formatEvent(event: JevEvent): string {
       break;
     }
     case "fill":
-      detail = `${event.action} ${event.instrument} ${event.quantity.toFixed(4)} @ ${money(event.price)}  ${money(event.notional)}${event.realizedPnl === 0 ? "" : `  realized ${signed(event.realizedPnl)}`}  cash ${money(event.cash)}`;
+      detail = `${event.exit === undefined ? "" : `${event.exit} `}${event.action} ${event.instrument} ${event.quantity.toFixed(4)} @ ${money(event.price)}  ${money(event.notional)}${event.realizedPnl === 0 ? "" : `  realized ${signed(event.realizedPnl)}`}  cash ${money(event.cash)}`;
       break;
     case "reject":
       detail = `${event.action} ${event.instrument} — ${event.reason}`;

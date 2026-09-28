@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { fractionOfEquity, Portfolio } from "./portfolio";
+import { fractionOfEquity, Portfolio, volatilityScaled } from "./portfolio";
 import type { ApplyResult, PriceMap } from "./portfolio";
 
 const prices: PriceMap = { gold: 200, bitcoin: 50_000, sp500: 500, oil: 80 };
@@ -214,5 +214,34 @@ describe("Portfolio", () => {
       updatedAt: "t",
       lastRun: undefined,
     });
+  });
+});
+
+describe("volatilityScaled", () => {
+  const sizer = volatilityScaled({ fraction: 0.1, risk: 0.002 });
+  const notional = (volatility?: number): number =>
+    sizer({ equity: 100_000, price: 200, volatility }) * 200;
+
+  it("sizes so a usual 15-minute move costs the risk fraction", () => {
+    // 0.5 % a minute is 1.94 % over 15 minutes: 200 / 0.0194 ≈ 10 328.
+    expect(notional(0.5)).toBeCloseTo(200 / ((0.5 * Math.sqrt(15)) / 100), 6);
+  });
+
+  it("stays within a quarter and twice the fixed fraction", () => {
+    expect(notional(0.0001)).toBeCloseTo(20_000, 6);
+    expect(notional(100)).toBeCloseTo(2_500, 6);
+  });
+
+  it("sizes like the fixed fraction without a volatility", () => {
+    expect(notional(undefined)).toBeCloseTo(10_000, 6);
+    expect(notional(0)).toBeCloseTo(10_000, 6);
+  });
+
+  it("reaches the sizer through apply", () => {
+    const portfolio = new Portfolio({ cash: 100_000, sizer, maxLeverage: 2 });
+    const result = fill(
+      portfolio.apply({ instrument: "gold", action: "buy" }, prices, 100)
+    );
+    expect(result.notional).toBeCloseTo(2_500, 6);
   });
 });
