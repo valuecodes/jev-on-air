@@ -40,7 +40,7 @@ Apps may import packages; packages must never import apps.
 
 ## Commands
 
-**Prerequisites:** Node.js 24.12.0 (`.nvmrc`), pnpm 11.24.0 (`packageManager` in root `package.json`).
+**Prerequisites:** Node.js 24.21.0 (`.nvmrc`), pnpm 11.24.0 (`packageManager` in root `package.json`).
 `pnpm cli transcribe` also needs [uv](https://docs.astral.sh/uv/) and `ffmpeg` on `PATH`.
 `pnpm cli prices` needs `ALPACA_API_KEY_ID` and `ALPACA_API_SECRET_KEY`, in the environment
 or in a root `.env` (see `.env.example`). `pnpm cli jev` needs those plus `TYPESAFE_API_KEY`.
