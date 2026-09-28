@@ -192,7 +192,8 @@ export class TypeSafeDecider implements Decider {
     const startedAt = Date.now();
     const instruments = input.prices.map((view) => view.instrument);
     const gate = await this.ask(
-      buildState(input),
+      // The gate reads the speech alone; price action is for the choices.
+      buildState(input, undefined, { market: false }),
       buildSignalQuestion(),
       signal
     );

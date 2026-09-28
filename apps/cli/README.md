@@ -73,7 +73,18 @@ the model; the default is `jev-latest`).
 pnpm cli jev https://www.youtube.com/watch?v=U5Ovbz8KnYE --language en
 pnpm cli jev <url> --interval 60 --size 0.05               # fewer, smaller trades
 pnpm cli jev <url> --json                                  # ledger events as JSON lines
+pnpm cli jev <url> --sizing=vol --stop-z=3 --take-profit-z=5 # volatility-sized, with exits
 ```
+
+The engine also watches how each market moves: 5- and 15-minute returns, one-minute volatility,
+volume against the past hour and the spread. Jev sees them each turn. By default an entry is
+rejected once the instrument has already moved more than 3 usual 5-minute moves its way, since
+the news is likely priced in (`--max-chase-z`, `0` to disable). `--sizing=vol` sizes each fill so
+a usual 15-minute move costs `--risk` of equity (default 0.002), within 0.25× to 2× `--size`.
+`--stop-z` and `--take-profit-z` close a position once it has moved that many usual 15-minute
+moves (volatility at entry) against or for it; both are off by default. The features need about
+ten minutes of prices to warm up; a replay seeds them from the hour of recorded ticks before
+its window.
 
 Every decision, fill, rejection, snapshot and error is printed and appended to
 `.cache/jev/<video-id>.jsonl`. The portfolio itself lives in `.cache/jev/portfolio.json`, is

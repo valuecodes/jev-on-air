@@ -5,6 +5,7 @@ import { once } from "node:events";
 import { rm } from "node:fs/promises";
 import { basename, join, resolve } from "node:path";
 import { PriceFeed } from "@repo/alpaca/prices";
+import type { PriceTick } from "@repo/alpaca/prices";
 import { HoldDecider, ScriptedDecider } from "@repo/jev/decider";
 import type { Decider } from "@repo/jev/decider";
 import { Engine } from "@repo/jev/engine";
@@ -12,7 +13,11 @@ import type { EngineEvent } from "@repo/jev/engine";
 import { formatEvent } from "@repo/jev/ledger";
 import { interval, mapSource, merge } from "@repo/jev/merge";
 import type { Source } from "@repo/jev/merge";
-import { fractionOfEquity, Portfolio } from "@repo/jev/portfolio";
+import {
+  fractionOfEquity,
+  Portfolio,
+  volatilityScaled,
+} from "@repo/jev/portfolio";
 import {
   clipTimeline,
   fast,
@@ -36,6 +41,10 @@ import { childEnv } from "./time";
 import { describeVideo } from "./transcribe";
 
 const cacheDir = join(import.meta.dirname, "..", ".cache");
+
+// A replay seeds the market features with up to this much price history
+// from before the ticks it replays, so they are ready from the first line.
+const historyMs = 60 * 60_000;
 
 /** Where the run reads and writes, all resolved to absolute paths. */
 type Paths = {
@@ -126,7 +135,10 @@ export class JevCommand {
     run: string,
     signal?: AbortSignal
   ): Promise<void> {
-    const sizer = fractionOfEquity(args.size);
+    const sizer =
+      args.sizing === "vol"
+        ? volatilityScaled({ fraction: args.size, risk: args.risk })
+        : fractionOfEquity(args.size);
     const book = { sizer, maxLeverage: args.maxLeverage };
     const resume =
       !args.reset && (args.source.kind === "live" || args.state !== undefined);
@@ -148,7 +160,7 @@ export class JevCommand {
     await stateFile.save(portfolio.toState(run, run));
 
     const decider = await this.decider(args, config, files);
-    const { events, clock, awaitDecisions } = await this.events(
+    const { events, clock, awaitDecisions, history } = await this.events(
       args,
       config,
       files
@@ -168,6 +180,11 @@ export class JevCommand {
       minSignal: args.minSignal,
       contextSeconds: args.contextSeconds,
       maxPriceAgeMs: args.maxPriceAgeSeconds * 1000,
+      marketHistory: history,
+      maxChaseZ: args.maxChaseZ,
+      stopZ: args.stopZ,
+      takeProfitZ: args.takeProfitZ,
+      sizing: args.sizing === "vol" ? `vol risk ${args.risk}` : "fixed",
       snapshotIntervalMs: args.snapshotSeconds * 1000,
       awaitDecisions,
       clock,
@@ -230,6 +247,8 @@ export class JevCommand {
     events: Source<EngineEvent>;
     clock: (() => number) | undefined;
     awaitDecisions: boolean;
+    /** Ticks from before the replayed ones, for the market features. */
+    history?: PriceTick[];
   }> {
     const heartbeat: Source<EngineEvent> = mapSource(interval(1000), () => ({
       kind: "heartbeat",
@@ -335,11 +354,26 @@ export class JevCommand {
             (transcript.at(-1)?.at ?? 0) + 60_000
           )
         : allPrices;
+    // The hour before those only warms up the market features: it is never
+    // replayed, so a paced replay does not wait through it.
+    const history =
+      allPrices && originMs !== undefined
+        ? allPrices
+            .filter(
+              (item) =>
+                item.at >= -historyMs &&
+                item.at < -args.maxPriceAgeSeconds * 1000
+            )
+            .flatMap((item) =>
+              item.value.kind === "tick" ? [item.value.tick] : []
+            )
+        : undefined;
     this.logger.info("replaying", {
       transcript: files.transcript,
       segments: transcript.length,
       prices: files.prices,
       ticks: prices?.length,
+      history: history?.length,
       fast: args.source.fast,
       audioStart,
       lagSeconds,
@@ -357,6 +391,7 @@ export class JevCommand {
         events: record(replay.source),
         clock: replay.clock,
         awaitDecisions: true,
+        history,
       };
     }
     // Each paced source counts from its own first item, so both timelines
@@ -375,6 +410,7 @@ export class JevCommand {
         events: record(events),
         clock: undefined,
         awaitDecisions: false,
+        history,
       };
     // With a known audio start the clock runs at real speed from the
     // recording's own time, as the fast clock does, so the ledger's times
@@ -389,6 +425,7 @@ export class JevCommand {
       clock: () =>
         originMs + earliest + (Date.now() - (startedAt ?? Date.now())),
       awaitDecisions: false,
+      history,
     };
   }
 

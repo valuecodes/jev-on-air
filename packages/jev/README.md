@@ -42,7 +42,10 @@ that wires everything together lives in [`apps/cli`](../../apps/cli/README.md).
   book would accept for its current position, plus a yes/no gate: did the new lines hold a
   market-moving statement? Each instrument question also lists how news usually reaches the
   instruments (a hawkish Fed weighs on stocks, gold and bitcoin; supply cuts lift oil), since a
-  speaker rarely names what is traded. `./typesafe` asks the gate first, then the instrument
+  speaker rarely names what is traded. Each price also carries how its market is moving
+  (`./market`: 5- and 15-minute returns, the 5-minute move in usual moves, volume against the
+  past hour, the spread), so the model can tell news already priced in from news the market is
+  still reacting to; the signal question is asked without it, so the gate reads the speech alone. `./typesafe` asks the gate first, then the instrument
   questions with that read in the state; with a flat book and a read below `minSignal` it stops
   after the gate, since every entry would be rejected. The answers become decisions, each with
   the model's confidence and probabilities, and the holds are kept with their odds too, so the
@@ -52,6 +55,15 @@ that wires everything together lives in [`apps/cli`](../../apps/cli/README.md).
   confidence threshold, when the instrument has no price or a stale one, or when the book says
   no (see below). Exits are never gated. Every step is reported as a ledger event, and recent
   fills and rejections are shown to the model on the next turn.
+- **Market rules.** `MarketTape` (`./market`) keeps an hour of one-minute buckets per instrument,
+  keyed by the minute they end, so live trades and recorded bars line up; only ended minutes
+  feed volatility and volume. An entry is rejected when the instrument already moved more than
+  `maxChaseZ` usual 5-minute moves its way. `volatilityScaled` (`./portfolio`) sizes a fill so a
+  usual 15-minute move costs a fixed fraction of equity. With `stopZ` or `takeProfitZ` set, the
+  engine closes a position on its own once it has moved that many usual 15-minute moves
+  (volatility at entry) from its average price: the `fill` carries `exit` and no confidence,
+  and a decision still in flight for that instrument is rejected, since it was made for a book
+  that no longer exists. `marketHistory` seeds the tape with ticks from before the run.
 - **Failures.** Rate limits, connection problems and 5xx replies keep the lines and retry with
   exponential backoff. An answer the engine cannot use is logged and retried after a full
   interval; after three in a row the pending lines are dropped. Any other API error (a bad key,

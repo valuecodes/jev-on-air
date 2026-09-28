@@ -7,6 +7,7 @@
     "./portfolio": "./src/portfolio.ts",
     "./state": "./src/state.ts",
     "./prices": "./src/prices.ts",
+    "./market": "./src/market.ts",
     "./trigger": "./src/trigger.ts",
     "./merge": "./src/merge.ts",
     "./decider": "./src/decider.ts",

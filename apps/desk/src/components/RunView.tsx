@@ -737,6 +737,11 @@ function Item({
         >
           <div className="text-ink flex flex-wrap items-center gap-2">
             <strong className="text-good">FILL</strong>
+            {event.exit !== undefined && (
+              <span className="text-warn text-xs font-semibold uppercase">
+                {event.exit}
+              </span>
+            )}
             <ActionPill action={event.action} />
             <InstrumentChip id={event.instrument} />
             <span className={mono}>

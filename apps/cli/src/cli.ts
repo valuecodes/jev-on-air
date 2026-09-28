@@ -49,6 +49,16 @@ Jev options (needs TYPESAFE_API_KEY and the Alpaca keys, e.g. in .env):
   --model=<id>        TypeSafe model (default: $JEV_MODEL or ${DEFAULT_MODEL})
   --cash=<usd>        Starting cash for a fresh portfolio (default: 100000)
   --size=<fraction>   Equity fraction per fill (default: 0.1)
+  --sizing=<fixed|vol>  fixed: every fill is --size of equity. vol: sized so a usual
+                      15-minute move costs --risk of equity, within 0.25x-2x --size
+                      (default: fixed)
+  --risk=<fraction>   Equity a usual 15-minute move may cost, for --sizing=vol (default: 0.002)
+  --max-chase-z=<z>   Reject entries after a move of this many usual 5-minute moves
+                      their way, likely priced in; 0 to disable (default: 3)
+  --stop-z=<z>        Close a position down this many usual 15-minute moves, 0 to
+                      disable (default: 0)
+  --take-profit-z=<z> Close a position up this many usual 15-minute moves, 0 to
+                      disable (default: 0)
   --min-chars=<n>     Transcript characters that trigger a turn (default: 400, at most 4000)
   --interval=<s>      Longest wait before a turn on a non-empty buffer (default: 30)
   --context=<s>       Seconds of earlier transcript the model is reminded of (default: 300)
@@ -339,6 +349,11 @@ export type JevArgs = {
   chunkSeconds?: number;
   cash: number;
   size: number;
+  sizing: "fixed" | "vol";
+  risk: number;
+  maxChaseZ: number;
+  stopZ: number;
+  takeProfitZ: number;
   minChars: number;
   intervalSeconds: number;
   contextSeconds: number;
@@ -381,6 +396,11 @@ export function parseJevArgs(argv: string[]): JevArgs {
       chunk: { type: "string" },
       cash: { type: "string" },
       size: { type: "string" },
+      sizing: { type: "string" },
+      risk: { type: "string" },
+      "max-chase-z": { type: "string" },
+      "stop-z": { type: "string" },
+      "take-profit-z": { type: "string" },
       "min-chars": { type: "string" },
       interval: { type: "string" },
       context: { type: "string" },
@@ -427,6 +447,11 @@ export function parseJevArgs(argv: string[]): JevArgs {
       "--whisper, --language and --chunk only apply to a live stream"
     );
   }
+  const sizing = values.sizing ?? "fixed";
+  if (sizing !== "fixed" && sizing !== "vol")
+    throw new Error(`--sizing must be fixed or vol, got ${sizing}`);
+  if (values.risk !== undefined && sizing !== "vol")
+    throw new Error("--risk only applies to --sizing=vol");
   if (values.fast && values.prices === undefined)
     throw new Error(
       "--fast needs --prices: a virtual clock cannot pace a live feed"
@@ -471,6 +496,19 @@ export function parseJevArgs(argv: string[]): JevArgs {
       min: 0,
       aboveMin: true,
       max: 1,
+    }),
+    sizing,
+    risk: parseNumber("risk", values.risk, 0.002, {
+      min: 0,
+      aboveMin: true,
+      max: 1,
+    }),
+    maxChaseZ: parseNumber("max-chase-z", values["max-chase-z"], 3, {
+      min: 0,
+    }),
+    stopZ: parseNumber("stop-z", values["stop-z"], 0, { min: 0 }),
+    takeProfitZ: parseNumber("take-profit-z", values["take-profit-z"], 0, {
+      min: 0,
     }),
     minChars: parseNumber("min-chars", values["min-chars"], 400, {
       min: 1,

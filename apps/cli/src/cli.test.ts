@@ -265,6 +265,11 @@ describe("parseJevArgs", () => {
       chunkSeconds: undefined,
       cash: 100_000,
       size: 0.1,
+      sizing: "fixed",
+      risk: 0.002,
+      maxChaseZ: 3,
+      stopZ: 0,
+      takeProfitZ: 0,
       minChars: 400,
       intervalSeconds: 30,
       contextSeconds: 300,
@@ -293,6 +298,11 @@ describe("parseJevArgs", () => {
         "--model=jev-preview",
         "--cash=5000",
         "--size=0.25",
+        "--sizing=vol",
+        "--risk=0.005",
+        "--max-chase-z=0",
+        "--stop-z=3",
+        "--take-profit-z=5",
         "--min-chars=100",
         "--interval=60",
         "--context=120",
@@ -321,6 +331,11 @@ describe("parseJevArgs", () => {
       model: "jev-preview",
       cash: 5000,
       size: 0.25,
+      sizing: "vol",
+      risk: 0.005,
+      maxChaseZ: 0,
+      stopZ: 3,
+      takeProfitZ: 5,
       minChars: 100,
       intervalSeconds: 60,
       contextSeconds: 120,
@@ -378,6 +393,13 @@ describe("parseJevArgs", () => {
       /only apply to a live stream/
     );
     expect(() => parseJevArgs([url, "extra"])).toThrow(/unexpected arguments/);
+    expect(() => parseJevArgs([url, "--sizing=kelly"])).toThrow(
+      /--sizing must be fixed or vol/
+    );
+    expect(() => parseJevArgs([url, "--risk=0.01"])).toThrow(
+      /--risk only applies to --sizing=vol/
+    );
+    expect(() => parseJevArgs([url, "--stop-z=-1"])).toThrow(/--stop-z/);
     expect(() => parseJevArgs([url, "--nope"])).toThrow();
   });
 

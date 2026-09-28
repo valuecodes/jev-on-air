@@ -3,6 +3,7 @@
 // at the prices current when the answer arrives, and reports every step as
 // ledger events. No I/O of its own: persistence is the `onEvent` hook's job.
 import { INSTRUMENTS } from "@repo/alpaca/instruments";
+import type { InstrumentId } from "@repo/alpaca/instruments";
 import type { PriceTick } from "@repo/alpaca/prices";
 import type { LoggerLike } from "@repo/logger";
 import type { Segment } from "@repo/transcriber";
@@ -10,10 +11,11 @@ import type { Segment } from "@repo/transcriber";
 import { DeciderError } from "./decider";
 import type { Decider, DecideResult } from "./decider";
 import type { EventBase, JevEvent } from "./ledger";
+import { MarketTape } from "./market";
 import type { Source } from "./merge";
 import type { Portfolio, Snapshot } from "./portfolio";
 import { PriceTable } from "./prices";
-import type { Feedback, PriceView, TurnInput } from "./questions";
+import type { Exit, Feedback, PriceView, TurnInput } from "./questions";
 import { normalizeTurnOutput } from "./schema";
 import { shouldEvaluate } from "./trigger";
 import type { TriggerOptions } from "./trigger";
@@ -51,6 +53,25 @@ export type EngineOptions = {
   maxFeedback?: number;
   /** Fills on a price that arrived longer ago are rejected (default 10 min). */
   maxPriceAgeMs?: number;
+  /**
+   * Ticks from before the run, oldest first, so market features are ready
+   * from the first turn. They set no prices: fills never use them.
+   */
+  marketHistory?: readonly PriceTick[];
+  /**
+   * Entries are rejected when the instrument already moved more than this
+   * many usual 5-minute moves their way; 0 disables (default 3).
+   */
+  maxChaseZ?: number;
+  /**
+   * A position is closed once it has lost this many usual 15-minute moves
+   * (volatility at entry × √15) from its average price; 0 disables (default 0).
+   */
+  stopZ?: number;
+  /** ...or gained this many; 0 disables (default 0). */
+  takeProfitZ?: number;
+  /** How the portfolio sizes fills, reported in the start event. */
+  sizing?: string;
   /** Snapshot cadence between turns; 0 disables (default 60 s). */
   snapshotIntervalMs?: number;
   /**
@@ -81,6 +102,11 @@ export class Engine {
   private readonly options: EngineOptions;
   private readonly clock: () => number;
   private readonly prices = new PriceTable();
+  private readonly tape = new MarketTape();
+  /** Bumped by every exit the engine makes, so a stale decision is caught. */
+  private readonly exits = new Map<InstrumentId, number>();
+  /** Volatility when each position was opened; what its stops are sized by. */
+  private readonly entryVolatility = new Map<InstrumentId, number>();
   private readonly pending: Segment[] = [];
   private pendingChars = 0;
   private readonly context: Segment[] = [];
@@ -101,6 +127,7 @@ export class Engine {
     this.logger = logger.child({ component: "engine" });
     this.options = options;
     this.clock = options.clock ?? Date.now;
+    this.tape.seed(options.marketHistory ?? []);
   }
 
   /**
@@ -129,6 +156,12 @@ export class Engine {
       equity: start.equity,
       size: this.options.size,
       resumed: this.options.resumed,
+      strategy: {
+        sizing: this.options.sizing ?? "fixed",
+        maxChaseZ: this.maxChaseZ(),
+        stopZ: this.options.stopZ ?? 0,
+        takeProfitZ: this.options.takeProfitZ ?? 0,
+      },
     });
 
     // The abort listener stays until the run has settled: a call in flight
@@ -138,6 +171,8 @@ export class Engine {
       try {
         for await (const event of this.options.events(this.controller.signal)) {
           this.handle(event);
+          if (event.kind === "tick")
+            await this.maybeExit(event.tick.instrument);
           await this.maybeSnapshot();
           await this.maybeEvaluate();
           if (this.fatal) break;
@@ -182,6 +217,7 @@ export class Engine {
     switch (event.kind) {
       case "tick":
         this.prices.update(event.tick, this.clock());
+        this.tape.update(event.tick);
         return;
       case "segment":
         this.pending.push(event.segment);
@@ -277,6 +313,7 @@ export class Engine {
     this.lastEvaluationAt = startedAt;
     const turn = ++this.turn;
     const input = this.input(turn, segments, startedAt);
+    const exits = new Map(this.exits);
     try {
       let result: DecideResult;
       try {
@@ -304,8 +341,11 @@ export class Engine {
         latencyMs: result.latencyMs,
         segments: segments.length,
         usage: result.usage ?? null,
+        market: Object.fromEntries(
+          input.prices.map((view) => [view.instrument, view.market ?? null])
+        ),
       });
-      await this.apply(result, turn);
+      await this.apply(result, turn, exits);
       this.lastSnapshotAt = this.clock();
       await this.emit({
         ...this.base(turn),
@@ -318,10 +358,20 @@ export class Engine {
     }
   }
 
-  private async apply(result: DecideResult, turn: number): Promise<void> {
+  /**
+   * Applies a turn's decisions. `exits` is the engine's exit count per
+   * instrument when the turn's input was built: a decision about a position
+   * the engine has closed since was made on a book that no longer exists.
+   */
+  private async apply(
+    result: DecideResult,
+    turn: number,
+    exits: ReadonlyMap<InstrumentId, number>
+  ): Promise<void> {
     const minConfidence = this.options.minConfidence ?? 0.6;
     const minSignal = this.options.minSignal ?? 0.5;
     const maxAge = this.options.maxPriceAgeMs ?? 600_000;
+    const maxChaseZ = this.maxChaseZ();
     const now = this.clock();
     const prices = this.prices.map();
     const signal = result.output.signal;
@@ -330,27 +380,56 @@ export class Engine {
       const { instrument, action, confidence } = decision;
       const age = this.prices.ageMs(instrument, now);
       const opens = action === "buy" || action === "short";
+      const features = this.tape.features(instrument, now);
+      const z = features?.moveZ5m;
+      const chased =
+        opens &&
+        maxChaseZ > 0 &&
+        z !== undefined &&
+        (action === "buy" ? z > maxChaseZ : z < -maxChaseZ);
+      const volatility = features?.volatility;
       const outcome =
-        gated && opens
+        (this.exits.get(instrument) ?? 0) !== (exits.get(instrument) ?? 0)
           ? {
               kind: "reject" as const,
-              reason: `no market-moving statement (signal ${signal.toFixed(2)} below ${minSignal.toFixed(2)})`,
+              reason: "position was closed by a stop while deciding",
             }
-          : confidence < minConfidence
+          : gated && opens
             ? {
                 kind: "reject" as const,
-                reason: `confidence ${confidence.toFixed(2)} below ${minConfidence.toFixed(2)}`,
+                reason: `no market-moving statement (signal ${signal.toFixed(2)} below ${minSignal.toFixed(2)})`,
               }
-            : age !== undefined && age > maxAge
+            : confidence < minConfidence
               ? {
                   kind: "reject" as const,
-                  reason: `stale price (${Math.round(age / 1000)} s old)`,
+                  reason: `confidence ${confidence.toFixed(2)} below ${minConfidence.toFixed(2)}`,
                 }
-              : this.options.portfolio.apply({ instrument, action }, prices);
+              : age !== undefined && age > maxAge
+                ? {
+                    kind: "reject" as const,
+                    reason: `stale price (${Math.round(age / 1000)} s old)`,
+                  }
+                : chased
+                  ? {
+                      kind: "reject" as const,
+                      reason: `already moved ${Math.abs(z).toFixed(1)} usual moves ${z > 0 ? "up" : "down"}; likely priced in`,
+                    }
+                  : this.options.portfolio.apply(
+                      { instrument, action },
+                      prices,
+                      volatility
+                    );
       this.feedback.push({ turn, instrument, action, result: outcome });
+      if (outcome.kind === "fill") this.track(instrument, volatility);
       await this.emit(
         outcome.kind === "fill"
-          ? { ...this.base(turn), type: "fill", confidence, ...outcome.fill }
+          ? {
+              ...this.base(turn),
+              type: "fill",
+              confidence,
+              ...(opens && volatility !== undefined ? { volatility } : {}),
+              ...outcome.fill,
+            }
           : {
               ...this.base(turn),
               type: "reject",
@@ -361,9 +440,96 @@ export class Engine {
             }
       );
     }
+    this.trimFeedback();
+  }
+
+  private trimFeedback(): void {
     const keep = this.options.maxFeedback ?? 12;
     if (this.feedback.length > keep)
       this.feedback.splice(0, this.feedback.length - keep);
+  }
+
+  private maxChaseZ(): number {
+    return this.options.maxChaseZ ?? 3;
+  }
+
+  /**
+   * Keeps each position's entry volatility: set when it opens (or, for one
+   * resumed from disk, at the first volatility known), kept when it grows,
+   * forgotten when it goes flat.
+   */
+  private track(
+    instrument: InstrumentId,
+    volatility: number | undefined
+  ): void {
+    if (!this.options.portfolio.position(instrument)) {
+      this.entryVolatility.delete(instrument);
+      return;
+    }
+    if (volatility !== undefined && !this.entryVolatility.has(instrument))
+      this.entryVolatility.set(instrument, volatility);
+  }
+
+  /**
+   * Closes the instrument's position when its move from the average price
+   * crosses the stop or the take-profit, measured in usual 15-minute moves
+   * at entry. Runs on each of its ticks, between and during turns.
+   */
+  private async maybeExit(instrument: InstrumentId): Promise<void> {
+    const stopZ = this.options.stopZ ?? 0;
+    const takeProfitZ = this.options.takeProfitZ ?? 0;
+    if ((stopZ <= 0 && takeProfitZ <= 0) || this.fatal) return;
+    const now = this.clock();
+    this.track(instrument, this.tape.features(instrument, now)?.volatility);
+    const position = this.options.portfolio.position(instrument);
+    const volatility = this.entryVolatility.get(instrument);
+    const price = this.prices.get(instrument)?.price;
+    if (!position || volatility === undefined || price === undefined) return;
+    const move =
+      (position.side === "long" ? 1 : -1) *
+      (price / position.avgPrice - 1) *
+      100;
+    const usual = volatility * Math.sqrt(15);
+    let exit: Exit;
+    let threshold: number;
+    if (stopZ > 0 && move <= -stopZ * usual) {
+      exit = "stop";
+      threshold = -stopZ * usual;
+    } else if (takeProfitZ > 0 && move >= takeProfitZ * usual) {
+      exit = "take-profit";
+      threshold = takeProfitZ * usual;
+    } else {
+      return;
+    }
+    const outcome = this.options.portfolio.apply(
+      { instrument, action: "close" },
+      this.prices.map()
+    );
+    if (outcome.kind !== "fill") return;
+    this.exits.set(instrument, (this.exits.get(instrument) ?? 0) + 1);
+    this.entryVolatility.delete(instrument);
+    this.feedback.push({
+      turn: this.turn,
+      instrument,
+      action: "close",
+      result: outcome,
+      exit,
+    });
+    this.trimFeedback();
+    await this.emit({
+      ...this.base(null),
+      type: "fill",
+      confidence: null,
+      exit,
+      exitThresholdPct: threshold,
+      ...outcome.fill,
+    });
+    this.lastSnapshotAt = now;
+    await this.emit({
+      ...this.base(null),
+      type: "snapshot",
+      ...this.snapshot(),
+    });
   }
 
   private async failed(
@@ -442,6 +608,7 @@ export class Engine {
         symbol: instrument.symbol,
         price: latest?.price,
         ageSeconds: age === undefined ? undefined : age / 1000,
+        market: this.tape.features(instrument.id, now),
       };
     });
     return {

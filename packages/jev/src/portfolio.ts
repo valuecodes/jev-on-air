@@ -56,12 +56,51 @@ export type Snapshot = {
   positions: PositionView[];
 };
 
-/** Quantity to open or add for a fill at `price` with the given equity. */
-export type Sizer = (input: { equity: number; price: number }) => number;
+/**
+ * Quantity to open or add for a fill at `price` with the given equity.
+ * `volatility` is the instrument's one-minute volatility in percent, when
+ * known.
+ */
+export type Sizer = (input: {
+  equity: number;
+  price: number;
+  volatility?: number;
+}) => number;
 
 /** Sizes every fill to `fraction` of current equity. */
 export function fractionOfEquity(fraction: number): Sizer {
   return ({ equity, price }) => (fraction * equity) / price;
+}
+
+export type VolatilityScaledOptions = {
+  /** Fraction of equity per fill when volatility is unknown. */
+  fraction: number;
+  /** Fraction of equity a one-sigma 15-minute move should cost. */
+  risk: number;
+};
+
+// A fill is kept between these multiples of the fixed-fraction size, so a
+// calm quarter-hour cannot lever the book up, nor a wild one shrink it to dust.
+const minScale = 0.25;
+const maxScale = 2;
+
+/**
+ * Sizes each fill so a usual 15-minute move (`volatility·√15`) costs `risk`
+ * of equity: quiet markets get more, wild ones less, within 0.25× to 2× of
+ * `fraction`. Without a volatility it sizes like `fractionOfEquity`.
+ */
+export function volatilityScaled(options: VolatilityScaledOptions): Sizer {
+  const { fraction, risk } = options;
+  return ({ equity, price, volatility }) => {
+    const base = fraction * equity;
+    if (volatility === undefined || !(volatility > 0)) return base / price;
+    const move = (volatility * Math.sqrt(15)) / 100;
+    const notional = Math.min(
+      maxScale * base,
+      Math.max(minScale * base, (risk * equity) / move)
+    );
+    return notional / price;
+  };
 }
 
 export type PortfolioOptions = {
@@ -156,8 +195,9 @@ export class Portfolio {
    * `buy` opens or adds to a long, `short` opens or adds to a short, `sell`
    * reduces a long by one sizing unit and `close` flattens either side.
    * Reversing is two steps: the opposite side must be closed first.
+   * `volatility` reaches the sizer, for volatility-scaled books.
    */
-  apply(order: Order, prices: PriceMap): ApplyResult {
+  apply(order: Order, prices: PriceMap, volatility?: number): ApplyResult {
     const { instrument, action } = order;
     const price = prices[instrument];
     if (price === undefined)
@@ -178,7 +218,7 @@ export class Portfolio {
     }
 
     const { equity, grossExposure } = this.markToMarket(prices);
-    const size = equity > 0 ? this.sizer({ equity, price }) : NaN;
+    const size = equity > 0 ? this.sizer({ equity, price, volatility }) : NaN;
     const sized = Number.isFinite(size) && size > 0;
 
     if (action === "sell") {
