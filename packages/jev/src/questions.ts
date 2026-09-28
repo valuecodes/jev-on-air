@@ -121,6 +121,7 @@ function marketEntry(
     move_5m_pct: maybe(features.return5m, 3),
     move_15m_pct: maybe(features.return15m, 3),
     move_vs_usual: maybe(features.moveZ5m, 1),
+    volatility_pct_per_min: maybe(features.volatility, 3),
     volume_vs_usual: maybe(features.relativeVolume, 1),
     spread_bps: maybe(features.spreadBps, 1),
   };
@@ -170,6 +171,8 @@ export function buildState(
             move_15m_pct: "Percent change over about the last 15 minutes.",
             move_vs_usual:
               "The 5-minute move in usual 5-minute moves: beyond 3 either way is unusually large.",
+            volatility_pct_per_min:
+              "Typical size of a one-minute move over the past hour, in percent.",
             volume_vs_usual:
               "Trading volume of the last 5 minutes against the past hour: 1 is normal.",
             spread_bps: "Bid/ask spread in basis points.",
@@ -219,7 +222,7 @@ const SIGNAL_INSTRUCTIONS = {
 };
 
 const RULES = [
-  "Every fill is sized by the simulator as a fixed fraction of equity; size is never your choice.",
+  "Every fill is sized by the simulator as a fraction of equity, which it may scale by volatility; size is never your choice.",
   "Reversing is two steps: close first, reverse on a later turn if the case still holds.",
   "Do not repeat an action already taken on the same statement, and do not reverse a recent position without new, contradicting information.",
   "An instrument without a fresh price cannot be filled; the ETFs only trade in US market hours.",

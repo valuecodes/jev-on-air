@@ -106,6 +106,8 @@ export class Engine {
   private readonly tape = new MarketTape();
   /** Bumped by every exit the engine makes, so a stale decision is caught. */
   private readonly exits = new Map<InstrumentId, number>();
+  /** The kind of each instrument's latest engine exit, for the rejection. */
+  private readonly lastExit = new Map<InstrumentId, Exit>();
   /** Volatility when each position was opened; what its stops are sized by. */
   private readonly entryVolatility = new Map<InstrumentId, number>();
   private readonly pending: Segment[] = [];
@@ -393,7 +395,7 @@ export class Engine {
         (this.exits.get(instrument) ?? 0) !== (exits.get(instrument) ?? 0)
           ? {
               kind: "reject" as const,
-              reason: "position was closed by a stop while deciding",
+              reason: `position was closed by a ${this.lastExit.get(instrument) ?? "stop"} while deciding`,
             }
           : gated && opens
             ? {
@@ -509,6 +511,7 @@ export class Engine {
     );
     if (outcome.kind !== "fill") return;
     this.exits.set(instrument, (this.exits.get(instrument) ?? 0) + 1);
+    this.lastExit.set(instrument, exit);
     this.entryVolatility.delete(instrument);
     this.feedback.push({
       turn: this.turn,

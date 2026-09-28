@@ -134,6 +134,7 @@ describe("buildState", () => {
             move_5m_pct: 0.412,
             move_15m_pct: null,
             move_vs_usual: 3.7,
+            volatility_pct_per_min: 0.05,
             volume_vs_usual: 2.4,
             spread_bps: 0.4,
           },
