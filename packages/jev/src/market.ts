@@ -1,9 +1,10 @@
 // How each market is moving: recent returns, volatility, volume against its
 // own baseline and the spread, from a rolling hour of one-minute buckets.
-// Buckets are keyed by the minute they end, from the tick's exchange time, so
-// a live trade at 12:00:30 and a historical bar stamped 12:01:00 (bars carry
-// their end time) land in the same bucket. Only minutes that have ended feed
-// volatility and volume; returns end at the latest price.
+// Buckets are keyed by the minute they end, on the clock features are asked
+// on (the engine's, at arrival), so a live trade at 12:00:30 and a replayed
+// bar arriving at 12:01:00 (bars carry their end time) land in the same
+// bucket, and a replay on a clock of its own still lines up. Only minutes
+// that have ended feed volatility and volume; returns end at the latest price.
 import type { InstrumentId } from "@repo/alpaca/instruments";
 import type { PriceTick } from "@repo/alpaca/prices";
 
@@ -14,7 +15,10 @@ export type MarketFeatures = {
   return15m: number | undefined;
   /** Standard deviation of one-minute log returns, in percent per minute. */
   volatility: number | undefined;
-  /** `return5m` in usual five-minute moves: `return5m / (volatility·√5)`. */
+  /**
+   * `return5m` in usual moves over the minutes it spans (five to seven):
+   * `return5m / (volatility·√minutes)`.
+   */
   moveZ5m: number | undefined;
   /** Trade volume of the last five minutes against the older minutes. */
   relativeVolume: number | undefined;
@@ -59,8 +63,8 @@ export class MarketTape {
     this.windowMs = options.windowMs ?? 60 * minute;
   }
 
-  update(tick: PriceTick): void {
-    const at = Date.parse(tick.timestamp);
+  /** Adds `tick`, arrived at `at` (default: its exchange time). */
+  update(tick: PriceTick, at = Date.parse(tick.timestamp)): void {
     if (!Number.isFinite(at) || !Number.isFinite(tick.price) || tick.price <= 0)
       return;
     let tape = this.tapes.get(tick.instrument);
@@ -94,7 +98,10 @@ export class MarketTape {
     this.expire(tape, tape.latest.at);
   }
 
-  /** Loads recorded ticks, oldest first, as if they had streamed in. */
+  /**
+   * Loads recorded ticks as if they had arrived at their exchange time; for
+   * a clock that runs on exchange time, as a replay with a known start does.
+   */
   seed(ticks: Iterable<PriceTick>): void {
     for (const tick of ticks) this.update(tick);
   }
@@ -111,24 +118,32 @@ export class MarketTape {
 
     const volatility = oneMinuteVolatility(complete);
     const latest = tape.latest.price;
-    const since = (minutes: number): number | undefined => {
-      // The newest ended minute between `minutes` and `minutes + 2` ago.
+    // The percent move since the newest minute that ended between `minutes`
+    // and `minutes + 2` ago, and how many minutes that actually spans.
+    const since = (
+      minutes: number
+    ): { percent: number; minutes: number } | undefined => {
       const from = now - (minutes + 2) * minute;
       const to = now - minutes * minute;
       const reference = complete.findLast(
         (bucket) => bucket.end >= from && bucket.end <= to
       );
-      return reference && (latest / reference.close - 1) * 100;
+      return (
+        reference && {
+          percent: (latest / reference.close - 1) * 100,
+          minutes: (now - reference.end) / minute,
+        }
+      );
     };
-    const return5m = since(5);
+    const move5m = since(5);
     return {
-      return5m,
-      return15m: since(15),
+      return5m: move5m?.percent,
+      return15m: since(15)?.percent,
       volatility,
       moveZ5m:
-        return5m === undefined || volatility === undefined
+        move5m === undefined || volatility === undefined
           ? undefined
-          : return5m / (volatility * Math.sqrt(5)),
+          : move5m.percent / (volatility * Math.sqrt(move5m.minutes)),
       relativeVolume: relativeVolume(complete, lastEnd),
       spreadBps: tape.spreadBps,
     };

@@ -567,6 +567,33 @@ describe("Engine market rules", () => {
     });
   });
 
+  it("builds features on its own clock when ticks carry older exchange times", async () => {
+    // A replay without an audio start: its clock starts now, the recording
+    // was made a day earlier.
+    const dayAgo = 24 * 60 * 60_000;
+    const recorded = history().map((item, index) => ({
+      at: (index + 1) * 60_000,
+      value: {
+        kind: "tick" as const,
+        tick: {
+          ...item,
+          timestamp: new Date(
+            startAt - dayAgo + (index + 1) * 60_000
+          ).toISOString(),
+        },
+      },
+    }));
+    const decider = new ScriptedDecider([]);
+    const { engine } = setup([...recorded, seg(20 * 60_000 + 9000)], {
+      decider,
+    });
+    await engine.run();
+    expect(
+      decider.inputs[0]?.prices.find((view) => view.instrument === "gold")
+        ?.market?.volatility
+    ).toBeGreaterThan(0);
+  });
+
   it("rejects an entry chasing a move that already happened, not one against it", async () => {
     const decider = new ScriptedDecider([
       {

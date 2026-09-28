@@ -81,6 +81,13 @@ describe("MarketTape", () => {
         ((features?.volatility ?? Number.NaN) * Math.sqrt(5)),
       10
     );
+    // Half a minute later the same reference spans five and a half minutes.
+    const later = tape.features("gold", base + 30 * minute + 30_000);
+    expect(later?.moveZ5m).toBeCloseTo(
+      (later?.return5m ?? 0) /
+        ((later?.volatility ?? Number.NaN) * Math.sqrt(5.5)),
+      10
+    );
   });
 
   it("uses only minutes that have ended for volatility", () => {
