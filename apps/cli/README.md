@@ -152,7 +152,6 @@ The root `cli` script runs `pnpm --silent --filter cli start`, so any arguments 
 | Start     | `pnpm --filter cli start`     |
 | Typecheck | `pnpm --filter cli typecheck` |
 | Test      | `pnpm --filter cli test`      |
-| Format    | `pnpm --filter cli format`    |
 | Clean     | `pnpm --filter cli clean`     |
 
-Linting is repo-wide: run `pnpm lint` from the root.
+Linting and formatting are repo-wide: run `pnpm lint` and `pnpm format` from the root.
