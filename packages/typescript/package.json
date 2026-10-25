@@ -1,0 +1,7 @@
+{
+  "name": "@repo/typescript",
+  "private": true,
+  "files": [
+    "*.json"
+  ]
+}
