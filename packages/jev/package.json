@@ -20,23 +20,19 @@
   "scripts": {
     "typecheck": "tsc",
     "test": "vitest run",
-    "format": "prettier --write .",
     "clean": "rm -rf .turbo node_modules .cache"
   },
   "dependencies": {
     "@repo/alpaca": "workspace:*",
     "@repo/logger": "workspace:*",
     "@repo/transcriber": "workspace:*",
-    "@typesafe-ai/sdk": "0.5.7",
+    "@typesafe-ai/sdk": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@repo/prettier": "workspace:*",
     "@repo/typescript": "workspace:*",
     "@types/node": "catalog:",
-    "prettier": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
-  },
-  "prettier": "@repo/prettier"
+  }
 }

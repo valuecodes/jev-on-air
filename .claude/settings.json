@@ -9,6 +9,7 @@
       "Bash(pnpm format:check:*)",
       "Bash(pnpm test:*)",
       "Bash(pnpm secrets:scan:*)",
+      "Bash(pnpm knip:*)",
       "Bash(pnpm --filter:*)",
       "Bash(pnpm typecheck *)"
     ],
@@ -17,8 +18,6 @@
       "Bash(wget:*)",
       "Bash(nc:*)",
       "Bash(ssh:*)",
-      "Read(**/.env)",
-      "Read(**/.env.*)",
       "Read(**/.env*)",
       "Read(**/secrets/**)"
     ],

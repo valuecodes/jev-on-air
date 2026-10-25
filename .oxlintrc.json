@@ -1,42 +1,52 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
 
-  // Every rule below is listed explicitly and every category is off, because
-  // oxlint's categories are not the same set as the ESLint presets this
-  // replaced (`eslint:recommended` + typescript-eslint `recommended` +
-  // `recommendedTypeChecked` + `stylisticTypeChecked` + react-hooks
-  // `recommended-latest`). Turning on `correctness` instead would both drop
-  // rules we had and add ones we never ran.
+  // Every rule is listed explicitly with every category off, mirroring
+  // eslint:recommended + typescript-eslint recommended/recommendedTypeChecked/
+  // stylisticTypeChecked + react-hooks recommended-latest + jsx-a11y
+  // recommended, plus repo-specific boundary, strictness and style rules.
   //
-  // Generated from the old flat config with `@oxlint/migrate --type-aware`,
-  // then flattened by hand: the tool mirrors ESLint's config-array shape, which
-  // meant eight `overrides` entries repeating the same rules four times.
-  //
-  // `unicorn` and `oxc` are ON by default, so `plugins` has to be explicit to
-  // keep them off -- an empty/absent `plugins` is not the same as "none".
-  //
-  // `correctness` has to be turned off by NAME, not by an empty `categories`
-  // object: `{}` leaves oxlint's default category on, which silently adds ~57
-  // rules at `warn` -- including the ones typescript-eslint deliberately
-  // disables for TS because tsc already reports them (`no-const-assign`,
-  // `constructor-super`, `no-unreachable`, ...). Those are omitted below for
-  // the same reason: every source file in this repo is TypeScript.
-  "plugins": ["typescript", "import", "react"],
+  // `plugins` is explicit so only the listed ones load. Enabling a plugin adds
+  // no rules by itself: `correctness` must be turned off by name, since an
+  // empty `categories` leaves it on and silently adds ~57 rules, including
+  // ones tsc already reports.
+  "plugins": [
+    "typescript",
+    "import",
+    "react",
+    "jsx-a11y",
+    "vitest",
+    "unicorn",
+    "oxc"
+  ],
   "categories": { "correctness": "off" },
 
-  // Type-aware rules (the no-unsafe-* family, no-floating-promises,
-  // unbound-method, ...) need the `oxlint-tsgolint` binary. Without it
-  // `oxlint` exits 0 having silently skipped all of them, so the root `lint`
-  // script also passes `--type-aware` to fail loudly.
+  // Type-aware rules need `oxlint-tsgolint`; without it oxlint silently skips
+  // them, so the root `lint` script also passes `--type-aware` to fail loudly.
   "options": { "typeAware": true },
   "env": { "builtin": true },
 
-  // `.gitignore` is read natively by oxlint, which is what keeps `dist/`,
-  // `.turbo/` and `.cache/` out -- the old config had to feed it in through
-  // `includeIgnoreFile`. Only the config-file glob has to be repeated here:
-  // `postcss.config.mjs`, `vite.config.ts` and `vitest.config.ts` sit outside
-  // every tsconfig `include`, so type-aware rules cannot resolve them.
-  "ignorePatterns": ["**/*.config.*"],
+  // `.gitignore` is read natively.
+
+  // Next.js and Vitest load their config through a default export, and Next.js
+  // App Router entry files (pages, layouts) must default-export too, so that
+  // one rule is off for them.
+  "overrides": [
+    {
+      "files": [
+        "**/*.config.*",
+        "apps/desk/src/app/**/page.tsx",
+        "apps/desk/src/app/**/layout.tsx"
+      ],
+      "rules": { "import/no-default-export": "off" }
+    },
+    {
+      // Next.js reads route segment config (`dynamic`) only from an inline
+      // `export const`, so route files cannot gather it into one export list.
+      "files": ["apps/desk/src/app/**/route.ts"],
+      "rules": { "import/group-exports": "off" }
+    }
+  ],
 
   "rules": {
     // eslint core -- eslint:recommended, minus the rules typescript-eslint
@@ -138,9 +148,8 @@
     "typescript/consistent-generic-constructors": "error",
     "typescript/consistent-indexed-object-style": "error",
     "typescript/consistent-type-assertions": "error",
-    // `type` rather than the rule's `interface` default: the shared packages
-    // are written with type aliases, and unions like `LogLevel` cannot be
-    // interfaces anyway, so the alias form is the only one that spans both.
+    // `type` over the `interface` default: unions cannot be interfaces, so
+    // aliases are the one form that covers both.
     "typescript/consistent-type-definitions": ["error", "type"],
     "typescript/dot-notation": "error",
     "typescript/no-confusing-non-null-assertion": "error",
@@ -155,7 +164,7 @@
     "typescript/prefer-regexp-exec": "error",
     "typescript/prefer-string-starts-ends-with": "error",
 
-    // Explicit overrides the old base config set on top of those presets.
+    // Repo-specific additions on top of the presets.
     "typescript/no-non-null-assertion": "error",
     "typescript/no-unused-vars": [
       "error",
@@ -165,6 +174,59 @@
       "warn",
       { "prefer": "type-imports", "fixStyle": "separate-type-imports" }
     ],
+    "typescript/consistent-type-exports": [
+      "error",
+      { "fixMixedExportsWithInlineTypeSpecifier": false }
+    ],
+    "typescript/switch-exhaustiveness-check": "error",
+    "typescript/no-deprecated": "error",
+    // Nursery rule, so warn only.
+    "typescript/no-unnecessary-condition": "warn",
+    "typescript/no-unnecessary-type-parameters": "error",
+    "typescript/prefer-readonly": "error",
+    "typescript/strict-boolean-expressions": "error",
+    "no-param-reassign": "error",
+    "no-nested-ternary": "error",
+    // Code lines only, so comments and spacing are never what trips it.
+    "max-lines": [
+      "error",
+      { "max": 400, "skipBlankLines": true, "skipComments": true }
+    ],
+
+    // Style: one way to write functions, and the cleanups below.
+    "func-style": ["error", "expression"],
+    "arrow-body-style": ["error", "as-needed"],
+    "typescript/method-signature-style": ["error", "property"],
+    "eqeqeq": "error",
+    "curly": "error",
+    "object-shorthand": "error",
+    "prefer-template": "error",
+    "no-else-return": "error",
+    "no-lonely-if": "error",
+    "no-useless-return": "error",
+    "no-unneeded-ternary": "error",
+    "no-useless-concat": "error",
+    "no-useless-computed-key": "error",
+    "no-useless-constructor": "error",
+    "logical-assignment-operators": "error",
+    "prefer-arrow-callback": "error",
+    "prefer-object-spread": "error",
+    "yoda": "error",
+    "no-implicit-coercion": "error",
+    "default-param-last": "error",
+    "default-case-last": "error",
+    "no-return-assign": "error",
+    "no-multi-assign": "error",
+    "radix": "error",
+    "array-callback-return": "error",
+    "typescript/no-unnecessary-template-expression": "error",
+    "typescript/no-unnecessary-boolean-literal-compare": "error",
+    "typescript/no-unnecessary-type-arguments": "error",
+    "typescript/no-unnecessary-type-conversion": "error",
+    "typescript/prefer-reduce-type-parameter": "error",
+    "typescript/consistent-return": "error",
+    // `await` inside try/catch so the catch sees the rejection; not elsewhere.
+    "typescript/return-await": ["error", "in-try-catch"],
     "typescript/no-misused-promises": [
       "error",
       { "checksVoidReturn": { "attributes": false } }
@@ -172,15 +234,89 @@
 
     // eslint-plugin-import
     "import/consistent-type-specifier-style": ["error", "prefer-top-level"],
+    // Circular imports silently break module init order.
+    "import/no-cycle": "error",
+    "import/no-duplicates": "error",
+    "import/no-self-import": "error",
+    // Named exports only. The `overrides` entry above turns this off for the
+    // config files, which Vite and Vitest load through a default export.
+    "import/no-default-export": "error",
+    // Declarations first, one export list at the bottom, as in `@repo/logger`.
+    "import/exports-last": "error",
+    "import/group-exports": "error",
+    "import/first": "error",
+    "import/newline-after-import": "error",
+    "import/no-mutable-exports": "error",
 
-    // eslint-plugin-react `recommended`. These were dead under the old config:
-    // `tooling/eslint/react.ts` spread `configs.flat["jsx-runtime"]` after
-    // `configs.flat.recommended`, and since both objects carry a `rules` key the
-    // second spread replaced the first -- collapsing 22 rules down to the two
-    // "off" entries jsx-runtime declares. Enabling them here is a fix, not a
-    // new gate. `react-in-jsx-scope` and `jsx-uses-react` stay off, which is
-    // what jsx-runtime was there to do in the first place.
+    // Workspace boundaries. `../` is banned outright: it is the only way a
+    // relative path can reach another workspace (including packages reaching
+    // into apps -- importing an app by name already fails, since apps are
+    // never package dependencies). Apps go up the tree with the `~/` alias;
+    // packages stay flat or use package.json `imports` (`#...`), because
+    // tsconfig `paths` would resolve against the consuming app's program.
+    "import/no-relative-parent-imports": "error",
+    // Deep imports must go through a package's `exports`.
+    "no-restricted-imports": [
+      "error",
+      {
+        "patterns": [
+          {
+            "group": ["@repo/*/src", "@repo/*/src/**"],
+            "message": "Import the package entry, not its internals."
+          }
+        ]
+      }
+    ],
+
+    // Barrels built on `export *` hide the public API and defeat
+    // tree-shaking. Packages expose modules directly through package.json
+    // `exports` subpaths instead (see `@repo/logger`).
+    "oxc/no-barrel-file": ["error", { "threshold": 0 }],
+
+    "unicorn/filename-case": ["error", { "case": "kebabCase" }],
+    // Every disable directive must name the rule it silences.
+    "unicorn/no-abusive-eslint-disable": "error",
+    "unicorn/catch-error-name": "error",
+    "unicorn/throw-new-error": "error",
+    "unicorn/error-message": "error",
+    "unicorn/prefer-optional-catch-binding": "error",
+    "unicorn/switch-case-braces": "error",
+    "unicorn/prefer-at": "error",
+    "unicorn/prefer-string-slice": "error",
+    "unicorn/prefer-string-replace-all": "error",
+    "unicorn/no-typeof-undefined": "error",
+    "unicorn/prefer-array-some": "error",
+    "unicorn/prefer-date-now": "error",
+    "unicorn/prefer-node-protocol": "error",
+    "unicorn/prefer-export-from": "error",
+    "unicorn/prefer-structured-clone": "error",
+    "unicorn/prefer-global-this": "error",
+    "unicorn/prefer-spread": "error",
+    "unicorn/consistent-function-scoping": "error",
+    "unicorn/numeric-separators-style": "error",
+
+    // vitest
+    "vitest/no-focused-tests": "error",
+    "vitest/no-disabled-tests": "warn",
+    "vitest/consistent-test-it": ["error", { "fn": "it" }],
+    "vitest/valid-title": "error",
+    "vitest/valid-expect": "error",
+    "vitest/expect-expect": "error",
+    "vitest/no-identical-title": "error",
+    "vitest/no-standalone-expect": "error",
+    "vitest/no-conditional-expect": "error",
+    "vitest/no-duplicate-hooks": "error",
+    "vitest/prefer-hooks-on-top": "error",
+    "vitest/no-commented-out-tests": "error",
+    "vitest/prefer-to-be": "error",
+    "vitest/prefer-to-have-length": "error",
+    "vitest/prefer-to-contain": "error",
+    "vitest/require-top-level-describe": "error",
+
+    // eslint-plugin-react `recommended`, minus `react-in-jsx-scope` and
+    // `jsx-uses-react` (unneeded with the automatic JSX runtime).
     "react/display-name": "error",
+    "react/jsx-filename-extension": ["error", { "extensions": [".tsx"] }],
     "react/jsx-key": "error",
     "react/jsx-no-comment-textnodes": "error",
     "react/jsx-no-duplicate-props": "error",
@@ -212,10 +348,126 @@
     "react/static-components": "error",
     "react/unsupported-syntax": "warn",
     "react/use-memo": "error",
-    "react/void-use-memo": "error"
-  },
+    "react/void-use-memo": "error",
 
-  "globals": {
-    "React": "writable"
+    // JSX conventions. Components are arrow functions, matching `func-style`.
+    "react/function-component-definition": [
+      "error",
+      {
+        "namedComponents": "arrow-function",
+        "unnamedComponents": "arrow-function"
+      }
+    ],
+    "react/self-closing-comp": "error",
+    "react/jsx-boolean-value": "error",
+    "react/jsx-curly-brace-presence": "error",
+    "react/jsx-fragments": "error",
+    "react/jsx-no-useless-fragment": "error",
+    "react/jsx-pascal-case": "error",
+    "react/hook-use-state": "error",
+    "react/no-unstable-nested-components": "error",
+
+    // eslint-plugin-jsx-a11y `recommended`. Options are spelled out where
+    // oxlint's defaults differ from the preset's.
+    "jsx-a11y/alt-text": "error",
+    "jsx-a11y/anchor-has-content": "error",
+    "jsx-a11y/anchor-is-valid": "error",
+    "jsx-a11y/aria-activedescendant-has-tabindex": "error",
+    "jsx-a11y/aria-props": "error",
+    "jsx-a11y/aria-proptypes": "error",
+    "jsx-a11y/aria-role": "error",
+    "jsx-a11y/aria-unsupported-elements": "error",
+    "jsx-a11y/autocomplete-valid": "error",
+    "jsx-a11y/click-events-have-key-events": "error",
+    "jsx-a11y/heading-has-content": "error",
+    "jsx-a11y/html-has-lang": "error",
+    "jsx-a11y/iframe-has-title": "error",
+    "jsx-a11y/img-redundant-alt": "error",
+    "jsx-a11y/interactive-supports-focus": "error",
+    "jsx-a11y/label-has-associated-control": "error",
+    "jsx-a11y/media-has-caption": "error",
+    "jsx-a11y/mouse-events-have-key-events": "error",
+    "jsx-a11y/no-access-key": "error",
+    "jsx-a11y/no-autofocus": "error",
+    "jsx-a11y/no-distracting-elements": "error",
+    "jsx-a11y/no-interactive-element-to-noninteractive-role": [
+      "error",
+      { "tr": ["none", "presentation"], "canvas": ["img"] }
+    ],
+    "jsx-a11y/no-noninteractive-element-interactions": [
+      "error",
+      {
+        "handlers": [
+          "onClick",
+          "onError",
+          "onLoad",
+          "onMouseDown",
+          "onMouseUp",
+          "onKeyPress",
+          "onKeyDown",
+          "onKeyUp"
+        ],
+        "alert": ["onKeyUp", "onKeyDown", "onKeyPress"],
+        "body": ["onError", "onLoad"],
+        "dialog": ["onKeyUp", "onKeyDown", "onKeyPress"],
+        "iframe": ["onError", "onLoad"],
+        "img": ["onError", "onLoad"]
+      }
+    ],
+    "jsx-a11y/no-noninteractive-element-to-interactive-role": [
+      "error",
+      {
+        "ul": [
+          "listbox",
+          "menu",
+          "menubar",
+          "radiogroup",
+          "tablist",
+          "tree",
+          "treegrid"
+        ],
+        "ol": [
+          "listbox",
+          "menu",
+          "menubar",
+          "radiogroup",
+          "tablist",
+          "tree",
+          "treegrid"
+        ],
+        "li": [
+          "menuitem",
+          "menuitemradio",
+          "menuitemcheckbox",
+          "option",
+          "row",
+          "tab",
+          "treeitem"
+        ],
+        "table": ["grid"],
+        "td": ["gridcell"],
+        "fieldset": ["radiogroup", "presentation"]
+      }
+    ],
+    "jsx-a11y/no-noninteractive-tabindex": "error",
+    "jsx-a11y/no-redundant-roles": "error",
+    "jsx-a11y/no-static-element-interactions": [
+      "error",
+      {
+        "allowExpressionValues": true,
+        "handlers": [
+          "onClick",
+          "onMouseDown",
+          "onMouseUp",
+          "onKeyPress",
+          "onKeyDown",
+          "onKeyUp"
+        ]
+      }
+    ],
+    "jsx-a11y/role-has-required-aria-props": "error",
+    "jsx-a11y/role-supports-aria-props": "error",
+    "jsx-a11y/scope": "error",
+    "jsx-a11y/tabindex-no-positive": "error"
   }
 }

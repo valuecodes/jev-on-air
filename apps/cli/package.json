@@ -6,15 +6,13 @@
   "scripts": {
     "start": "tsx src/main.ts",
     "typecheck": "tsc",
-    "format": "prettier --write .",
     "clean": "rm -rf .turbo node_modules .cache dist",
     "test": "vitest run"
   },
   "devDependencies": {
-    "@repo/prettier": "workspace:*",
     "@repo/typescript": "workspace:*",
     "@types/node": "catalog:",
-    "tsx": "4.23.13",
+    "tsx": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
   },
