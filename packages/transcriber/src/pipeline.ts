@@ -1,7 +1,8 @@
-import type { LoggerLike } from "@repo/logger";
 // Runs a chain of processes connected stdout -> stdin, like a shell pipeline,
 // and yields the last stage's stdout line by line. Every stage is killed when
 // the consumer stops iterating, the signal aborts, or any stage exits.
+
+import type { LoggerLike } from "@repo/logger";
 import { spawn } from "node:child_process";
 import type { ChildProcess } from "node:child_process";
 import { createInterface } from "node:readline";
@@ -102,7 +103,9 @@ class Pipeline {
       return;
     }
 
-    const children = commands.map((command) =>
+    // Typed as `ChildProcess`: a spawn that fails with EMFILE/ENFILE returns
+    // before creating the stdio pipes, so they can be null despite `stdio`.
+    const children: ChildProcess[] = commands.map((command) =>
       // Each stage leads its own process group so `signalGroup` also reaches
       // its descendants: `uv run` keeps a Python child that holds the stage's
       // stdout open after `uv` itself exits. The stages therefore do not get
@@ -171,31 +174,34 @@ class Pipeline {
       const stage = commands[index]?.name ?? "process";
       // A stage that dies closes its neighbours' pipes; that surfaces as its
       // own exit code, so the stream-level EPIPE errors are not interesting.
-      child.stdin.on("error", () => undefined);
-      child.stdout.on("error", () => undefined);
-      // Every stdio stream is a pipe (see `spawn` above), so none is null.
-      const stageLogger = this.logger.child({ stage });
-      createInterface({ input: child.stderr }).on("line", (line) =>
-        logStderrLine(stageLogger, line)
-      );
+      child.stdin?.on("error", () => undefined);
+      child.stdout?.on("error", () => undefined);
+      if (child.stderr !== null) {
+        const stageLogger = this.logger.child({ stage });
+        createInterface({ input: child.stderr }).on("line", (line) =>
+          logStderrLine(stageLogger, line)
+        );
+      }
       const next = children[index + 1];
-      if (next !== undefined) {
-        child.stdout.pipe(next.stdin);
+      const { stdout } = child;
+      if (next !== undefined && next.stdin !== null && stdout !== null) {
+        const { stdin } = next;
+        stdout.pipe(stdin);
         // `pipe` only ends the next stdin on a clean end of this stdout; make
         // sure the next stage sees EOF however this one goes away.
-        child.once("close", () => next.stdin.end());
+        child.once("close", () => stdin.end());
         // When the next stage goes away first, `pipe` unpipes and leaves this
         // stdout paused; it would then never reach EOF, so this stage would
         // never emit `close`. Drain it instead.
-        next.once("close", () => child.stdout.resume());
+        next.once("close", () => stdout.resume());
       }
     });
     // The first stage gets no input.
-    children[0]?.stdin.end();
+    children[0]?.stdin?.end();
 
     const last = children.at(-1);
     try {
-      if (last !== undefined) {
+      if (last !== undefined && last.stdout !== null) {
         for await (const line of createInterface({
           input: last.stdout,
           crlfDelay: Infinity,

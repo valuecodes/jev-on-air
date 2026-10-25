@@ -1,8 +1,9 @@
-import { Channel } from "@repo/alpaca/channel";
 // Combines several async sources into one. Sources are factories that take
 // an abort signal, because a generator blocked in `await` cannot be stopped
 // from outside any other way; each source is expected to end once the signal
 // aborts, as the transcriber and the price feed do.
+
+import { Channel } from "@repo/alpaca/channel";
 import { setTimeout as sleep } from "node:timers/promises";
 
 type Source<T> = (signal: AbortSignal) => AsyncIterable<T>;

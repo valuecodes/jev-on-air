@@ -1,3 +1,7 @@
+// The `jev` command: runs the decision engine over a live stream or a
+// recording, keeps the portfolio in a state file and writes every event to
+// a ledger and to stdout.
+
 import { PriceFeed } from "@repo/alpaca/prices";
 import type { PriceTick } from "@repo/alpaca/prices";
 import { HoldDecider, ScriptedDecider } from "@repo/jev/decider";
@@ -26,9 +30,6 @@ import { StateFile } from "@repo/jev/state";
 import { TypeSafeDecider } from "@repo/jev/typesafe";
 import type { LoggerLike } from "@repo/logger";
 import { parseSegmentLine, Transcriber } from "@repo/transcriber";
-// The `jev` command: runs the decision engine over a live stream or a
-// recording, keeps the portfolio in a state file and writes every event to
-// a ledger and to stdout.
 import { once } from "node:events";
 import { rm } from "node:fs/promises";
 import { basename } from "node:path";

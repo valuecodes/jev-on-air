@@ -1,7 +1,8 @@
-import type { LoggerLike } from "@repo/logger";
 // Transcribes a YouTube live stream or video with faster-whisper. The audio is
 // pulled by yt-dlp, decoded by ffmpeg and transcribed by the Python worker in
 // `whisper/`; this class wires them together and yields segments as they come.
+
+import type { LoggerLike } from "@repo/logger";
 import { join } from "node:path";
 
 import { Pipeline } from "./pipeline";

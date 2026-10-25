@@ -1,5 +1,6 @@
-import { Logger } from "@repo/logger";
 // Process entry point: reads argv, prints the result, and sets the exit code.
+
+import { Logger } from "@repo/logger";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { parseEnv } from "node:util";

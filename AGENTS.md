@@ -78,7 +78,7 @@ It exits 0 when clean and 1 when it finds a leak.
 
 CI checks are defined once in the reusable `.github/workflows/checks.yml`: typecheck,
 lint, knip, format:check, test, build, secrets-scan, CodeQL code scanning
-(`javascript-typescript`) and workflow-lint. `feature.yml` calls it on PRs and
+(`javascript-typescript` and `python`) and workflow-lint. `feature.yml` calls it on PRs and
 `main.yml` on push to `main` (deploy jobs go there). workflow-lint calls the reusable
 workflow from `valuecodes/automation`: actionlint (with shellcheck) and zizmor over the
 workflow and action files. Each tool reads `.github/actionlint.yaml` / `zizmor.yml` if
