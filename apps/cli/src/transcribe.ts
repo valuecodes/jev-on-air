@@ -1,8 +1,9 @@
-import type { LoggerLike } from "@repo/logger";
-import { Transcriber } from "@repo/transcriber";
 // The `transcribe` command: streams a YouTube transcript to stdout and appends
 // every segment to a JSONL file, so a run can be replayed or tailed later. A
 // `.meta.json` next to it records the video and when its audio began.
+
+import type { LoggerLike } from "@repo/logger";
+import { Transcriber } from "@repo/transcriber";
 import { mkdir, open } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 

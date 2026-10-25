@@ -1,6 +1,7 @@
-import type { LoggerLike } from "@repo/logger";
 // One Alpaca market-data WebSocket: authenticates, subscribes to trades and
 // quotes and yields them, reconnecting with backoff when the connection drops.
+
+import type { LoggerLike } from "@repo/logger";
 import { setTimeout as sleep } from "node:timers/promises";
 
 import { Channel } from "./channel";

@@ -1,8 +1,9 @@
+// The `prices` command: streams live prices for Jev's instruments from Alpaca
+// to stdout until interrupted, or prints a past window of them.
+
 import { PriceHistory } from "@repo/alpaca/history";
 import { PriceFeed } from "@repo/alpaca/prices";
 import type { LoggerLike } from "@repo/logger";
-// The `prices` command: streams live prices for Jev's instruments from Alpaca
-// to stdout until interrupted, or prints a past window of them.
 import { once } from "node:events";
 
 import { formatTick } from "./cli";

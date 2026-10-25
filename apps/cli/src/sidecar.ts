@@ -1,6 +1,7 @@
-import type { VideoInfo } from "@repo/transcriber";
 // The `.meta.json` next to a transcript: what video it came from and when
 // its audio began, so a replay can line it up with recorded prices.
+
+import type { VideoInfo } from "@repo/transcriber";
 import { readFile, writeFile } from "node:fs/promises";
 
 import { isZonedTime } from "./time";

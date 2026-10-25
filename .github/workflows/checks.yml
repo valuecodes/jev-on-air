@@ -78,7 +78,8 @@ jobs:
       fail-fast: false
       matrix:
         # The workflow files are checked by the `workflow-lint` job instead.
-        language: [javascript-typescript]
+        # `python` covers the faster-whisper worker in packages/transcriber.
+        language: [javascript-typescript, python]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

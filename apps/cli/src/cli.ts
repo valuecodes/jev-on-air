@@ -1,9 +1,10 @@
-import type { PriceTick, StockFeed } from "@repo/alpaca/prices";
-import { DEFAULT_MODEL } from "@repo/jev/typesafe";
-import type { Segment } from "@repo/transcriber";
 // Argument parsing and commands. Pure: returns the output instead of printing it,
 // so tests can call `run` directly. `main.ts` is the process entry point; the
 // `jev` command's arguments live in `jev-args.ts`.
+
+import type { PriceTick, StockFeed } from "@repo/alpaca/prices";
+import { DEFAULT_MODEL } from "@repo/jev/typesafe";
+import type { Segment } from "@repo/transcriber";
 import { parseArgs } from "node:util";
 
 import { parseTime } from "./time";

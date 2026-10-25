@@ -1,7 +1,8 @@
-import type { PriceTick } from "@repo/alpaca/prices";
-import type { Segment } from "@repo/transcriber";
 // Replays recorded transcripts and ticks through the engine: paced by their
 // own timestamps with real sleeps, or as fast as possible on a virtual clock.
+
+import type { PriceTick } from "@repo/alpaca/prices";
+import type { Segment } from "@repo/transcriber";
 import { setTimeout as sleep } from "node:timers/promises";
 
 import type { EngineEvent } from "./engine";

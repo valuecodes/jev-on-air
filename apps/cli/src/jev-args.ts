@@ -1,6 +1,7 @@
-import { DEFAULT_MODEL } from "@repo/jev/typesafe";
 // The `jev` command's arguments and the configuration it reads from the
 // environment. Pure, like `cli.ts`, so tests can call it directly.
+
+import { DEFAULT_MODEL } from "@repo/jev/typesafe";
 import { parseArgs } from "node:util";
 
 import {
