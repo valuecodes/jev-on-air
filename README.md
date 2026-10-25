@@ -32,12 +32,13 @@ flowchart LR
 
 - Command-line app in `apps/cli` (Node.js 24, TypeScript run directly)
 - Local dashboard in `apps/desk` (Next.js): start/stop `jev` runs and watch them live
-- Shared tooling: oxlint, Prettier, TypeScript 7, Turbo
+- Shared tooling: oxlint, oxfmt, Knip, TypeScript 7, Turbo
 - `@repo/logger` — structured JSON logging for Cloud Run / Cloud Logging
 - `@repo/alpaca` — live Gold, Bitcoin, S&P 500 and Oil prices from Alpaca
 - `@repo/transcriber` — YouTube → faster-whisper live transcript
 - `@repo/jev` — the decision engine: transcript + prices → Jev (TypeSafe AI) → simulated portfolio
-- pnpm catalog for versions, with a 14-day release-age guard on new releases
+- pnpm catalog for versions, with supply-chain guards: a 14-day release-age wait,
+  a trust-downgrade check, and no git/tarball subdependencies
 - Agent settings in `.claude/`, CI in `.github/`
 
 ```text
@@ -47,15 +48,15 @@ packages/alpaca        Alpaca market data: live prices over WebSocket
 packages/jev           paper-trading decision engine, portfolio and ledger
 packages/transcriber   yt-dlp → ffmpeg → faster-whisper transcript stream
 packages/logger        pino logger, Cloud Logging shaped JSON
-tooling/prettier       shared Prettier config
-tooling/typescript     shared tsconfig presets (base, node, react)
-tooling/github         composite action: pnpm + Node + install; secrets-scan script
+packages/typescript    shared tsconfig presets (base, node, react)
+.github/               CI workflows, composite setup action, secrets-scan script
 .oxlintrc.json         single root lint config for the whole repo
+.oxfmtrc.jsonc         single root format config for the whole repo
 ```
 
 ## Getting started
 
-Requires Node.js 24.21.0 (`.nvmrc`) and pnpm 11.24.0 (`packageManager` in `package.json`).
+Requires Node.js 24 (exact version in `.nvmrc`) and pnpm 12.11.2 (`packageManager` in `package.json`).
 
 ```bash
 pnpm install
@@ -90,16 +91,20 @@ pnpm desk   # http://127.0.0.1:3000
 
 ```bash
 pnpm lint           # type-aware linting, whole repo in one oxlint process
+pnpm knip           # unused files, exports and dependencies
 pnpm typecheck      # TypeScript 7 (tsc) across the repo
 pnpm test           # test suite
 pnpm build          # production builds
-pnpm format         # Prettier write
-pnpm format:check   # Prettier check (CI gate)
+pnpm format         # oxfmt write
+pnpm format:check   # oxfmt check (CI gate)
 pnpm secrets:scan   # gitleaks secret scan over git history
 ```
 
 oxlint prints nothing when there are no findings, so silent output means clean.
 
-CI runs typecheck, lint, format-check, test, build and a gitleaks secret scan on push to
-`main` and on PRs. `secrets:scan` needs either `gitleaks` v8.19+ on PATH or a running
+CI runs typecheck, lint, knip, format:check, test, build and a gitleaks secret scan on
+PRs and on push to `main`, plus CodeQL code scanning and actionlint + zizmor over the
+workflow files. The checks live once in `checks.yml`, called by `feature.yml` (PRs) and
+`main.yml` (push to `main`). The `all-passed` job fans them in: require only that check
+in branch protection. `secrets:scan` needs either `gitleaks` v8.19+ on PATH or a running
 Docker daemon.

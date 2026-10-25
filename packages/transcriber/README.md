@@ -62,4 +62,5 @@ cache.
 | --------- | ------------------------------------------- |
 | Typecheck | `pnpm --filter @repo/transcriber typecheck` |
 | Test      | `pnpm --filter @repo/transcriber test`      |
-| Format    | `pnpm --filter @repo/transcriber format`    |
+
+Linting and formatting are repo-wide: run `pnpm lint` and `pnpm format` from the root.
