@@ -76,7 +76,7 @@
   }
 
   body {
-    @apply bg-page text-ink min-h-screen text-sm antialiased;
+    @apply min-h-screen bg-page text-sm text-ink antialiased;
     background-image: radial-gradient(
       ellipse 80% 40% at 50% -10%,
       color-mix(in oklab, var(--color-accent) 12%, transparent),

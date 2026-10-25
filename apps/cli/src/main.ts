@@ -1,19 +1,18 @@
+import { Logger } from "@repo/logger";
 // Process entry point: reads argv, prints the result, and sets the exit code.
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { parseEnv } from "node:util";
-import { Logger } from "@repo/logger";
 
 import {
   alpacaCredentials,
-  jevConfig,
-  parseJevArgs,
   parsePricesArgs,
   parseTranscribeArgs,
   run,
   usage,
 } from "./cli";
 import { JevCommand } from "./jev";
+import { jevConfig, parseJevArgs } from "./jev-args";
 import { PricesCommand } from "./prices";
 import { TranscribeCommand } from "./transcribe";
 
@@ -25,7 +24,7 @@ const argv = process.argv.slice(2);
  * transcriber's child processes get a scrubbed copy, so credentials from
  * either source stay in this process.
  */
-function readEnv(): NodeJS.ProcessEnv {
+const readEnv = (): NodeJS.ProcessEnv => {
   let text: string;
   try {
     text = readFileSync(
@@ -33,27 +32,29 @@ function readEnv(): NodeJS.ProcessEnv {
       "utf8"
     );
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+      throw error;
+    }
     return { ...process.env };
   }
   return { ...parseEnv(text), ...process.env };
-}
+};
 
-function fail(error: unknown): void {
+const fail = (error: unknown): void => {
   console.error(
     `${error instanceof Error ? error.message : String(error)}\n\n${usage}`
   );
   process.exitCode = 1;
-}
+};
 
 /**
  * Runs a long-lived command until it ends or the process is signalled. stdout
  * carries the command's output, so logs go to stderr.
  */
-async function runStreaming(
+const runStreaming = async (
   name: string,
   command: (logger: Logger, signal: AbortSignal) => Promise<void>
-): Promise<void> {
+): Promise<void> => {
   const logger = new Logger({
     bindings: { service: "cli" },
     destination: process.stderr,
@@ -65,7 +66,7 @@ async function runStreaming(
   // tsx — so signals within a second of the first count as the same one.
   const controller = new AbortController();
   let abortedAt = 0;
-  for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"] as const)
+  for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"] as const) {
     process.on(signal, () => {
       if (!controller.signal.aborted) {
         abortedAt = Date.now();
@@ -74,13 +75,14 @@ async function runStreaming(
         process.exit(130);
       }
     });
+  }
   try {
     await command(logger, controller.signal);
   } catch (error) {
     logger.error(`${name} failed`, { err: error });
     process.exitCode = 1;
   }
-}
+};
 
 if (argv[0] === "transcribe") {
   let args;

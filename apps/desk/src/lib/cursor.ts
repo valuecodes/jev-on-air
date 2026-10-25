@@ -3,7 +3,7 @@
 // resumes there. Run output is counted per desk process, so its position
 // carries the registry's generation too.
 
-export type Cursor = {
+type Cursor = {
   ledger: number;
   transcript: number;
   ticks: number;
@@ -15,7 +15,7 @@ export type Cursor = {
  * `ledger.transcript.ticks.generation.output`; anything malformed counts as
  * zero.
  */
-export function parseCursor(value: string | null): Cursor {
+const parseCursor = (value: string | null): Cursor => {
   const [ledger, transcript, ticks, generation, output] = (value ?? "")
     .split(".")
     .map((part) => (/^\d{1,15}$/.test(part) ? Number(part) : 0));
@@ -26,9 +26,9 @@ export function parseCursor(value: string | null): Cursor {
     generation: generation ?? 0,
     output: output ?? 0,
   };
-}
+};
 
-export const formatCursor = (cursor: Cursor): string =>
+const formatCursor = (cursor: Cursor): string =>
   [
     cursor.ledger,
     cursor.transcript,
@@ -36,3 +36,5 @@ export const formatCursor = (cursor: Cursor): string =>
     cursor.generation,
     cursor.output,
   ].join(".");
+
+export { formatCursor, parseCursor };

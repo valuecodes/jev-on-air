@@ -88,4 +88,4 @@ const sanitizeFields = (fields: LogFields): LogFields =>
 const sanitizeBindings = (bindings: LogFields): LogFields =>
   copyWithout(bindings, (key) => PROTOTYPE_KEYS.has(key));
 
-export { PROTOTYPE_KEYS, RESERVED_KEYS, sanitizeBindings, sanitizeFields };
+export { sanitizeBindings, sanitizeFields };

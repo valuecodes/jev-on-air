@@ -19,7 +19,9 @@ export class PriceTable {
   private readonly latest = new Map<InstrumentId, LatestPrice>();
 
   update(tick: PriceTick, receivedAt: number): void {
-    if (!Number.isFinite(tick.price) || tick.price <= 0) return;
+    if (!Number.isFinite(tick.price) || tick.price <= 0) {
+      return;
+    }
     this.latest.set(tick.instrument, {
       price: tick.price,
       source: tick.source,
@@ -40,8 +42,9 @@ export class PriceTable {
 
   map(): PriceMap {
     const prices: PriceMap = {};
-    for (const [instrument, latest] of this.latest)
+    for (const [instrument, latest] of this.latest) {
       prices[instrument] = latest.price;
+    }
     return prices;
   }
 }

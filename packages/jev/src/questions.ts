@@ -17,7 +17,7 @@ import type { MarketFeatures } from "./market";
 import type { ApplyResult, Snapshot } from "./portfolio";
 import type { Action, Choice } from "./schema";
 
-export type PriceView = {
+type PriceView = {
   instrument: InstrumentId;
   name: string;
   symbol: string;
@@ -29,10 +29,10 @@ export type PriceView = {
 };
 
 /** Why the engine closed a position on its own, without a turn. */
-export type Exit = "stop" | "take-profit";
+type Exit = "stop" | "take-profit";
 
 /** What happened to one decision of an earlier turn. */
-export type Feedback = {
+type Feedback = {
   turn: number;
   instrument: InstrumentId;
   action: Action;
@@ -41,7 +41,7 @@ export type Feedback = {
   exit?: Exit;
 };
 
-export type TurnInput = {
+type TurnInput = {
   turn: number;
   /** ISO wall-clock time of the turn. */
   now: string;
@@ -58,38 +58,37 @@ export type TurnInput = {
 };
 
 /** Instrument questions are named after the instrument; this one gates them. */
-export const SIGNAL_QUESTION = "signal";
+const SIGNAL_QUESTION = "signal";
 
-export type TurnQuestions = Record<InstrumentId, ChoiceQuestion> & {
+type TurnQuestions = Record<InstrumentId, ChoiceQuestion> & {
   [SIGNAL_QUESTION]: NoulQuestion;
 };
 
+const pad = (value: number): string => String(value).padStart(2, "0");
+
 /** `seconds` of audio time as `hh:mm:ss`. */
-export function formatClock(seconds: number): string {
+const formatClock = (seconds: number): string => {
   const total = Math.max(0, Math.floor(seconds));
-  const pad = (value: number): string => String(value).padStart(2, "0");
   return [Math.floor(total / 3600), Math.floor(total / 60) % 60, total % 60]
     .map(pad)
     .join(":");
-}
+};
 
 const round = (value: number, places = 2): number =>
   Number(value.toFixed(places));
 
 /** One transcript line as the model sees it: no control characters. */
-function line(segment: Segment): { time: string; text: string } {
-  return {
-    time: formatClock(segment.start),
-    text: segment.text
-      .replace(/\p{Cc}+/gu, " ")
-      .replace(/\s+/g, " ")
-      .trim(),
-  };
-}
+const line = (segment: Segment): { time: string; text: string } => ({
+  time: formatClock(segment.start),
+  text: segment.text
+    .replaceAll(/\p{Cc}+/gu, " ")
+    .replaceAll(/\s+/g, " ")
+    .trim(),
+});
 
-function feedbackEntry(item: Feedback): Record<string, JsonValue> {
+const feedbackEntry = (item: Feedback): Record<string, JsonValue> => {
   const { turn, instrument, action, result, exit } = item;
-  if (result.kind === "reject")
+  if (result.kind === "reject") {
     return {
       turn,
       instrument,
@@ -97,6 +96,7 @@ function feedbackEntry(item: Feedback): Record<string, JsonValue> {
       result: "rejected",
       reason: result.reason,
     };
+  }
   return {
     turn,
     instrument,
@@ -107,16 +107,18 @@ function feedbackEntry(item: Feedback): Record<string, JsonValue> {
     price: round(result.fill.price),
     realized_pnl: round(result.fill.realizedPnl),
   };
-}
+};
 
 const maybe = (value: number | undefined, places = 2): number | null =>
   value === undefined ? null : round(value, places);
 
 /** How a market is moving, as the model sees it; null while warming up. */
-function marketEntry(
+const marketEntry = (
   features: MarketFeatures | undefined
-): Record<string, JsonValue> | null {
-  if (!features) return null;
+): Record<string, JsonValue> | null => {
+  if (!features) {
+    return null;
+  }
   return {
     move_5m_pct: maybe(features.return5m, 3),
     move_15m_pct: maybe(features.return15m, 3),
@@ -125,9 +127,9 @@ function marketEntry(
     volume_vs_usual: maybe(features.relativeVolume, 1),
     spread_bps: maybe(features.spreadBps, 1),
   };
-}
+};
 
-export type StateOptions = {
+type StateOptions = {
   /**
    * Include how each market is moving (default true). The signal question
    * leaves it out, so its read stays one of the speech alone.
@@ -140,11 +142,11 @@ export type StateOptions = {
  * signal question, when it was asked first: the instrument questions then
  * see the desk's own read of whether the new lines moved markets.
  */
-export function buildState(
+const buildState = (
   input: TurnInput,
   signal?: number,
   options: StateOptions = {}
-): Record<string, JsonValue> {
+): Record<string, JsonValue> => {
   const { snapshot } = input;
   const market = options.market ?? true;
   return {
@@ -205,7 +207,7 @@ export function buildState(
           },
         }),
   };
-}
+};
 
 const SIGNAL_INSTRUCTIONS = {
   question:
@@ -246,44 +248,47 @@ const TRANSMISSION = [
 type Descriptions = Partial<Record<Choice, Record<string, JsonValue>>>;
 
 /** What each choice means for `name`, worded for the side of the book it sits on. */
-function describe(name: string): Descriptions {
-  return {
-    hold: { what: `Do nothing with ${name} this turn.` },
-    buy: {
-      what: `Open a long in ${name}, or add one unit to an existing long.`,
-      when: `A new statement that makes ${name} likely to rise.`,
-    },
-    short: {
-      what: `Open a short in ${name}, or add one unit to an existing short.`,
-      when: `A new statement that makes ${name} likely to fall.`,
-    },
-    sell: {
-      what: `Reduce the long in ${name} by one unit, exiting it if less remains.`,
-      when: `The case for the long has weakened, or profit should be taken.`,
-    },
-    close: {
-      what: `Flatten the whole position in ${name}, long or short.`,
-      when: `The reason for the position no longer holds, or the story reversed.`,
-    },
-  };
-}
+const describe = (name: string): Descriptions => ({
+  hold: { what: `Do nothing with ${name} this turn.` },
+  buy: {
+    what: `Open a long in ${name}, or add one unit to an existing long.`,
+    when: `A new statement that makes ${name} likely to rise.`,
+  },
+  short: {
+    what: `Open a short in ${name}, or add one unit to an existing short.`,
+    when: `A new statement that makes ${name} likely to fall.`,
+  },
+  sell: {
+    what: `Reduce the long in ${name} by one unit, exiting it if less remains.`,
+    when: `The case for the long has weakened, or profit should be taken.`,
+  },
+  close: {
+    what: `Flatten the whole position in ${name}, long or short.`,
+    when: `The reason for the position no longer holds, or the story reversed.`,
+  },
+});
 
 /** The choices the book would accept for a position on the given side. */
-export function choicesFor(side: "long" | "short" | undefined): Choice[] {
-  if (side === "long") return ["hold", "buy", "sell", "close"];
-  if (side === "short") return ["hold", "short", "close"];
+const choicesFor = (side: "long" | "short" | undefined): Choice[] => {
+  if (side === "long") {
+    return ["hold", "buy", "sell", "close"];
+  }
+  if (side === "short") {
+    return ["hold", "short", "close"];
+  }
   return ["hold", "buy", "short"];
-}
+};
 
-function question(view: PriceView, snapshot: Snapshot): ChoiceQuestion {
+const question = (view: PriceView, snapshot: Snapshot): ChoiceQuestion => {
   const position = snapshot.positions.find(
     (candidate) => candidate.instrument === view.instrument
   );
   const name = `${view.name} (${view.symbol})`;
   const descriptions = describe(name);
   const criteria: ChoiceCriteria = {};
-  for (const option of choicesFor(position?.side))
+  for (const option of choicesFor(position?.side)) {
     criteria[option] = descriptions[option] ?? null;
+  }
   return choice(
     {
       question: `What should the desk do with ${name} in response to the new transcript lines?`,
@@ -296,27 +301,45 @@ function question(view: PriceView, snapshot: Snapshot): ChoiceQuestion {
     },
     criteria
   );
-}
+};
 
 /** The signal question alone, asked before the instrument questions. */
-export function buildSignalQuestion(): Pick<
+const buildSignalQuestion = (): Pick<
   TurnQuestions,
   typeof SIGNAL_QUESTION
-> {
-  return { [SIGNAL_QUESTION]: noul(SIGNAL_INSTRUCTIONS) };
-}
+> => ({ [SIGNAL_QUESTION]: noul(SIGNAL_INSTRUCTIONS) });
 
 /** One choice question per instrument with a price view. */
-export function buildInstrumentQuestions(
+const buildInstrumentQuestions = (
   input: TurnInput
-): Omit<TurnQuestions, typeof SIGNAL_QUESTION> {
+): Omit<TurnQuestions, typeof SIGNAL_QUESTION> => {
   const questions: Partial<Record<InstrumentId, ChoiceQuestion>> = {};
-  for (const view of input.prices)
+  for (const view of input.prices) {
     questions[view.instrument] = question(view, input.snapshot);
+  }
   return questions as Record<InstrumentId, ChoiceQuestion>;
-}
+};
 
 /** One question per instrument plus the signal gate. */
-export function buildQuestions(input: TurnInput): TurnQuestions {
-  return { ...buildSignalQuestion(), ...buildInstrumentQuestions(input) };
-}
+const buildQuestions = (input: TurnInput): TurnQuestions => ({
+  ...buildSignalQuestion(),
+  ...buildInstrumentQuestions(input),
+});
+
+export {
+  buildInstrumentQuestions,
+  buildQuestions,
+  buildSignalQuestion,
+  buildState,
+  choicesFor,
+  formatClock,
+  SIGNAL_QUESTION,
+};
+export type {
+  Exit,
+  Feedback,
+  PriceView,
+  StateOptions,
+  TurnInput,
+  TurnQuestions,
+};

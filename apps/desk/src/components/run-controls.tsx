@@ -10,12 +10,13 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { useState } from "react";
 
-import type { RunSummary, RunState as State } from "../lib/types";
+import type { RunSummary, RunState as State } from "~/lib/types";
+
 import { postJson } from "./api";
 import { badge, dangerButton } from "./ui";
 import type { Tone } from "./ui";
 
-export const isActive = (run: RunSummary): boolean =>
+const isActive = (run: RunSummary): boolean =>
   run.state === "starting" ||
   run.state === "running" ||
   run.state === "stopping";
@@ -28,34 +29,45 @@ const looks: Record<State, { tone: Tone; icon: LucideIcon; spin?: boolean }> = {
   failed: { tone: "bad", icon: CircleX },
 };
 
-export function RunState({ run }: { run: RunSummary }) {
+/** Why a finished run ended, as ` (SIGTERM)` or ` (exit 1)`; else empty. */
+const endDetail = (run: RunSummary): string => {
+  if (run.state !== "exited" && run.state !== "failed") {
+    return "";
+  }
+  if (run.signal !== null && run.signal !== "") {
+    return ` (${run.signal})`;
+  }
+  if (run.exitCode !== null) {
+    return ` (exit ${run.exitCode})`;
+  }
+  return "";
+};
+
+const RunState = ({ run }: { run: RunSummary }) => {
   const { tone, icon: Icon, spin } = looks[run.state];
-  const detail =
-    run.state === "exited" || run.state === "failed"
-      ? run.signal
-        ? ` (${run.signal})`
-        : run.exitCode !== null
-          ? ` (exit ${run.exitCode})`
-          : ""
-      : "";
   return (
     <span className={badge(tone)}>
-      <Icon className={`size-3.5 ${spin ? "animate-spin" : ""}`} aria-hidden />
+      <Icon
+        className={`size-3.5 ${spin === true ? "animate-spin" : ""}`}
+        aria-hidden
+      />
       {run.state}
-      {detail}
+      {endDetail(run)}
     </span>
   );
-}
+};
 
-export function StopButton({ run }: { run: RunSummary }) {
+const StopButton = ({ run }: { run: RunSummary }) => {
   const [error, setError] = useState<string | null>(null);
-  if (!isActive(run)) return null;
+  if (!isActive(run)) {
+    return null;
+  }
   const stop = async (): Promise<void> => {
     try {
       await postJson("/api/runs/stop", { id: run.id });
       setError(null);
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : String(caught));
+    } catch (error) {
+      setError(error instanceof Error ? error.message : String(error));
     }
   };
   return (
@@ -69,7 +81,11 @@ export function StopButton({ run }: { run: RunSummary }) {
         <Square className="size-3.5 fill-current" aria-hidden />
         {run.state === "stopping" ? "Stopping…" : "Stop"}
       </button>
-      {error && <span className="text-bad">{error}</span>}
+      {error !== null && error !== "" && (
+        <span className="text-bad">{error}</span>
+      )}
     </>
   );
-}
+};
+
+export { isActive, RunState, StopButton };

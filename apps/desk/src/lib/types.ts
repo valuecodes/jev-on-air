@@ -5,11 +5,10 @@ import type { Decision } from "@repo/jev/schema";
 
 import type { SampleMode } from "./samples";
 
-export type RunState =
-  "starting" | "running" | "stopping" | "exited" | "failed";
+type RunState = "starting" | "running" | "stopping" | "exited" | "failed";
 
 /** A run desk started. Runs started elsewhere only exist as ledgers. */
-export type RunSummary = {
+type RunSummary = {
   id: string;
   videoId: string;
   startedAt: string;
@@ -24,7 +23,7 @@ export type RunSummary = {
   transcriptStart: number;
 };
 
-export type OutputLine = {
+type OutputLine = {
   /** The desk process's registry; `seq` counts from zero in each. */
   generation: number;
   seq: number;
@@ -32,7 +31,7 @@ export type OutputLine = {
   text: string;
 };
 
-export type LedgerInfo = {
+type LedgerInfo = {
   id: string;
   title: string | null;
   channel: string | null;
@@ -41,12 +40,12 @@ export type LedgerInfo = {
   live: boolean;
 };
 
-export type Segment = { start: number; end: number; text: string };
+type Segment = { start: number; end: number; text: string };
 
-export type LedgerLine = { offset: number; event: JevEvent };
+type LedgerLine = { offset: number; event: JevEvent };
 
 /** The last price of an instrument in one time bucket. */
-export type PricePoint = {
+type PricePoint = {
   instrument: Decision["instrument"];
   /** Bucket start, in milliseconds since the epoch. */
   t: number;
@@ -54,7 +53,7 @@ export type PricePoint = {
 };
 
 /** A transcript's `.meta.json`, as written by the CLI. */
-export type VideoMeta = {
+type VideoMeta = {
   video: {
     id: string;
     title?: string;
@@ -67,4 +66,16 @@ export type VideoMeta = {
   transcribedAt: string;
   audioStart?: string;
 };
-export type TranscriptLine = { offset: number; segment: Segment };
+type TranscriptLine = { offset: number; segment: Segment };
+
+export type {
+  LedgerInfo,
+  LedgerLine,
+  OutputLine,
+  PricePoint,
+  RunState,
+  RunSummary,
+  Segment,
+  TranscriptLine,
+  VideoMeta,
+};

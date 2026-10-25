@@ -7,7 +7,7 @@ import { PriceFeed, streamUrl } from "./prices";
 const stocksUrl = "wss://stream.data.alpaca.markets/v2/iex";
 const cryptoUrl = "wss://stream.data.alpaca.markets/v1beta3/crypto/us-1";
 
-function setup() {
+const setup = () => {
   const server = new FakeServer();
   const { logger } = createTestLogger();
   const feed = new PriceFeed(logger, {
@@ -16,7 +16,7 @@ function setup() {
     retry: { minDelayMs: 1, maxDelayMs: 1 },
   });
   return { server, feed };
-}
+};
 
 describe("streamUrl", () => {
   it("picks the stock feed and the crypto endpoint", () => {
@@ -52,13 +52,13 @@ describe("PriceFeed", () => {
       quotes: ["BTC/USD"],
     });
 
-    server.latest(cryptoUrl).receive(trade("BTC/USD", 64000.5));
+    server.latest(cryptoUrl).receive(trade("BTC/USD", 64_000.5));
     expect((await first).value).toEqual({
       instrument: "bitcoin",
       name: "Bitcoin",
       symbol: "BTC/USD",
       source: "trade",
-      price: 64000.5,
+      price: 64_000.5,
       size: 10,
       timestamp: "2026-09-25T14:31:07.123Z",
     });
@@ -74,14 +74,16 @@ describe("PriceFeed", () => {
     server.latest(cryptoUrl).accept();
 
     server.latest(stocksUrl).receive(trade("AAPL", 1), trade("GLD", 243.1));
-    server.latest(cryptoUrl).receive(trade("BTC/USD", 64000));
+    server.latest(cryptoUrl).receive(trade("BTC/USD", 64_000));
     server.latest(stocksUrl).receive(trade("USO", 71.2), trade("SPY", 512));
 
     const results = [await first];
-    for (let i = 0; i < 3; i++) results.push(await ticks.next());
+    for (let i = 0; i < 3; i++) {
+      results.push(await ticks.next());
+    }
     // Order holds within a stream; across streams it depends on scheduling.
     const instruments = results.map((result) =>
-      result.done ? undefined : result.value.instrument
+      result.done === true ? undefined : result.value.instrument
     );
     expect(instruments.filter((id) => id !== "bitcoin")).toEqual([
       "gold",
@@ -101,38 +103,40 @@ describe("PriceFeed", () => {
     crypto.accept();
 
     crypto.receive(
-      quote("BTC/USD", 63999, 64001),
+      quote("BTC/USD", 63_999, 64_001),
       // Same midpoint, new prices: not a new tick.
-      quote("BTC/USD", 63998, 64002),
+      quote("BTC/USD", 63_998, 64_002),
       // Empty side and crossed book: not a price.
-      quote("BTC/USD", 0, 64001),
-      quote("BTC/USD", 64005, 64001),
-      quote("BTC/USD", 64001, 64003),
-      trade("BTC/USD", 64002.5)
+      quote("BTC/USD", 0, 64_001),
+      quote("BTC/USD", 64_005, 64_001),
+      quote("BTC/USD", 64_001, 64_003),
+      trade("BTC/USD", 64_002.5)
     );
 
     const results = [await first];
-    for (let i = 0; i < 2; i++) results.push(await ticks.next());
+    for (let i = 0; i < 2; i++) {
+      results.push(await ticks.next());
+    }
     expect(
-      results.map((result) => (result.done ? undefined : result.value))
+      results.map((result) => (result.done === true ? undefined : result.value))
     ).toEqual([
       {
         instrument: "bitcoin",
         name: "Bitcoin",
         symbol: "BTC/USD",
         source: "quote",
-        price: 64000,
-        bid: 63999,
-        ask: 64001,
+        price: 64_000,
+        bid: 63_999,
+        ask: 64_001,
         timestamp: "2026-09-25T14:31:07.456Z",
       },
-      expect.objectContaining({ source: "quote", price: 64002 }),
+      expect.objectContaining({ source: "quote", price: 64_002 }),
       // A trade carries the latest quote alongside its own price.
       expect.objectContaining({
         source: "trade",
-        price: 64002.5,
-        bid: 64001,
-        ask: 64003,
+        price: 64_002.5,
+        bid: 64_001,
+        ask: 64_003,
         size: 10,
       }),
     ]);
@@ -185,7 +189,11 @@ describe("PriceFeed", () => {
       expect(server.latest(cryptoUrl).closed).toBe(true);
     });
     await expect(async () => {
-      for (;;) if ((await ticks.next()).done) break;
+      for (;;) {
+        if ((await ticks.next()).done === true) {
+          break;
+        }
+      }
     }).rejects.toThrow(/402/);
     expect(server.sockets).toHaveLength(2);
   });

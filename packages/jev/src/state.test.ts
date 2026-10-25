@@ -14,15 +14,15 @@ const state: PortfolioState = {
   updatedAt: "2026-09-26T12:00:00.000Z",
 };
 
-let dir: string;
-beforeEach(async () => {
-  dir = await mkdtemp(join(tmpdir(), "jev-state-"));
-});
-afterEach(async () => {
-  await rm(dir, { recursive: true, force: true });
-});
-
 describe("StateFile", () => {
+  let dir: string;
+  beforeEach(async () => {
+    dir = await mkdtemp(join(tmpdir(), "jev-state-"));
+  });
+  afterEach(async () => {
+    await rm(dir, { recursive: true, force: true });
+  });
+
   it("returns undefined without a file and round-trips a save", async () => {
     const file = new StateFile(join(dir, "nested", "portfolio.json"));
     expect(await file.load()).toBeUndefined();
@@ -49,10 +49,8 @@ describe("StateFile", () => {
       /invalid state file .* at positions\.gold\.quantity/
     );
   });
-});
 
-describe("StateFile.lock", () => {
-  it("refuses a file held by a live process and takes over a dead one's lock", async () => {
+  it("lock refuses a file held by a live process and takes over a dead one's lock", async () => {
     const file = new StateFile(join(dir, "portfolio.json"));
     const unlock = await file.lock();
     expect(await readFile(`${file.path}.lock`, "utf8")).toBe(

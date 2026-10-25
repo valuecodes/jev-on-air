@@ -2,9 +2,9 @@
 // read back. Every server frame is a JSON array of messages tagged by `T`.
 // https://docs.alpaca.markets/docs/streaming-market-data
 
-export type Credentials = { keyId: string; secretKey: string };
+type Credentials = { keyId: string; secretKey: string };
 
-export type Trade = {
+type Trade = {
   symbol: string;
   price: number;
   size: number;
@@ -12,7 +12,7 @@ export type Trade = {
   timestamp: string;
 };
 
-export type Quote = {
+type Quote = {
   symbol: string;
   bidPrice: number;
   bidSize: number;
@@ -23,75 +23,82 @@ export type Quote = {
 };
 
 /** What a subscribed stream delivers. */
-export type MarketData =
-  { type: "trade"; trade: Trade } | { type: "quote"; quote: Quote };
+type MarketData =
+  | { type: "trade"; trade: Trade }
+  | { type: "quote"; quote: Quote };
 
-export type AlpacaMessage =
+type AlpacaMessage =
   | { type: "connected" }
   | { type: "authenticated" }
   | { type: "subscription"; trades: string[]; quotes: string[] }
   | { type: "error"; code: number; message: string }
   | MarketData;
 
-export function authMessage(credentials: Credentials): string {
-  return JSON.stringify({
+const authMessage = (credentials: Credentials): string =>
+  JSON.stringify({
     action: "auth",
     key: credentials.keyId,
     secret: credentials.secretKey,
   });
-}
 
 /**
  * Subscribes to trades and quotes. Trades can be minutes apart (Alpaca's own
  * crypto venue is thin, IEX is a small share of stock volume); quotes keep
  * the price current in between.
  */
-export function subscribeMessage(symbols: readonly string[]): string {
-  return JSON.stringify({
+const subscribeMessage = (symbols: readonly string[]): string =>
+  JSON.stringify({
     action: "subscribe",
     trades: symbols,
     quotes: symbols,
   });
-}
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null;
 
-function isStringArray(value: unknown): value is string[] {
-  return (
-    Array.isArray(value) && value.every((item) => typeof item === "string")
-  );
-}
+const isStringArray = (value: unknown): value is string[] =>
+  Array.isArray(value) && value.every((item) => typeof item === "string");
 
-function parseMessage(value: unknown): AlpacaMessage | undefined {
-  if (!isRecord(value)) return undefined;
+const parseMessage = (value: unknown): AlpacaMessage | undefined => {
+  if (!isRecord(value)) {
+    return undefined;
+  }
   switch (value.T) {
-    case "success":
-      if (value.msg === "connected") return { type: "connected" };
-      if (value.msg === "authenticated") return { type: "authenticated" };
+    case "success": {
+      if (value.msg === "connected") {
+        return { type: "connected" };
+      }
+      if (value.msg === "authenticated") {
+        return { type: "authenticated" };
+      }
       return undefined;
-    case "subscription":
+    }
+    case "subscription": {
       return {
         type: "subscription",
         trades: isStringArray(value.trades) ? value.trades : [],
         quotes: isStringArray(value.quotes) ? value.quotes : [],
       };
-    case "error":
-      if (typeof value.code !== "number") return undefined;
+    }
+    case "error": {
+      if (typeof value.code !== "number") {
+        return undefined;
+      }
       return {
         type: "error",
         code: value.code,
         message: typeof value.msg === "string" ? value.msg : "",
       };
-    case "t":
+    }
+    case "t": {
       if (
         typeof value.S !== "string" ||
         typeof value.p !== "number" ||
         typeof value.s !== "number" ||
         typeof value.t !== "string"
-      )
+      ) {
         return undefined;
+      }
       return {
         type: "trade",
         trade: {
@@ -101,7 +108,8 @@ function parseMessage(value: unknown): AlpacaMessage | undefined {
           timestamp: value.t,
         },
       };
-    case "q":
+    }
+    case "q": {
       if (
         typeof value.S !== "string" ||
         typeof value.bp !== "number" ||
@@ -109,8 +117,9 @@ function parseMessage(value: unknown): AlpacaMessage | undefined {
         typeof value.ap !== "number" ||
         typeof value.as !== "number" ||
         typeof value.t !== "string"
-      )
+      ) {
         return undefined;
+      }
       return {
         type: "quote",
         quote: {
@@ -122,20 +131,24 @@ function parseMessage(value: unknown): AlpacaMessage | undefined {
           timestamp: value.t,
         },
       };
-    default:
+    }
+    default: {
       return undefined;
+    }
   }
-}
+};
 
 /**
  * Parses one server frame. Messages we do not use (bars, corrections,
  * unknown types) are dropped. Throws if the frame is not a JSON array.
  */
-export function parseFrame(data: string): AlpacaMessage[] {
+const parseFrame = (data: string): AlpacaMessage[] => {
   const value: unknown = JSON.parse(data);
-  if (!Array.isArray(value)) throw new Error(`not an Alpaca frame: ${data}`);
+  if (!Array.isArray(value)) {
+    throw new Error(`not an Alpaca frame: ${data}`);
+  }
   return value.flatMap((item) => parseMessage(item) ?? []);
-}
+};
 
 // Errors that reconnecting cannot fix: a malformed request (400), bad or
 // missing credentials (401, 402), the plan's symbol or connection limit (405,
@@ -144,11 +157,9 @@ export function parseFrame(data: string): AlpacaMessage[] {
 // slow client (407), internal error (500) — are worth retrying.
 const fatalCodes = new Set([400, 401, 402, 405, 406, 409, 410]);
 
-export function isFatalError(code: number): boolean {
-  return fatalCodes.has(code);
-}
+const isFatalError = (code: number): boolean => fatalCodes.has(code);
 
-export class AlpacaError extends Error {
+class AlpacaError extends Error {
   readonly code: number;
 
   constructor(code: number, message: string) {
@@ -157,3 +168,6 @@ export class AlpacaError extends Error {
     this.code = code;
   }
 }
+
+export { AlpacaError, authMessage, isFatalError, parseFrame, subscribeMessage };
+export type { Credentials, MarketData };

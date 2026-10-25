@@ -49,5 +49,4 @@ const resolveLevel = (env: NodeJS.ProcessEnv): LevelResolution => {
     : { level: fallback, ignored: requested };
 };
 
-export type { LevelResolution };
-export { LOG_LEVELS, isLogLevel, resolveLevel };
+export { isLogLevel, resolveLevel };

@@ -8,7 +8,9 @@ export class Channel<T> implements AsyncIterable<T> {
   private wake: (() => void) | undefined;
 
   push(value: T): void {
-    if (this.closed) return;
+    if (this.closed) {
+      return;
+    }
     this.buffer.push(value);
     this.notify();
   }
@@ -21,7 +23,9 @@ export class Channel<T> implements AsyncIterable<T> {
 
   /** Makes iteration throw `reason` once the buffered values are consumed. */
   fail(reason: unknown): void {
-    if (this.closed) return;
+    if (this.closed) {
+      return;
+    }
     this.failure = { reason };
     this.end();
   }
@@ -38,8 +42,12 @@ export class Channel<T> implements AsyncIterable<T> {
         yield this.buffer.shift() as T;
         continue;
       }
-      if (this.failure) throw this.failure.reason;
-      if (this.closed) return;
+      if (this.failure) {
+        throw this.failure.reason;
+      }
+      if (this.closed) {
+        return;
+      }
       await new Promise<void>((resolve) => {
         this.wake = resolve;
       });

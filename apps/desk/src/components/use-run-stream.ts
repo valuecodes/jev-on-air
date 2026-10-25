@@ -10,9 +10,9 @@ import type {
   RunSummary,
   Segment,
   TranscriptLine,
-} from "../lib/types";
+} from "~/lib/types";
 
-export type StreamState = {
+type StreamState = {
   ledger: LedgerLine[];
   transcript: TranscriptLine[];
   output: OutputLine[];
@@ -47,7 +47,7 @@ const initial: StreamState = {
   notices: [],
 };
 
-function apply(state: StreamState, messages: Message[]): StreamState {
+const apply = (state: StreamState, messages: Message[]): StreamState => {
   // Copied once per batch, then appended to in place.
   let ledger = [...state.ledger];
   let transcript = [...state.transcript];
@@ -57,38 +57,53 @@ function apply(state: StreamState, messages: Message[]): StreamState {
   let { run, connected } = state;
   for (const message of messages) {
     switch (message.type) {
-      case "ledger":
+      case "ledger": {
         ledger.push(message.line);
         break;
-      case "transcript":
+      }
+      case "transcript": {
         transcript.push(message.line);
         break;
+      }
       case "output": {
         const last = output.at(-1);
         // A new generation means desk restarted and counts from zero again.
-        if (last && last.generation !== message.line.generation)
+        if (last && last.generation !== message.line.generation) {
           output = [message.line];
-        else if ((last?.seq ?? 0) < message.line.seq) output.push(message.line);
+        } else if ((last?.seq ?? 0) < message.line.seq) {
+          output.push(message.line);
+        }
         break;
       }
-      case "prices":
+      case "prices": {
         // A loop: spreading tens of thousands of points overflows the stack.
-        for (const point of message.points) prices.push(point);
+        for (const point of message.points) {
+          prices.push(point);
+        }
         break;
-      case "state":
+      }
+      case "state": {
         run = message.run;
         break;
-      case "reset":
-        if (message.file === "ledger") ledger = [];
-        else if (message.file === "transcript") transcript = [];
-        else prices = [];
+      }
+      case "reset": {
+        if (message.file === "ledger") {
+          ledger = [];
+        } else if (message.file === "transcript") {
+          transcript = [];
+        } else {
+          prices = [];
+        }
         break;
-      case "notice":
+      }
+      case "notice": {
         notices.push(message.message);
         break;
-      case "connected":
+      }
+      case "connected": {
         connected = message.connected;
         break;
+      }
     }
   }
   return {
@@ -100,7 +115,7 @@ function apply(state: StreamState, messages: Message[]): StreamState {
     connected,
     notices: notices.slice(-NOTICE_LIMIT),
   };
-}
+};
 
 type Payload<T> = { offset: number; value: T };
 
@@ -108,7 +123,7 @@ type Payload<T> = { offset: number; value: T };
  * Follows `/api/runs/<id>/stream`. Messages are batched per animation frame,
  * so replaying a long ledger on connect is one render, not thousands.
  */
-export function useRunStream(id: string): StreamState {
+const useRunStream = (id: string): StreamState => {
   const [state, dispatch] = useReducer(apply, initial);
 
   useEffect(() => {
@@ -176,9 +191,13 @@ export function useRunStream(id: string): StreamState {
 
     return () => {
       source.close();
-      if (frame !== undefined) cancelAnimationFrame(frame);
+      if (frame !== undefined) {
+        cancelAnimationFrame(frame);
+      }
     };
   }, [id]);
 
   return state;
-}
+};
+
+export { useRunStream };

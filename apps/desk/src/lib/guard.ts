@@ -6,46 +6,54 @@
 
 const localHosts = new Set(["127.0.0.1", "localhost", "[::1]"]);
 
-function hostname(host: string): string | undefined {
+const hostname = (host: string): string | undefined => {
   try {
     return new URL(`http://${host}`).hostname;
   } catch {
     return undefined;
   }
-}
+};
 
 /** Why a request is refused, or `undefined` if it may proceed. */
-export function refusal(
+const refusal = (
   headers: Headers,
   { mutating }: { mutating: boolean }
-): string | undefined {
+): string | undefined => {
   const host = headers.get("host");
-  if (!host || !localHosts.has(hostname(host) ?? ""))
+  if (host === null || host === "" || !localHosts.has(hostname(host) ?? "")) {
     return "desk only answers on localhost";
-  if (!mutating) return undefined;
+  }
+  if (!mutating) {
+    return undefined;
+  }
 
   const origin = headers.get("origin");
   let url: URL | undefined;
   try {
-    url = origin ? new URL(origin) : undefined;
+    url = origin !== null && origin !== "" ? new URL(origin) : undefined;
   } catch {
     url = undefined;
   }
-  if (!url || url.protocol !== "http:" || url.host !== host)
+  if (!url || url.protocol !== "http:" || url.host !== host) {
     return "cross-origin request";
+  }
 
   const type = headers.get("content-type")?.split(";")[0]?.trim().toLowerCase();
-  if (type !== "application/json") return "expected application/json";
+  if (type !== "application/json") {
+    return "expected application/json";
+  }
   return undefined;
-}
+};
 
 /** A 403 response if the request is refused, else `undefined`. */
-export function guard(
+const guard = (
   request: Request,
   options: { mutating: boolean }
-): Response | undefined {
+): Response | undefined => {
   const reason = refusal(request.headers, options);
   return reason === undefined
     ? undefined
     : Response.json({ error: reason }, { status: 403 });
-}
+};
+
+export { guard, refusal };

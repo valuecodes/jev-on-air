@@ -5,13 +5,13 @@
 import { TriangleAlert } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
-import type { SeekTarget } from "../lib/video";
+import type { SeekTarget } from "~/lib/video";
 
 type YTPlayer = {
-  seekTo(seconds: number, allowSeekAhead: boolean): void;
-  getDuration(): number;
-  playVideo(): void;
-  destroy(): void;
+  seekTo: (seconds: number, allowSeekAhead: boolean) => void;
+  getDuration: () => number;
+  playVideo: () => void;
+  destroy: () => void;
 };
 
 type YTNamespace = {
@@ -29,20 +29,20 @@ type YTNamespace = {
 };
 
 /** The globals the IFrame API script sets and calls. */
-type YouTubeWindow = Window & {
+type YouTubeGlobals = typeof globalThis & {
   YT?: YTNamespace;
   onYouTubeIframeAPIReady?: () => void;
 };
 
 /** What the run page can do with the player. */
-export type PlayerHandle = { seek: (target: SeekTarget) => void };
+type PlayerHandle = { seek: (target: SeekTarget) => void };
 
 let loading: Promise<YTNamespace> | undefined;
 
 /** Loads the IFrame API script once. */
-function loadYouTube(): Promise<YTNamespace> {
+const loadYouTube = (): Promise<YTNamespace> => {
   loading ??= new Promise<YTNamespace>((resolve, reject) => {
-    const page: YouTubeWindow = window;
+    const page: YouTubeGlobals = globalThis;
     if (page.YT?.Player) {
       resolve(page.YT);
       return;
@@ -50,7 +50,9 @@ function loadYouTube(): Promise<YTNamespace> {
     const previous = page.onYouTubeIframeAPIReady;
     page.onYouTubeIframeAPIReady = () => {
       previous?.();
-      if (page.YT) resolve(page.YT);
+      if (page.YT) {
+        resolve(page.YT);
+      }
     };
     const script = document.createElement("script");
     script.src = "https://www.youtube.com/iframe_api";
@@ -62,23 +64,21 @@ function loadYouTube(): Promise<YTNamespace> {
     document.head.append(script);
   });
   return loading;
-}
+};
 
-function handleFor(player: YTPlayer): PlayerHandle {
-  return {
-    seek: (target) => {
-      const seconds =
-        target.kind === "absolute"
-          ? target.seconds
-          : // On a live stream the duration is the live edge.
-            player.getDuration() - (Date.now() - target.wallTime) / 1000;
-      player.seekTo(Math.max(0, seconds), true);
-      player.playVideo();
-    },
-  };
-}
+const handleFor = (player: YTPlayer): PlayerHandle => ({
+  seek: (target) => {
+    const seconds =
+      target.kind === "absolute"
+        ? target.seconds
+        : // On a live stream the duration is the live edge.
+          player.getDuration() - (Date.now() - target.wallTime) / 1000;
+    player.seekTo(Math.max(0, seconds), true);
+    player.playVideo();
+  },
+});
 
-export default function VideoPlayer({
+const VideoPlayer = ({
   videoId,
   autoplay = true,
   onReady,
@@ -87,18 +87,22 @@ export default function VideoPlayer({
   /** Off for replays, whose timeline does not follow the video's start. */
   autoplay?: boolean;
   onReady: (handle: PlayerHandle | null) => void;
-}) {
+}) => {
   const host = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const element = host.current;
-    if (!element) return;
+    if (!element) {
+      return undefined;
+    }
     let player: YTPlayer | undefined;
     let cancelled = false;
     loadYouTube()
       .then((YT) => {
-        if (cancelled) return;
+        if (cancelled) {
+          return;
+        }
         // The API replaces this node with its iframe.
         const mount = document.createElement("div");
         element.append(mount);
@@ -117,9 +121,10 @@ export default function VideoPlayer({
         });
         player = created;
       })
-      .catch((caught: unknown) => {
-        if (!cancelled)
-          setError(caught instanceof Error ? caught.message : String(caught));
+      .catch((error: unknown) => {
+        if (!cancelled) {
+          setError(error instanceof Error ? error.message : String(error));
+        }
       });
     return () => {
       cancelled = true;
@@ -130,11 +135,11 @@ export default function VideoPlayer({
   }, [videoId, autoplay, onReady]);
 
   return (
-    <div className="border-line relative aspect-video w-full overflow-hidden rounded-lg border bg-black">
+    <div className="relative aspect-video w-full overflow-hidden rounded-lg border border-line bg-black">
       <div ref={host} className="absolute inset-0 [&_iframe]:size-full" />
-      {error && (
-        <div className="text-muted absolute inset-0 flex flex-col items-center justify-center gap-2 p-4 text-center">
-          <TriangleAlert className="text-warn size-6" aria-hidden />
+      {error !== null && error !== "" && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-4 text-center text-muted">
+          <TriangleAlert className="size-6 text-warn" aria-hidden />
           {error}
           <a
             href={`https://www.youtube.com/watch?v=${videoId}`}
@@ -147,4 +152,7 @@ export default function VideoPlayer({
       )}
     </div>
   );
-}
+};
+
+export { VideoPlayer };
+export type { PlayerHandle };

@@ -1,20 +1,20 @@
+import type { LoggerLike } from "@repo/logger";
 // Transcribes a YouTube live stream or video with faster-whisper. The audio is
 // pulled by yt-dlp, decoded by ffmpeg and transcribed by the Python worker in
 // `whisper/`; this class wires them together and yields segments as they come.
 import { join } from "node:path";
-import type { LoggerLike } from "@repo/logger";
 
 import { Pipeline } from "./pipeline";
 import type { Command } from "./pipeline";
 
-export type Segment = {
+type Segment = {
   /** Seconds from the start of the transcribed audio. */
   start: number;
   end: number;
   text: string;
 };
 
-export type TranscriberOptions = {
+type TranscriberOptions = {
   /** faster-whisper model name or path (default `small`). */
   model?: string;
   /** Spoken language code such as `en`; detected from the first speech if unset. */
@@ -29,7 +29,7 @@ export type TranscriberOptions = {
 
 const whisperDir = join(import.meta.dirname, "..", "whisper");
 
-export type VideoInfo = {
+type VideoInfo = {
   id: string;
   title: string;
   channel?: string;
@@ -40,24 +40,35 @@ export type VideoInfo = {
   startedAt?: string;
 };
 
+/** yt-dlp's `live_status` (and the older `was_live` flag) as one of ours. */
+const liveStatus = (record: Record<string, unknown>): VideoInfo["live"] => {
+  const status = record.live_status;
+  if (status === "is_live") {
+    return "is_live";
+  }
+  if (
+    status === "was_live" ||
+    status === "post_live" ||
+    record.was_live === true
+  ) {
+    return "was_live";
+  }
+  return "not_live";
+};
+
 /** Parses yt-dlp's `--dump-single-json` output. Throws if it is not a video. */
-export function parseVideoInfo(json: string): VideoInfo {
+const parseVideoInfo = (json: string): VideoInfo => {
   const value: unknown = JSON.parse(json);
-  if (typeof value !== "object" || value === null)
+  if (typeof value !== "object" || value === null) {
     throw new Error("not a video description");
+  }
   const record = value as Record<string, unknown>;
-  const { id, title, channel, duration, live_status: status } = record;
-  if (typeof id !== "string" || typeof title !== "string")
+  const { id, title, channel, duration } = record;
+  if (typeof id !== "string" || typeof title !== "string") {
     throw new Error("not a video description");
+  }
   const started = record.release_timestamp;
-  const live: VideoInfo["live"] =
-    status === "is_live"
-      ? "is_live"
-      : status === "was_live" ||
-          status === "post_live" ||
-          record.was_live === true
-        ? "was_live"
-        : "not_live";
+  const live = liveStatus(record);
   return {
     id,
     title,
@@ -70,10 +81,10 @@ export function parseVideoInfo(json: string): VideoInfo {
       ? { startedAt: new Date(started * 1000).toISOString() }
       : {}),
   };
-}
+};
 
 /** Parses one JSON line from the worker. Throws if it is not a segment. */
-export function parseSegmentLine(line: string): Segment {
+const parseSegmentLine = (line: string): Segment => {
   const value: unknown = JSON.parse(line);
   if (
     typeof value === "object" &&
@@ -88,9 +99,9 @@ export function parseSegmentLine(line: string): Segment {
     return { start: value.start, end: value.end, text: value.text };
   }
   throw new Error(`not a transcript segment: ${line}`);
-}
+};
 
-export class Transcriber {
+class Transcriber {
   private readonly logger: LoggerLike;
   private readonly options: TranscriberOptions;
   private readonly pipeline: Pipeline;
@@ -131,8 +142,12 @@ export class Transcriber {
    */
   async info(url: string, signal?: AbortSignal): Promise<VideoInfo> {
     let json = "";
-    for await (const line of this.pipeline.run([this.infoCommand(url)], signal))
+    for await (const line of this.pipeline.run(
+      [this.infoCommand(url)],
+      signal
+    )) {
       json += line;
+    }
     return parseVideoInfo(json);
   }
 
@@ -141,10 +156,15 @@ export class Transcriber {
     const { model, language, chunkSeconds, realtime } = this.options;
     const uv = ["run", "--project", whisperDir, "--quiet"];
     const worker = [join(whisperDir, "transcribe.py")];
-    if (model !== undefined) worker.push("--model", model);
-    if (language !== undefined) worker.push("--language", language);
-    if (chunkSeconds !== undefined)
+    if (model !== undefined) {
+      worker.push("--model", model);
+    }
+    if (language !== undefined) {
+      worker.push("--language", language);
+    }
+    if (chunkSeconds !== undefined) {
       worker.push("--chunk", String(chunkSeconds));
+    }
 
     return [
       {
@@ -174,7 +194,7 @@ export class Transcriber {
           "-hide_banner",
           "-loglevel",
           "error",
-          ...(realtime ? ["-re"] : []),
+          ...(realtime === true ? ["-re"] : []),
           "-i",
           "pipe:0",
           "-vn",
@@ -206,8 +226,13 @@ export class Transcriber {
       yield parseSegmentLine(line);
     }
     this.logger.info(
-      signal?.aborted ? "transcription stopped" : "transcription finished",
+      signal?.aborted === true
+        ? "transcription stopped"
+        : "transcription finished",
       { url, segments }
     );
   }
 }
+
+export { parseSegmentLine, parseVideoInfo, Transcriber };
+export type { Segment, TranscriberOptions, VideoInfo };

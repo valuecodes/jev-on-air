@@ -4,9 +4,9 @@ import type { PricePoint } from "./types";
 
 type Instrument = PricePoint["instrument"];
 
-export type ChartPoint = { time: number; value: number; price: number };
+type ChartPoint = { time: number; value: number; price: number };
 
-export type ChartLine = {
+type ChartLine = {
   instrument: Instrument;
   /** `time` in whole seconds, ascending and unique; `value` is % change. */
   points: ChartPoint[];
@@ -24,15 +24,19 @@ const MARGIN_MS = 60_000;
  * inside the run. A bucket seen twice (split across stream batches) keeps
  * its later price.
  */
-export function chartLines(
+const chartLines = (
   points: PricePoint[],
   from: number,
   to: number | undefined
-): ChartLine[] {
+): ChartLine[] => {
   const byInstrument = new Map<Instrument, Map<number, number>>();
   for (const point of points) {
-    if (point.t < from - MARGIN_MS) continue;
-    if (to !== undefined && point.t > to + MARGIN_MS) continue;
+    if (point.t < from - MARGIN_MS) {
+      continue;
+    }
+    if (to !== undefined && point.t > to + MARGIN_MS) {
+      continue;
+    }
     let prices = byInstrument.get(point.instrument);
     if (!prices) {
       prices = new Map();
@@ -50,7 +54,9 @@ export function chartLines(
     );
     const base = (inside[0] ?? sorted[0])?.[1];
     const last = (inside.at(-1) ?? sorted.at(-1))?.[1];
-    if (base === undefined || last === undefined) continue;
+    if (base === undefined || last === undefined) {
+      continue;
+    }
     lines.push({
       instrument,
       points: sorted.map(([time, price]) => ({
@@ -63,21 +69,32 @@ export function chartLines(
     });
   }
   return lines;
-}
+};
 
 /** The time in `times` (ascending) nearest to `time`, if any. */
-export function nearestTime(times: number[], time: number): number | undefined {
+const nearestTime = (times: number[], time: number): number | undefined => {
   let low = 0;
   let high = times.length - 1;
-  if (high < 0) return undefined;
+  if (high < 0) {
+    return undefined;
+  }
   while (low < high) {
     const middle = (low + high) >> 1;
-    if ((times[middle] ?? 0) < time) low = middle + 1;
-    else high = middle;
+    if ((times[middle] ?? 0) < time) {
+      low = middle + 1;
+    } else {
+      high = middle;
+    }
   }
   const after = times[low];
   const before = times[low - 1];
-  if (before === undefined) return after;
-  if (after === undefined) return before;
+  if (before === undefined) {
+    return after;
+  }
+  if (after === undefined) {
+    return before;
+  }
   return time - before <= after - time ? before : after;
-}
+};
+
+export { chartLines, nearestTime };

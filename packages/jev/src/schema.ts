@@ -3,21 +3,21 @@
 import type { InstrumentId } from "@repo/alpaca/instruments";
 import { z } from "zod";
 
-export const INSTRUMENT_IDS = [
+const INSTRUMENT_IDS = [
   "gold",
   "bitcoin",
   "sp500",
   "oil",
 ] as const satisfies readonly InstrumentId[];
 
-export const ACTIONS = ["buy", "sell", "short", "close"] as const;
+const ACTIONS = ["buy", "sell", "short", "close"] as const;
 
 /** What the model picks from: an action, or nothing. */
-export const CHOICES = ["hold", ...ACTIONS] as const;
+const CHOICES = ["hold", ...ACTIONS] as const;
 
-export const ActionSchema = z.enum(ACTIONS);
+const ActionSchema = z.enum(ACTIONS);
 
-export const DecisionSchema = z.object({
+const DecisionSchema = z.object({
   instrument: z.enum(INSTRUMENT_IDS),
   action: ActionSchema,
   /** 0 to 1: how concentrated the model's probabilities were on this action. */
@@ -27,13 +27,13 @@ export const DecisionSchema = z.object({
 });
 
 /** An instrument the model held on, with how close it came to acting. */
-export const HoldSchema = z.object({
+const HoldSchema = z.object({
   instrument: z.enum(INSTRUMENT_IDS),
   confidence: z.number(),
   probabilities: z.partialRecord(z.enum(CHOICES), z.number()).optional(),
 });
 
-export const TurnOutputSchema = z.object({
+const TurnOutputSchema = z.object({
   decisions: z
     .array(DecisionSchema)
     .describe("At most one per instrument; empty means hold"),
@@ -43,11 +43,11 @@ export const TurnOutputSchema = z.object({
   holds: z.array(HoldSchema).optional(),
 });
 
-export type Action = z.infer<typeof ActionSchema>;
-export type Choice = (typeof CHOICES)[number];
-export type Decision = z.infer<typeof DecisionSchema>;
-export type Hold = z.infer<typeof HoldSchema>;
-export type TurnOutput = z.infer<typeof TurnOutputSchema>;
+type Action = z.infer<typeof ActionSchema>;
+type Choice = (typeof CHOICES)[number];
+type Decision = z.infer<typeof DecisionSchema>;
+type Hold = z.infer<typeof HoldSchema>;
+type TurnOutput = z.infer<typeof TurnOutputSchema>;
 
 const unit = (value: number): number =>
   Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : 0;
@@ -57,13 +57,14 @@ const unit = (value: number): number =>
  * the most confident, or the first on a tie. Order of first appearance is kept.
  * Holds are clamped too, and dropped for an instrument that has a decision.
  */
-export function normalizeTurnOutput(output: TurnOutput): TurnOutput {
+const normalizeTurnOutput = (output: TurnOutput): TurnOutput => {
   const best = new Map<InstrumentId, Decision>();
   for (const decision of output.decisions) {
     const candidate = { ...decision, confidence: unit(decision.confidence) };
     const current = best.get(decision.instrument);
-    if (!current || candidate.confidence > current.confidence)
+    if (current === undefined || candidate.confidence > current.confidence) {
       best.set(decision.instrument, candidate);
+    }
   }
   const signal =
     output.signal !== undefined && Number.isFinite(output.signal)
@@ -77,4 +78,16 @@ export function normalizeTurnOutput(output: TurnOutput): TurnOutput {
     ...(signal === undefined ? {} : { signal }),
     ...(holds === undefined ? {} : { holds }),
   };
-}
+};
+
+export {
+  ACTIONS,
+  ActionSchema,
+  CHOICES,
+  DecisionSchema,
+  HoldSchema,
+  INSTRUMENT_IDS,
+  normalizeTurnOutput,
+  TurnOutputSchema,
+};
+export type { Action, Choice, Decision, Hold, TurnOutput };

@@ -13,8 +13,9 @@ const post = {
 
 describe("refusal", () => {
   it("allows local reads", () => {
-    for (const host of ["127.0.0.1:3000", "localhost:4000", "[::1]:3000"])
+    for (const host of ["127.0.0.1:3000", "localhost:4000", "[::1]:3000"]) {
       expect(refusal(headers({ host }), { mutating: false })).toBeUndefined();
+    }
   });
 
   it("refuses a foreign Host, as a DNS-rebinding page would send", () => {
@@ -61,9 +62,10 @@ describe("refusal", () => {
       "text/plain",
       "application/x-www-form-urlencoded",
       "multipart/form-data",
-    ])
+    ]) {
       expect(
         refusal(headers({ ...post, "content-type": type }), { mutating: true })
       ).toMatch(/json/);
+    }
   });
 });

@@ -40,7 +40,7 @@ const input: TurnInput = {
       instrument: "bitcoin",
       name: "Bitcoin",
       symbol: "BTC/USD",
-      price: 64000.25,
+      price: 64_000.25,
       ageSeconds: 0,
     },
     {
@@ -143,7 +143,7 @@ describe("buildState", () => {
           instrument: "bitcoin",
           symbol: "BTC/USD",
           name: "Bitcoin",
-          price_usd: 64000.25,
+          price_usd: 64_000.25,
           seconds_since_update: 0,
           market: null,
         },
@@ -222,7 +222,9 @@ describe("buildState", () => {
 
   it("shows an exit the engine made itself", () => {
     const [fill] = input.feedback;
-    if (!fill) throw new Error("fixture has no fill");
+    if (!fill) {
+      throw new Error("fixture has no fill");
+    }
     const state = buildState({
       ...input,
       feedback: [{ ...fill, action: "close", exit: "stop" }],

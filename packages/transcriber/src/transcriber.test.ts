@@ -62,8 +62,8 @@ describe("parseVideoInfo", () => {
           duration: 1055,
           was_live: true,
           live_status: "was_live",
-          timestamp: 1790352795,
-          release_timestamp: 1790350993,
+          timestamp: 1_790_352_795,
+          release_timestamp: 1_790_350_993,
         })
       )
     ).toEqual({

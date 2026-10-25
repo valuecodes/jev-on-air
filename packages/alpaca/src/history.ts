@@ -11,9 +11,9 @@ import type { CryptoVenue, PriceTick, StockFeed } from "./prices";
 import type { Credentials } from "./protocol";
 
 /** The subset of `fetch` the fetcher needs; the global one fits. */
-export type Fetch = (input: string, init?: RequestInit) => Promise<Response>;
+type Fetch = (input: string, init?: RequestInit) => Promise<Response>;
 
-export type PriceHistoryOptions = {
+type PriceHistoryOptions = {
   credentials: Credentials;
   /** Stock feed for history; `sip` (the default) is the whole market. */
   stockFeed?: StockFeed;
@@ -27,7 +27,7 @@ export type PriceHistoryOptions = {
 };
 
 /** A half-open window of RFC 3339 times: bars opening at `to` are left out. */
-export type Range = { from: string; to: string };
+type Range = { from: string; to: string };
 
 type Bar = { t: string; c: number; v: number };
 type BarsPage = { bars: Record<string, Bar[]>; next_page_token: string | null };
@@ -35,7 +35,7 @@ type BarsPage = { bars: Record<string, Bar[]>; next_page_token: string | null };
 const defaultBaseUrl = "https://data.alpaca.markets";
 const pageLimit = 10_000;
 
-export class HistoryError extends Error {
+class HistoryError extends Error {
   readonly status: number;
 
   constructor(status: number, message: string) {
@@ -45,19 +45,23 @@ export class HistoryError extends Error {
   }
 }
 
-function parsePage(value: unknown): BarsPage {
-  if (typeof value !== "object" || value === null || !("bars" in value))
+const parsePage = (value: unknown): BarsPage => {
+  if (typeof value !== "object" || value === null || !("bars" in value)) {
     throw new Error("bars response has no bars");
+  }
   const { bars, next_page_token: token } = value as {
     bars: unknown;
     next_page_token?: unknown;
   };
   // An empty window comes back as `null`.
-  if (bars !== null && typeof bars !== "object")
+  if (bars !== null && typeof bars !== "object") {
     throw new Error("bars response has no bars");
+  }
   const result: Record<string, Bar[]> = {};
   for (const [symbol, list] of Object.entries(bars ?? {})) {
-    if (!Array.isArray(list)) continue;
+    if (!Array.isArray(list)) {
+      continue;
+    }
     result[symbol] = list.map((bar: unknown, index) => {
       const { t, c, v } = (bar ?? {}) as Partial<Bar>;
       if (
@@ -66,8 +70,9 @@ function parsePage(value: unknown): BarsPage {
         typeof c !== "number" ||
         !Number.isFinite(c) ||
         c <= 0
-      )
+      ) {
         throw new Error(`invalid bar ${index} for ${symbol}`);
+      }
       return { t, c, v: typeof v === "number" ? v : 0 };
     });
   }
@@ -75,9 +80,9 @@ function parsePage(value: unknown): BarsPage {
     bars: result,
     next_page_token: typeof token === "string" && token !== "" ? token : null,
   };
-}
+};
 
-export class PriceHistory {
+class PriceHistory {
   private readonly logger: LoggerLike;
   private readonly options: PriceHistoryOptions;
   private readonly fetch: Fetch;
@@ -107,7 +112,9 @@ export class PriceHistory {
       query.set("feed", this.options.stockFeed ?? "sip");
       query.set("adjustment", "raw");
     }
-    if (pageToken !== undefined) query.set("page_token", pageToken);
+    if (pageToken !== undefined) {
+      query.set("page_token", pageToken);
+    }
     const path =
       market === "stocks"
         ? "/v2/stocks/bars"
@@ -123,8 +130,9 @@ export class PriceHistory {
    * data fails; ends quietly when `signal` aborts.
    */
   async *ticks(range: Range, signal?: AbortSignal): AsyncGenerator<PriceTick> {
-    if (!(Date.parse(range.from) < Date.parse(range.to)))
+    if (!(Date.parse(range.from) < Date.parse(range.to))) {
       throw new Error("range must run from an earlier time to a later one");
+    }
     const ticks: PriceTick[] = [];
     const barMs = (this.options.barMinutes ?? 1) * 60_000;
     const toMs = Date.parse(range.to);
@@ -136,15 +144,19 @@ export class PriceHistory {
         try {
           page = await this.page(market, range, pageToken, signal);
         } catch (error) {
-          if (signal?.aborted) return;
+          if (signal?.aborted === true) {
+            return;
+          }
           throw error;
         }
         pages += 1;
         for (const [symbol, bars] of Object.entries(page.bars)) {
           const instrument = instrumentForSymbol(symbol);
-          if (!instrument) continue;
+          if (instrument === undefined) {
+            continue;
+          }
           // Alpaca includes a bar opening exactly at `end`; the window is half-open.
-          for (const bar of bars.filter((b) => Date.parse(b.t) < toMs))
+          for (const bar of bars.filter((b) => Date.parse(b.t) < toMs)) {
             ticks.push({
               instrument: instrument.id,
               name: instrument.name,
@@ -155,10 +167,12 @@ export class PriceHistory {
               size: bar.v,
               timestamp: new Date(Date.parse(bar.t) + barMs).toISOString(),
             });
+          }
         }
         const next = page.next_page_token ?? undefined;
-        if (next !== undefined && next === pageToken)
+        if (next !== undefined && next === pageToken) {
           throw new Error(`${market} bars: the server repeated a page token`);
+        }
         pageToken = next;
       } while (pageToken !== undefined);
       this.logger.info("fetched history", {
@@ -174,7 +188,9 @@ export class PriceHistory {
         a.symbol.localeCompare(b.symbol)
     );
     for (const tick of ticks) {
-      if (signal?.aborted) return;
+      if (signal?.aborted === true) {
+        return;
+      }
       yield tick;
     }
   }
@@ -208,3 +224,6 @@ export class PriceHistory {
     return parsePage(body);
   }
 }
+
+export { HistoryError, PriceHistory };
+export type { Fetch, PriceHistoryOptions, Range };

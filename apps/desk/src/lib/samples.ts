@@ -2,7 +2,7 @@
 // and ticks live in apps/cli/samples/<id>.*, so a sample's id is also its
 // ledger id. No Node imports here, so the home page can list them.
 
-export type Sample = {
+type Sample = {
   id: string;
   title: string;
   description: string;
@@ -10,7 +10,7 @@ export type Sample = {
   lagSeconds: number;
 };
 
-export const SAMPLES: readonly Sample[] = [
+const SAMPLES: readonly Sample[] = [
   {
     id: "fomc-2026-09-16",
     title: "FOMC press conference, 16 Sep 2026",
@@ -20,10 +20,12 @@ export const SAMPLES: readonly Sample[] = [
   },
 ];
 
-export function findSample(id: string): Sample | undefined {
-  return SAMPLES.find((sample) => sample.id === id);
-}
+const findSample = (id: string): Sample | undefined =>
+  SAMPLES.find((sample) => sample.id === id);
 
 /** Fast runs on a virtual clock; paced plays in real time, like the video. */
-export const SAMPLE_MODES = ["fast", "paced"] as const;
-export type SampleMode = (typeof SAMPLE_MODES)[number];
+const SAMPLE_MODES = ["fast", "paced"] as const;
+type SampleMode = (typeof SAMPLE_MODES)[number];
+
+export { findSample, SAMPLE_MODES, SAMPLES };
+export type { Sample, SampleMode };

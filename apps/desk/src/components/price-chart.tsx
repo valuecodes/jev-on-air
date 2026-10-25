@@ -16,14 +16,16 @@ import type {
   ISeriesApi,
   ISeriesMarkersPluginApi,
   SeriesMarker,
+  SeriesMarkerBar,
   Time,
   UTCTimestamp,
 } from "lightweight-charts";
 import { ChartNoAxesCombined } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { chartLines, nearestTime } from "../lib/chart";
-import type { PricePoint } from "../lib/types";
+import { chartLines, nearestTime } from "~/lib/chart";
+import type { PricePoint } from "~/lib/types";
+
 import { money } from "./format";
 import { mono } from "./ui";
 import { instruments } from "./visuals";
@@ -49,7 +51,23 @@ const localTime = (time: Time): string =>
 const percentLabel = (value: number): string =>
   `${value >= 0 ? "+" : ""}${value.toFixed(2)}%`;
 
-export default function PriceChart({
+/**
+ * Where a fill's marker sits and what it looks like: up for buys, a dot for
+ * closes, down for sells and shorts.
+ */
+const markerLook = (
+  action: FillEvent["action"]
+): Pick<SeriesMarkerBar<Time>, "position" | "shape"> => {
+  if (action === "buy") {
+    return { position: "belowBar", shape: "arrowUp" };
+  }
+  if (action === "close") {
+    return { position: "inBar", shape: "circle" };
+  }
+  return { position: "aboveBar", shape: "arrowDown" };
+};
+
+const PriceChart = ({
   points,
   fills,
   from,
@@ -60,7 +78,7 @@ export default function PriceChart({
   /** The run's start and end (ms); `to` is open while it runs. */
   from: number;
   to: number | undefined;
-}) {
+}) => {
   const host = useRef<HTMLDivElement>(null);
   const chart = useRef<IChartApi | null>(null);
   const lines = useRef(new Map<Instrument, Line>());
@@ -71,7 +89,9 @@ export default function PriceChart({
   // The chart itself, once.
   useEffect(() => {
     const element = host.current;
-    if (!element) return;
+    if (!element) {
+      return undefined;
+    }
     const muted = token("muted");
     const line = token("line");
     const created = createChart(element, {
@@ -107,15 +127,18 @@ export default function PriceChart({
   // Lines and fill markers, whenever the data changes.
   useEffect(() => {
     const api = chart.current;
-    if (!api) return;
+    if (!api) {
+      return;
+    }
     // Another run may lack an instrument the last one had: drop its line.
     const present = new Set(data.map((line) => line.instrument));
-    for (const [instrument, line] of lines.current)
+    for (const [instrument, line] of lines.current) {
       if (!present.has(instrument)) {
         line.markers.detach();
         api.removeSeries(line.series);
         lines.current.delete(instrument);
       }
+    }
     for (const { instrument, points: linePoints } of data) {
       let line = lines.current.get(instrument);
       if (!line) {
@@ -138,18 +161,19 @@ export default function PriceChart({
       const times = linePoints.map((point) => point.time);
       const markers: SeriesMarker<Time>[] = [];
       for (const fill of fills) {
-        if (fill.instrument !== instrument) continue;
+        if (fill.instrument !== instrument) {
+          continue;
+        }
         const time = nearestTime(
           times,
           Math.floor(Date.parse(fill.time) / 1000)
         );
-        if (time === undefined) continue;
-        const up = fill.action === "buy";
-        const close = fill.action === "close";
+        if (time === undefined) {
+          continue;
+        }
         markers.push({
           time: time as UTCTimestamp,
-          position: up ? "belowBar" : close ? "inBar" : "aboveBar",
-          shape: up ? "arrowUp" : close ? "circle" : "arrowDown",
+          ...markerLook(fill.action),
           color: token(fill.action),
           text: fill.action.toUpperCase(),
         });
@@ -160,14 +184,17 @@ export default function PriceChart({
   }, [data, fills]);
 
   useEffect(() => {
-    for (const [instrument, line] of lines.current)
+    for (const [instrument, line] of lines.current) {
       line.series.applyOptions({ visible: !hidden.has(instrument) });
+    }
   }, [hidden, data]);
 
   const toggle = (instrument: Instrument): void =>
     setHidden((current) => {
       const next = new Set(current);
-      if (!next.delete(instrument)) next.add(instrument);
+      if (!next.delete(instrument)) {
+        next.add(instrument);
+      }
       return next;
     });
 
@@ -200,7 +227,7 @@ export default function PriceChart({
       <div className="relative h-64 w-full">
         <div ref={host} className="absolute inset-0" />
         {data.length === 0 && (
-          <div className="text-muted absolute inset-0 flex flex-col items-center justify-center gap-2 text-center">
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-center text-muted">
             <ChartNoAxesCombined className="size-8" aria-hidden />
             No prices recorded for this run yet.
             <span className="text-xs">
@@ -212,4 +239,6 @@ export default function PriceChart({
       </div>
     </div>
   );
-}
+};
+
+export { PriceChart };

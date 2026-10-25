@@ -11,35 +11,40 @@ const SIDECAR_WINDOW_MS = 2 * 60_000;
  * rewritten by every session, so it is only trusted when it was written
  * just after this run started; otherwise the run's start time is close.
  */
-export function audioStartFor(
+const audioStartFor = (
   meta: VideoMeta | null,
   runStart: string
-): number | undefined {
+): number | undefined => {
   const started = Date.parse(runStart);
   const written = meta ? Date.parse(meta.transcribedAt) : Number.NaN;
   if (
     meta?.audioStart !== undefined &&
     written >= started &&
     written - started <= SIDECAR_WINDOW_MS
-  )
+  ) {
     return Date.parse(meta.audioStart);
+  }
   return Number.isNaN(started) ? undefined : started;
-}
+};
 
 /** Seconds into the video for a transcript time. */
-export function videoTime(
+const videoTime = (
   audioTime: number,
   meta: VideoMeta | null,
   runStart: string
-): number {
+): number => {
   const broadcast = meta?.video.startedAt;
-  if (!broadcast) return audioTime;
+  if (broadcast === undefined || broadcast === "") {
+    return audioTime;
+  }
   const audioStart = audioStartFor(meta, runStart);
-  if (audioStart === undefined) return audioTime;
+  if (audioStart === undefined) {
+    return audioTime;
+  }
   return Math.max(0, audioTime + (audioStart - Date.parse(broadcast)) / 1000);
-}
+};
 
-export type SeekTarget =
+type SeekTarget =
   /** Seconds from the start of the video. */
   | { kind: "absolute"; seconds: number }
   /** A wall-clock moment on a live stream: seek back from the live edge. */
@@ -50,13 +55,17 @@ export type SeekTarget =
  * is sought relative to its live edge (its absolute time base can be months
  * old for a 24/7 stream); anything else by absolute video time.
  */
-export function seekTarget(
+const seekTarget = (
   audioTime: number,
   meta: VideoMeta | null,
   runStart: string
-): SeekTarget {
+): SeekTarget => {
   const audioStart = audioStartFor(meta, runStart);
-  if (meta?.video.live === "is_live" && audioStart !== undefined)
+  if (meta?.video.live === "is_live" && audioStart !== undefined) {
     return { kind: "live", wallTime: audioStart + audioTime * 1000 };
+  }
   return { kind: "absolute", seconds: videoTime(audioTime, meta, runStart) };
-}
+};
+
+export { audioStartFor, seekTarget, videoTime };
+export type { SeekTarget };

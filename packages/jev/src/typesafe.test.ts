@@ -32,7 +32,7 @@ const input: TurnInput = {
       instrument: "bitcoin",
       name: "Bitcoin",
       symbol: "BTC/USD",
-      price: 64000,
+      price: 64_000,
       ageSeconds: 0,
     },
     {
@@ -78,7 +78,7 @@ const meta = {
 };
 const instruments = ["gold", "bitcoin", "sp500", "oil"] as const;
 
-function fakeClient(replies: unknown[], status = 200) {
+const fakeClient = (replies: unknown[], status = 200) => {
   const requests: {
     url: string;
     headers: Headers;
@@ -103,7 +103,15 @@ function fakeClient(replies: unknown[], status = 200) {
     },
   });
   return { client, requests };
-}
+};
+
+/** An error's kind and retryability once mapped, or the error itself. */
+const kind = (error: unknown) => {
+  const mapped = toDeciderError(error);
+  return mapped instanceof DeciderError
+    ? [mapped.kind, mapped.retryable]
+    : mapped;
+};
 
 describe("TypeSafeDecider", () => {
   it("asks the signal first, then the instruments with that read, and keeps the holds", async () => {
@@ -353,12 +361,6 @@ describe("interpretAnswers", () => {
 
 describe("toDeciderError", () => {
   it("classifies SDK errors and passes others through", () => {
-    const kind = (error: unknown) => {
-      const mapped = toDeciderError(error);
-      return mapped instanceof DeciderError
-        ? [mapped.kind, mapped.retryable]
-        : mapped;
-    };
     const headers = new Headers();
     expect(
       kind(APIError.fromResponse(429, { error: "slow" }, headers))

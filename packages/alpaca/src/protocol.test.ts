@@ -48,7 +48,7 @@ describe("parseFrame", () => {
           {
             T: "t",
             S: "SPY",
-            i: 52983525029461,
+            i: 52_983_525_029_461,
             x: "V",
             p: 512.34,
             s: 100,
@@ -59,7 +59,7 @@ describe("parseFrame", () => {
           {
             T: "t",
             S: "BTC/USD",
-            p: 64000.5,
+            p: 64_000.5,
             s: 0.0012,
             t: "2026-09-25T14:31:08Z",
             i: 1,
@@ -81,7 +81,7 @@ describe("parseFrame", () => {
         type: "trade",
         trade: {
           symbol: "BTC/USD",
-          price: 64000.5,
+          price: 64_000.5,
           size: 0.0012,
           timestamp: "2026-09-25T14:31:08Z",
         },
@@ -96,9 +96,9 @@ describe("parseFrame", () => {
           {
             T: "q",
             S: "BTC/USD",
-            bp: 63999.5,
+            bp: 63_999.5,
             bs: 0.5,
-            ap: 64001,
+            ap: 64_001,
             as: 0.25,
             t: "2026-09-25T14:31:08Z",
           },
@@ -109,9 +109,9 @@ describe("parseFrame", () => {
         type: "quote",
         quote: {
           symbol: "BTC/USD",
-          bidPrice: 63999.5,
+          bidPrice: 63_999.5,
           bidSize: 0.5,
-          askPrice: 64001,
+          askPrice: 64_001,
           askSize: 0.25,
           timestamp: "2026-09-25T14:31:08Z",
         },
@@ -143,12 +143,14 @@ describe("parseFrame", () => {
 
 describe("isFatalError", () => {
   it("does not retry auth, limit and subscription errors", () => {
-    for (const code of [400, 401, 402, 405, 406, 409, 410])
+    for (const code of [400, 401, 402, 405, 406, 409, 410]) {
       expect(isFatalError(code)).toBe(true);
+    }
   });
 
   it("retries transient errors", () => {
-    for (const code of [403, 404, 407, 500])
+    for (const code of [403, 404, 407, 500]) {
       expect(isFatalError(code)).toBe(false);
+    }
   });
 });

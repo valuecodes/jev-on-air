@@ -7,16 +7,17 @@ import { z } from "zod";
 
 import { INSTRUMENT_IDS } from "./schema";
 
-const finite = z.number().finite();
+// zod 4 numbers already reject Infinity and NaN.
+const finite = z.number();
 const positive = finite.positive();
 
-export const PositionSchema = z.object({
+const PositionSchema = z.object({
   side: z.enum(["long", "short"]),
   quantity: positive,
   avgPrice: positive,
 });
 
-export const PortfolioStateSchema = z.object({
+const PortfolioStateSchema = z.object({
   version: z.literal(1),
   cash: finite,
   realized: finite,
@@ -27,18 +28,33 @@ export const PortfolioStateSchema = z.object({
   lastRun: z.string().optional(),
 });
 
-export type PortfolioState = z.infer<typeof PortfolioStateSchema>;
+type PortfolioState = z.infer<typeof PortfolioStateSchema>;
 
 /** Throws, naming the problem, if `value` is not a saved portfolio. */
-export function parsePortfolioState(value: unknown): PortfolioState {
+const parsePortfolioState = (value: unknown): PortfolioState => {
   const result = PortfolioStateSchema.safeParse(value);
-  if (result.success) return result.data;
+  if (result.success) {
+    return result.data;
+  }
   const issue = result.error.issues[0];
-  const where = issue?.path.length ? ` at ${issue.path.join(".")}` : "";
+  const where =
+    issue !== undefined && issue.path.length > 0
+      ? ` at ${issue.path.join(".")}`
+      : "";
   throw new Error(`${issue?.message ?? "invalid"}${where}`);
-}
+};
 
-export class StateFile {
+const isRunning = (pid: number): boolean => {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    // EPERM: it exists, it just is not ours.
+    return (error as NodeJS.ErrnoException).code === "EPERM";
+  }
+};
+
+class StateFile {
   readonly path: string;
 
   constructor(path: string) {
@@ -51,7 +67,9 @@ export class StateFile {
     try {
       text = await readFile(this.path, "utf8");
     } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === "ENOENT") return undefined;
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+        return undefined;
+      }
       throw error;
     }
     let value: unknown;
@@ -89,24 +107,23 @@ export class StateFile {
     // The pid is written to a private file first and linked into place, so
     // the lock never exists without its owner's pid inside it.
     const temporary = `${lockPath}.${process.pid}.tmp`;
-    await writeFile(
-      temporary,
-      `${process.pid}
-`
-    );
+    await writeFile(temporary, `${process.pid}\n`);
     try {
       for (;;) {
         try {
           await link(temporary, lockPath);
           break;
         } catch (error) {
-          if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+          if ((error as NodeJS.ErrnoException).code !== "EEXIST") {
+            throw error;
+          }
           const holder = await readFile(lockPath, "utf8").catch(() => "");
           const pid = Number(holder.trim());
-          if (Number.isInteger(pid) && pid > 0 && isRunning(pid))
+          if (Number.isInteger(pid) && pid > 0 && isRunning(pid)) {
             throw new Error(
               `${this.path} is in use by another run (pid ${pid}); pass --state to use a separate portfolio`
             );
+          }
           await rm(lockPath, { force: true });
         }
       }
@@ -119,12 +136,5 @@ export class StateFile {
   }
 }
 
-function isRunning(pid: number): boolean {
-  try {
-    process.kill(pid, 0);
-    return true;
-  } catch (error) {
-    // EPERM: it exists, it just is not ours.
-    return (error as NodeJS.ErrnoException).code === "EPERM";
-  }
-}
+export { parsePortfolioState, PortfolioStateSchema, PositionSchema, StateFile };
+export type { PortfolioState };

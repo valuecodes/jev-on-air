@@ -10,8 +10,23 @@ const youtubeHosts = new Set([
 
 const videoIdPattern = /^[\w-]{11}$/;
 
+/** Where the id sits in a YouTube URL's path or query, by host and path. */
+const candidateId = (url: URL): string | null | undefined => {
+  const [first, second] = url.pathname.split("/").filter(Boolean);
+  if (url.hostname === "youtu.be") {
+    return first;
+  }
+  if (first === "watch") {
+    return url.searchParams.get("v");
+  }
+  if (first === "live" || first === "shorts") {
+    return second;
+  }
+  return undefined;
+};
+
 /** The 11-character video id in a YouTube URL. Throws if there is none. */
-export function parseYoutubeVideoId(input: string): string {
+const parseYoutubeVideoId = (input: string): string => {
   let url: URL;
   try {
     url = new URL(input);
@@ -21,24 +36,19 @@ export function parseYoutubeVideoId(input: string): string {
   if (
     !["https:", "http:"].includes(url.protocol) ||
     !youtubeHosts.has(url.hostname)
-  )
+  ) {
     throw new Error(`not a YouTube URL: ${input}`);
+  }
 
-  const [first, second] = url.pathname.split("/").filter(Boolean);
-  const id =
-    url.hostname === "youtu.be"
-      ? first
-      : first === "watch"
-        ? url.searchParams.get("v")
-        : first === "live" || first === "shorts"
-          ? second
-          : undefined;
-  if (!id || !videoIdPattern.test(id))
+  const id = candidateId(url);
+  if (id === null || id === undefined || !videoIdPattern.test(id)) {
     throw new Error(`no YouTube video ID in: ${input}`);
+  }
   return id;
-}
+};
 
 /** The canonical watch URL for a video id. */
-export function watchUrl(videoId: string): string {
-  return `https://www.youtube.com/watch?v=${videoId}`;
-}
+const watchUrl = (videoId: string): string =>
+  `https://www.youtube.com/watch?v=${videoId}`;
+
+export { parseYoutubeVideoId, watchUrl };

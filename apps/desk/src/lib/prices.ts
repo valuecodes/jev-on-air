@@ -8,10 +8,10 @@ import type { PricePoint } from "./types";
  * Parses tick lines and keeps the last price per instrument per `bucketMs`,
  * in time order. Lines that are not ticks are counted, not thrown.
  */
-export function downsample(
+const downsample = (
   lines: string[],
   bucketMs = 1000
-): { points: PricePoint[]; invalid: number } {
+): { points: PricePoint[]; invalid: number } => {
   const last = new Map<string, PricePoint>();
   let invalid = 0;
   for (const line of lines) {
@@ -32,4 +32,6 @@ export function downsample(
   }
   const points = [...last.values()].sort((a, b) => a.t - b.t);
   return { points, invalid };
-}
+};
+
+export { downsample };

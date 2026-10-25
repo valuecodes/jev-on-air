@@ -3,12 +3,12 @@
 // ETF for each — tradable on Alpaca, so a signal can later be paper-traded on
 // exactly the symbol it was priced from.
 
-export type InstrumentId = "gold" | "bitcoin" | "sp500" | "oil";
+type InstrumentId = "gold" | "bitcoin" | "sp500" | "oil";
 
 /** Which Alpaca stream carries the symbol. */
-export type Market = "stocks" | "crypto";
+type Market = "stocks" | "crypto";
 
-export type Instrument = {
+type Instrument = {
   id: InstrumentId;
   name: string;
   /** Alpaca symbol: a ticker for stocks, a `BASE/QUOTE` pair for crypto. */
@@ -16,7 +16,7 @@ export type Instrument = {
   market: Market;
 };
 
-export const INSTRUMENTS: readonly Instrument[] = [
+const INSTRUMENTS: readonly Instrument[] = [
   { id: "gold", name: "Gold", symbol: "GLD", market: "stocks" },
   { id: "bitcoin", name: "Bitcoin", symbol: "BTC/USD", market: "crypto" },
   { id: "sp500", name: "S&P 500", symbol: "SPY", market: "stocks" },
@@ -24,6 +24,8 @@ export const INSTRUMENTS: readonly Instrument[] = [
 ];
 
 /** The instrument priced by `symbol`, if it is one of ours. */
-export function instrumentForSymbol(symbol: string): Instrument | undefined {
-  return INSTRUMENTS.find((instrument) => instrument.symbol === symbol);
-}
+const instrumentForSymbol = (symbol: string): Instrument | undefined =>
+  INSTRUMENTS.find((instrument) => instrument.symbol === symbol);
+
+export { INSTRUMENTS, instrumentForSymbol };
+export type { Instrument, InstrumentId, Market };

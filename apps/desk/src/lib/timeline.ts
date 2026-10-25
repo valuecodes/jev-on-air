@@ -15,7 +15,7 @@ import type {
 
 import type { LedgerLine, RunSummary, Segment, TranscriptLine } from "./types";
 
-export type RunGroup = {
+type RunGroup = {
   run: string;
   start: StartEvent | undefined;
   events: JevEvent[];
@@ -24,7 +24,7 @@ export type RunGroup = {
 };
 
 /** Groups ledger lines by run, in order of first appearance. */
-export function groupRuns(lines: LedgerLine[]): RunGroup[] {
+const groupRuns = (lines: LedgerLine[]): RunGroup[] => {
   const groups = new Map<string, RunGroup>();
   for (const { offset, event } of lines) {
     let group = groups.get(event.run);
@@ -37,11 +37,13 @@ export function groupRuns(lines: LedgerLine[]): RunGroup[] {
       };
       groups.set(event.run, group);
     }
-    if (event.type === "start") group.start = event;
+    if (event.type === "start") {
+      group.start = event;
+    }
     group.events.push(event);
   }
   return [...groups.values()];
-}
+};
 
 const isLive = (group: RunGroup): boolean =>
   group.start?.source.startsWith("youtube:") ?? false;
@@ -53,33 +55,35 @@ const isReplay = (group: RunGroup): boolean =>
  * Splits a transcript into sessions: a new one begins wherever audio time
  * jumps back, because each transcriber process counts from zero.
  */
-export function transcriptSessions(
-  lines: TranscriptLine[]
-): TranscriptLine[][] {
+const transcriptSessions = (lines: TranscriptLine[]): TranscriptLine[][] => {
   const sessions: TranscriptLine[][] = [];
   let previous: Segment | undefined;
   for (const line of lines) {
-    if (!previous || line.segment.start < previous.start - 1) sessions.push([]);
+    if (!previous || line.segment.start < previous.start - 1) {
+      sessions.push([]);
+    }
     sessions.at(-1)?.push(line);
     previous = line.segment;
   }
   return sessions;
-}
+};
 
-export type RunTranscript = {
+type RunTranscript = {
   lines: TranscriptLine[];
   match: "exact" | "approximate" | "none";
 };
 
 /** The transcript lines that belong to `groups[index]`. */
-export function transcriptForRun(
+const transcriptForRun = (
   groups: RunGroup[],
   index: number,
   transcript: TranscriptLine[],
   deskRun: RunSummary | null
-): RunTranscript {
+): RunTranscript => {
   const group = groups[index];
-  if (!group) return { lines: [], match: "none" };
+  if (!group) {
+    return { lines: [], match: "none" };
+  }
 
   // Desk's run is the first group written after the ledger size it recorded.
   // A replay desk started records its lines too (`--tee`), so it matches.
@@ -96,7 +100,9 @@ export function transcriptForRun(
   }
 
   // Otherwise pair live runs and sessions from the newest back.
-  if (!isLive(group)) return { lines: [], match: "none" };
+  if (!isLive(group)) {
+    return { lines: [], match: "none" };
+  }
   const live = groups.filter(isLive);
   const sessions = transcriptSessions(transcript);
   const fromEnd = live.length - 1 - live.indexOf(group);
@@ -104,9 +110,9 @@ export function transcriptForRun(
   return session
     ? { lines: session, match: "approximate" }
     : { lines: [], match: "none" };
-}
+};
 
-export type TimelineItem =
+type TimelineItem =
   | { kind: "segment"; key: string; segment: Segment }
   | { kind: "event"; key: string; event: JevEvent };
 
@@ -114,16 +120,18 @@ export type TimelineItem =
  * Interleaves segments and events by audio time: an event follows the
  * transcript it had consumed. Segments no turn has consumed yet come last.
  */
-export function buildTimeline(
+const buildTimeline = (
   events: JevEvent[],
   lines: TranscriptLine[]
-): TimelineItem[] {
+): TimelineItem[] => {
   const items: TimelineItem[] = [];
   let next = 0;
   const flush = (until: number): void => {
     while (next < lines.length) {
       const line = lines[next];
-      if (!line || line.segment.end > until) break;
+      if (!line || line.segment.end > until) {
+        break;
+      }
       items.push({
         kind: "segment",
         key: `s${line.offset}`,
@@ -133,27 +141,37 @@ export function buildTimeline(
     }
   };
   events.forEach((event, index) => {
-    if (event.audioTime !== null) flush(event.audioTime + 0.001);
+    if (event.audioTime !== null) {
+      flush(event.audioTime + 0.001);
+    }
     items.push({ kind: "event", key: `e${index}`, event });
   });
   flush(Infinity);
   return items;
-}
+};
 
-export type Book = SnapshotEvent | EndEvent;
+type Book = SnapshotEvent | EndEvent;
 
 /** The run's latest mark-to-market, if any. */
-export function latestBook(events: JevEvent[]): Book | undefined {
-  return events.findLast(
+const latestBook = (events: JevEvent[]): Book | undefined =>
+  events.findLast(
     (event): event is Book => event.type === "snapshot" || event.type === "end"
   );
-}
 
 /** Equity over the run: the start, every snapshot and the end. */
-export function equityCurve(events: JevEvent[]): number[] {
-  return events.flatMap((event) =>
+const equityCurve = (events: JevEvent[]): number[] =>
+  events.flatMap((event) =>
     event.type === "start" || event.type === "snapshot" || event.type === "end"
       ? [event.equity]
       : []
   );
-}
+
+export {
+  buildTimeline,
+  equityCurve,
+  groupRuns,
+  latestBook,
+  transcriptForRun,
+  transcriptSessions,
+};
+export type { Book, RunTranscript, TimelineItem };

@@ -111,8 +111,9 @@ describe("parseTickLine", () => {
       JSON.stringify(tick("yesterday")),
       JSON.stringify(tick("2026-09-16T18:30:00")),
       JSON.stringify({ ...tick("2026-09-26T12:00:00.000Z"), source: "guess" }),
-    ])
+    ]) {
       expect(() => parseTickLine(bad)).toThrow(/not a price tick/);
+    }
   });
 });
 
@@ -144,8 +145,9 @@ describe("paced", () => {
     for await (const value of paced(timeline, (ms) => {
       waits.push(ms);
       return Promise.resolve();
-    })(new AbortController().signal))
+    })(new AbortController().signal)) {
       values.push(value);
+    }
     expect(values).toEqual(["a", "b", "c", "d"]);
     expect(waits).toEqual([1500, 2500]);
 
@@ -154,22 +156,25 @@ describe("paced", () => {
     for await (const value of paced(timeline, () => {
       controller.abort();
       return Promise.reject(new Error("aborted"));
-    })(controller.signal))
+    })(controller.signal)) {
       stopped.push(value);
+    }
     expect(stopped).toEqual(["a"]);
   });
 });
 
+const seg = (at: number, text: string): Timed<EngineEvent> => ({
+  at,
+  value: { kind: "segment", segment: { start: 0, end: at / 1000, text } },
+});
+
+const tk = (at: number): Timed<EngineEvent> => ({
+  at,
+  value: { kind: "tick", tick: tick("2026-09-26T12:00:00.000Z") },
+});
+
 describe("fast", () => {
   it("merges timelines by time, adds heartbeats and moves the clock", async () => {
-    const seg = (at: number, text: string): Timed<EngineEvent> => ({
-      at,
-      value: { kind: "segment", segment: { start: 0, end: at / 1000, text } },
-    });
-    const tk = (at: number): Timed<EngineEvent> => ({
-      at,
-      value: { kind: "tick", tick: tick("2026-09-26T12:00:00.000Z") },
-    });
     const { source, clock } = fast(
       [
         [seg(500, "a"), seg(2500, "b")],
@@ -178,11 +183,12 @@ describe("fast", () => {
       { heartbeatMs: 1000, startAt: 10_000 }
     );
     const seen: [number, string][] = [];
-    for await (const event of source(new AbortController().signal))
+    for await (const event of source(new AbortController().signal)) {
       seen.push([
         clock(),
         event.kind === "segment" ? event.segment.text : event.kind,
       ]);
+    }
     expect(seen).toEqual([
       [10_500, "a"],
       [10_500, "tick"],
@@ -194,14 +200,6 @@ describe("fast", () => {
   });
 
   it("ends with the primary timeline, leaving later items unplayed", async () => {
-    const seg = (at: number, text: string): Timed<EngineEvent> => ({
-      at,
-      value: { kind: "segment", segment: { start: 0, end: at / 1000, text } },
-    });
-    const tk = (at: number): Timed<EngineEvent> => ({
-      at,
-      value: { kind: "tick", tick: tick("2026-09-26T12:00:00.000Z") },
-    });
     const { source, clock } = fast(
       [
         [seg(500, "a"), seg(1500, "b")],
@@ -210,8 +208,9 @@ describe("fast", () => {
       { heartbeatMs: 1000, startAt: 0, primary: 0 }
     );
     const kinds: string[] = [];
-    for await (const event of source(new AbortController().signal))
+    for await (const event of source(new AbortController().signal)) {
       kinds.push(event.kind);
+    }
     expect(kinds).toEqual(["segment", "heartbeat", "tick", "segment"]);
     expect(clock()).toBe(1500);
 
@@ -221,8 +220,9 @@ describe("fast", () => {
       primary: 0,
     });
     const none: string[] = [];
-    for await (const event of empty.source(new AbortController().signal))
+    for await (const event of empty.source(new AbortController().signal)) {
       none.push(event.kind);
+    }
     expect(none).toEqual([]);
   });
 });

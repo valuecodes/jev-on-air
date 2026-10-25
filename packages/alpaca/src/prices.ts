@@ -10,7 +10,7 @@ import type { Credentials, MarketData } from "./protocol";
 import { AlpacaStream } from "./stream";
 import type { CreateSocket, RetryOptions } from "./stream";
 
-export type PriceTick = {
+type PriceTick = {
   instrument: InstrumentId;
   name: string;
   symbol: string;
@@ -29,7 +29,7 @@ export type PriceTick = {
   timestamp: string;
 };
 
-export type PriceFeedOptions = {
+type PriceFeedOptions = {
   credentials: Credentials;
   /**
    * Stock data feed: `iex` is real time on the free plan but covers one
@@ -55,17 +55,16 @@ const idleTimeoutMs: Record<Market, number | undefined> = {
   crypto: 120_000,
 };
 
-export type StockFeed = "iex" | "sip";
-export type CryptoVenue = "us" | "us-1" | "eu-1";
+type StockFeed = "iex" | "sip";
+type CryptoVenue = "us" | "us-1" | "eu-1";
 
-export function streamUrl(
+const streamUrl = (
   market: Market,
   feeds: { stockFeed: StockFeed; cryptoVenue: CryptoVenue }
-): string {
-  return market === "stocks"
+): string =>
+  market === "stocks"
     ? `${dataHost}/v2/${feeds.stockFeed}`
     : `${dataHost}/v1beta3/crypto/${feeds.cryptoVenue}`;
-}
 
 type Book = { bid: number; ask: number; mid: number };
 
@@ -81,7 +80,9 @@ class TickBuilder {
     const symbol =
       data.type === "trade" ? data.trade.symbol : data.quote.symbol;
     const instrument = instrumentForSymbol(symbol);
-    if (!instrument) return undefined;
+    if (instrument === undefined) {
+      return undefined;
+    }
     const base = { instrument: instrument.id, name: instrument.name, symbol };
 
     if (data.type === "trade") {
@@ -100,16 +101,20 @@ class TickBuilder {
     const { bidPrice: bid, askPrice: ask, timestamp } = data.quote;
     // A side with no orders is sent as 0 (common outside market hours), and
     // a crossed book is not a price anyone can trade at.
-    if (bid <= 0 || ask <= 0 || ask < bid) return undefined;
+    if (bid <= 0 || ask <= 0 || ask < bid) {
+      return undefined;
+    }
     const mid = (bid + ask) / 2;
     const previous = this.books.get(symbol);
     this.books.set(symbol, { bid, ask, mid });
-    if (previous?.mid === mid) return undefined;
+    if (previous?.mid === mid) {
+      return undefined;
+    }
     return { ...base, source: "quote", price: mid, bid, ask, timestamp };
   }
 }
 
-export class PriceFeed {
+class PriceFeed {
   private readonly streams: AlpacaStream[];
 
   constructor(logger: LoggerLike, options: PriceFeedOptions) {
@@ -143,7 +148,9 @@ export class PriceFeed {
     const onAbort = (): void => {
       controller.abort();
     };
-    if (signal?.aborted) controller.abort();
+    if (signal?.aborted === true) {
+      controller.abort();
+    }
     signal?.addEventListener("abort", onAbort, { once: true });
 
     const ticks = new Channel<PriceTick>();
@@ -151,7 +158,9 @@ export class PriceFeed {
     const pumps = this.streams.map(async (stream) => {
       for await (const data of stream.marketData(controller.signal)) {
         const tick = builder.build(data);
-        if (tick) ticks.push(tick);
+        if (tick !== undefined) {
+          ticks.push(tick);
+        }
       }
     });
     void Promise.all(pumps).then(
@@ -175,3 +184,6 @@ export class PriceFeed {
     }
   }
 }
+
+export { PriceFeed, streamUrl };
+export type { CryptoVenue, PriceFeedOptions, PriceTick, StockFeed };

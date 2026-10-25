@@ -2,7 +2,7 @@
 // play the server's side of the conversation.
 import type { CreateSocket, Socket, SocketHandlers } from "./stream";
 
-export class FakeSocket implements Socket {
+class FakeSocket implements Socket {
   readonly url: string;
   readonly sent: unknown[] = [];
   closed = false;
@@ -18,7 +18,9 @@ export class FakeSocket implements Socket {
   }
 
   close(): void {
-    if (this.closed) return;
+    if (this.closed) {
+      return;
+    }
     this.closed = true;
     this.handlers.close(1000, "");
   }
@@ -41,13 +43,15 @@ export class FakeSocket implements Socket {
 
   /** The server drops the connection. */
   drop(): void {
-    if (this.closed) return;
+    if (this.closed) {
+      return;
+    }
     this.closed = true;
     this.handlers.close(1006, "");
   }
 }
 
-export class FakeServer {
+class FakeServer {
   readonly sockets: FakeSocket[] = [];
 
   readonly createSocket: CreateSocket = (url, handlers) => {
@@ -61,23 +65,29 @@ export class FakeServer {
     const socket = this.sockets.findLast(
       (candidate) => url === undefined || candidate.url === url
     );
-    if (!socket) throw new Error(`no socket opened to ${url ?? "anything"}`);
+    if (socket === undefined) {
+      throw new Error(`no socket opened to ${url ?? "anything"}`);
+    }
     return socket;
   }
 }
 
-export function trade(symbol: string, price: number): object {
-  return { T: "t", S: symbol, p: price, s: 10, t: "2026-09-25T14:31:07.123Z" };
-}
+const trade = (symbol: string, price: number): object => ({
+  T: "t",
+  S: symbol,
+  p: price,
+  s: 10,
+  t: "2026-09-25T14:31:07.123Z",
+});
 
-export function quote(symbol: string, bid: number, ask: number): object {
-  return {
-    T: "q",
-    S: symbol,
-    bp: bid,
-    bs: 5,
-    ap: ask,
-    as: 7,
-    t: "2026-09-25T14:31:07.456Z",
-  };
-}
+const quote = (symbol: string, bid: number, ask: number): object => ({
+  T: "q",
+  S: symbol,
+  bp: bid,
+  bs: 5,
+  ap: ask,
+  as: 7,
+  t: "2026-09-25T14:31:07.456Z",
+});
+
+export { FakeServer, quote, trade };
