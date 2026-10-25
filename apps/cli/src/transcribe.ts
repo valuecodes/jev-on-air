@@ -1,10 +1,10 @@
+import type { LoggerLike } from "@repo/logger";
+import { Transcriber } from "@repo/transcriber";
 // The `transcribe` command: streams a YouTube transcript to stdout and appends
 // every segment to a JSONL file, so a run can be replayed or tailed later. A
 // `.meta.json` next to it records the video and when its audio began.
 import { mkdir, open } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
-import type { LoggerLike } from "@repo/logger";
-import { Transcriber } from "@repo/transcriber";
 
 import { formatSegment } from "./cli";
 import type { TranscribeArgs } from "./cli";
@@ -14,7 +14,48 @@ import { childEnv } from "./time";
 
 const cacheDir = join(import.meta.dirname, "..", ".cache", "transcripts");
 
-export class TranscribeCommand {
+// Metadata is best effort; a stalled lookup must not hold up the audio.
+const describeTimeoutMs = 30_000;
+
+/**
+ * The sidecar for a transcript of `url`, or `undefined` if the video could
+ * not be described: that is logged, not fatal, since the transcript is worth
+ * more than its metadata.
+ */
+const describeVideo = async (
+  logger: LoggerLike,
+  transcriber: Transcriber,
+  url: string,
+  signal?: AbortSignal
+): Promise<Sidecar | undefined> => {
+  const limit = AbortSignal.any([
+    AbortSignal.timeout(describeTimeoutMs),
+    ...(signal ? [signal] : []),
+  ]);
+  try {
+    const sidecar = buildSidecar(
+      await transcriber.info(url, limit),
+      new Date().toISOString()
+    );
+    logger.info("described video", {
+      title: sidecar.video.title,
+      live: sidecar.video.live,
+      audioStart: sidecar.audioStart,
+    });
+    return sidecar;
+  } catch (error) {
+    if (signal?.aborted === true) {
+      return undefined;
+    }
+    logger.warn(
+      "could not describe the video; replays will need --audio-start",
+      { err: error }
+    );
+    return undefined;
+  }
+};
+
+class TranscribeCommand {
   private readonly logger: LoggerLike;
 
   constructor(logger: LoggerLike) {
@@ -23,9 +64,10 @@ export class TranscribeCommand {
 
   async run(args: TranscribeArgs, signal?: AbortSignal): Promise<void> {
     // `pnpm cli` runs from apps/cli; INIT_CWD is where the user typed it.
-    const out = args.out
-      ? resolve(process.env.INIT_CWD ?? process.cwd(), args.out)
-      : join(cacheDir, `${args.videoId}.jsonl`);
+    const out =
+      args.out === undefined || args.out === ""
+        ? join(cacheDir, `${args.videoId}.jsonl`)
+        : resolve(process.env.INIT_CWD ?? process.cwd(), args.out);
     await mkdir(dirname(out), { recursive: true });
     const transcriber = new Transcriber(this.logger, {
       model: args.model,
@@ -40,7 +82,9 @@ export class TranscribeCommand {
       args.url,
       signal
     );
-    if (signal?.aborted) return;
+    if (signal?.aborted === true) {
+      return;
+    }
 
     const file = await open(out, "a");
     this.logger.info("writing transcript", { out });
@@ -63,41 +107,4 @@ export class TranscribeCommand {
   }
 }
 
-// Metadata is best effort; a stalled lookup must not hold up the audio.
-const describeTimeoutMs = 30_000;
-
-/**
- * The sidecar for a transcript of `url`, or `undefined` if the video could
- * not be described: that is logged, not fatal, since the transcript is worth
- * more than its metadata.
- */
-export async function describeVideo(
-  logger: LoggerLike,
-  transcriber: Transcriber,
-  url: string,
-  signal?: AbortSignal
-): Promise<Sidecar | undefined> {
-  const limit = AbortSignal.any([
-    AbortSignal.timeout(describeTimeoutMs),
-    ...(signal ? [signal] : []),
-  ]);
-  try {
-    const sidecar = buildSidecar(
-      await transcriber.info(url, limit),
-      new Date().toISOString()
-    );
-    logger.info("described video", {
-      title: sidecar.video.title,
-      live: sidecar.video.live,
-      audioStart: sidecar.audioStart,
-    });
-    return sidecar;
-  } catch (error) {
-    if (signal?.aborted) return undefined;
-    logger.warn(
-      "could not describe the video; replays will need --audio-start",
-      { err: error }
-    );
-    return undefined;
-  }
-}
+export { describeVideo, TranscribeCommand };

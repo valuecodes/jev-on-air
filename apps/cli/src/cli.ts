@@ -1,13 +1,14 @@
-// Argument parsing and commands. Pure: returns the output instead of printing it,
-// so tests can call `run` directly. `main.ts` is the process entry point.
-import { parseArgs } from "node:util";
 import type { PriceTick, StockFeed } from "@repo/alpaca/prices";
 import { DEFAULT_MODEL } from "@repo/jev/typesafe";
 import type { Segment } from "@repo/transcriber";
+// Argument parsing and commands. Pure: returns the output instead of printing it,
+// so tests can call `run` directly. `main.ts` is the process entry point; the
+// `jev` command's arguments live in `jev-args.ts`.
+import { parseArgs } from "node:util";
 
 import { parseTime } from "./time";
 
-export const usage = `Usage: pnpm cli [options]
+const usage = `Usage: pnpm cli [options]
        pnpm cli transcribe <youtube-url> [transcribe options]
        pnpm cli prices [--json]
        pnpm cli prices --from=<iso> --to=<iso> [--bars=<minutes>] [--json]
@@ -77,7 +78,7 @@ Jev options (needs TYPESAFE_API_KEY and the Alpaca keys, e.g. in .env):
   --whisper=<name> --language=<code> --chunk=<seconds>   Transcriber options (live only)`;
 
 /** Parses `argv` and returns the text to print. Throws on unknown flags. */
-export function run(argv: string[]): string {
+const run = (argv: string[]): string => {
   const { values } = parseArgs({
     args: argv,
     options: {
@@ -88,11 +89,13 @@ export function run(argv: string[]): string {
     strict: true,
   });
 
-  if (values["hello-world"]) return `Hello, ${values.name ?? "world"}!`;
+  if (values["hello-world"] === true) {
+    return `Hello, ${values.name ?? "world"}!`;
+  }
   return usage;
-}
+};
 
-export type TranscribeArgs = {
+type TranscribeArgs = {
   url: string;
   videoId: string;
   model?: string;
@@ -103,6 +106,10 @@ export type TranscribeArgs = {
   out?: string;
 };
 
+/** Whether an environment value is missing or empty. */
+const isBlank = (value: string | undefined): value is "" | undefined =>
+  value === undefined || value === "";
+
 const youtubeHosts = new Set([
   "youtube.com",
   "www.youtube.com",
@@ -111,11 +118,26 @@ const youtubeHosts = new Set([
 ]);
 const videoIdPattern = /^[\w-]{11}$/;
 
+/** Where `url` keeps its video ID, by URL shape. */
+const videoIdIn = (url: URL): string | null | undefined => {
+  const [first, second] = url.pathname.split("/").filter(Boolean);
+  if (url.hostname === "youtu.be") {
+    return first;
+  }
+  if (first === "watch") {
+    return url.searchParams.get("v");
+  }
+  if (first === "live" || first === "shorts") {
+    return second;
+  }
+  return undefined;
+};
+
 /**
  * Returns the video ID of a YouTube watch, live, shorts or youtu.be URL.
  * Throws for anything else.
  */
-export function parseYoutubeVideoId(input: string): string {
+const parseYoutubeVideoId = (input: string): string => {
   let url: URL;
   try {
     url = new URL(input);
@@ -125,36 +147,33 @@ export function parseYoutubeVideoId(input: string): string {
   if (
     !["https:", "http:"].includes(url.protocol) ||
     !youtubeHosts.has(url.hostname)
-  )
+  ) {
     throw new Error(`not a YouTube URL: ${input}`);
+  }
 
-  const [first, second] = url.pathname.split("/").filter(Boolean);
-  const id =
-    url.hostname === "youtu.be"
-      ? first
-      : first === "watch"
-        ? url.searchParams.get("v")
-        : first === "live" || first === "shorts"
-          ? second
-          : undefined;
-  if (!id || !videoIdPattern.test(id))
+  const id = videoIdIn(url) ?? "";
+  if (!videoIdPattern.test(id)) {
     throw new Error(`no YouTube video ID in: ${input}`);
+  }
   return id;
-}
+};
 
 /** Parses `--chunk`. The worker cuts each window in its last 2 s. */
-function parseChunkSeconds(value: string | undefined): number | undefined {
-  if (value === undefined) return undefined;
+const parseChunkSeconds = (value: string | undefined): number | undefined => {
+  if (value === undefined) {
+    return undefined;
+  }
   const chunkSeconds = Number(value);
-  if (!Number.isFinite(chunkSeconds) || chunkSeconds <= 2)
+  if (!Number.isFinite(chunkSeconds) || chunkSeconds <= 2) {
     throw new Error(
       `--chunk must be a number of seconds above 2, got ${value}`
     );
+  }
   return chunkSeconds;
-}
+};
 
 /** Parses the arguments after `transcribe`. Throws on invalid input. */
-export function parseTranscribeArgs(argv: string[]): TranscribeArgs {
+const parseTranscribeArgs = (argv: string[]): TranscribeArgs => {
   const { values, positionals } = parseArgs({
     args: argv,
     options: {
@@ -170,9 +189,12 @@ export function parseTranscribeArgs(argv: string[]): TranscribeArgs {
   });
 
   const [url, ...extra] = positionals;
-  if (url === undefined) throw new Error("transcribe needs a YouTube URL");
-  if (extra.length > 0)
+  if (url === undefined) {
+    throw new Error("transcribe needs a YouTube URL");
+  }
+  if (extra.length > 0) {
     throw new Error(`unexpected arguments: ${extra.join(" ")}`);
+  }
 
   return {
     url,
@@ -184,21 +206,22 @@ export function parseTranscribeArgs(argv: string[]): TranscribeArgs {
     json: values.json ?? false,
     out: values.out,
   };
-}
+};
+
+const pad2 = (value: number): string => String(value).padStart(2, "0");
 
 /** Formats a segment as `[hh:mm:ss] text`. */
-export function formatSegment(segment: Segment): string {
+const formatSegment = (segment: Segment): string => {
   const total = Math.floor(segment.start);
-  const pad = (value: number) => String(value).padStart(2, "0");
   const clock = [
     Math.floor(total / 3600),
     Math.floor(total / 60) % 60,
     total % 60,
   ]
-    .map(pad)
+    .map(pad2)
     .join(":");
   return `[${clock}] ${segment.text}`;
-}
+};
 
 type Range = {
   min?: number;
@@ -207,46 +230,50 @@ type Range = {
   integer?: boolean;
 };
 
-function parseNumber(
+const parseNumber = (
   name: string,
   value: string | undefined,
   fallback: number,
   range: Range = {}
-): number {
-  if (value === undefined) return fallback;
+): number => {
+  if (value === undefined) {
+    return fallback;
+  }
   const number = Number(value);
+  const aboveMin = range.aboveMin === true;
+  const integer = range.integer === true;
   const tooLow =
     range.min !== undefined &&
-    (range.aboveMin ? number <= range.min : number < range.min);
+    (aboveMin ? number <= range.min : number < range.min);
   const tooHigh = range.max !== undefined && number > range.max;
-  const notInteger = range.integer === true && !Number.isInteger(number);
+  const notInteger = integer && !Number.isInteger(number);
   if (!Number.isFinite(number) || tooLow || tooHigh || notInteger) {
     const bounds = [
       range.min === undefined
         ? undefined
-        : `${range.aboveMin ? "above" : "at least"} ${range.min}`,
+        : `${aboveMin ? "above" : "at least"} ${range.min}`,
       range.max === undefined ? undefined : `at most ${range.max}`,
     ]
       .filter(Boolean)
       .join(" and ");
     throw new Error(
-      `--${name} must be ${range.integer ? "an integer" : "a number"}${bounds ? ` ${bounds}` : ""}, got ${value}`
+      `--${name} must be ${integer ? "an integer" : "a number"}${bounds === "" ? "" : ` ${bounds}`}, got ${value}`
     );
   }
   return number;
-}
+};
 
-export type PricesArgs = {
+type PricesArgs = {
   json: boolean;
   /** A past window to fetch instead of streaming live. */
   history?: { from: string; to: string; barMinutes: number; feed: StockFeed };
 };
 
 /** Longest past window `prices` fetches in one go. */
-export const MAX_HISTORY_MS = 24 * 60 * 60 * 1000;
+const MAX_HISTORY_MS = 24 * 60 * 60 * 1000;
 
 /** Parses the arguments after `prices`. Throws on invalid input. */
-export function parsePricesArgs(argv: string[]): PricesArgs {
+const parsePricesArgs = (argv: string[]): PricesArgs => {
   const { values } = parseArgs({
     args: argv,
     options: {
@@ -260,20 +287,26 @@ export function parsePricesArgs(argv: string[]): PricesArgs {
   });
   const json = values.json ?? false;
   if (values.from === undefined && values.to === undefined) {
-    if (values.bars !== undefined || values.feed !== undefined)
+    if (values.bars !== undefined || values.feed !== undefined) {
       throw new Error("--bars and --feed only apply with --from and --to");
+    }
     return { json };
   }
-  if (values.from === undefined || values.to === undefined)
+  if (values.from === undefined || values.to === undefined) {
     throw new Error("--from and --to go together");
+  }
   const from = parseTime("from", values.from);
   const to = parseTime("to", values.to);
-  if (!(from < to)) throw new Error("--from must be earlier than --to");
-  if (Date.parse(to) - Date.parse(from) > MAX_HISTORY_MS)
+  if (!(from < to)) {
+    throw new Error("--from must be earlier than --to");
+  }
+  if (Date.parse(to) - Date.parse(from) > MAX_HISTORY_MS) {
     throw new Error("--from and --to may be at most 24 hours apart");
+  }
   const feed = values.feed ?? "sip";
-  if (feed !== "sip" && feed !== "iex")
+  if (feed !== "sip" && feed !== "iex") {
     throw new Error(`--feed must be sip or iex, got ${feed}`);
+  }
   return {
     json,
     history: {
@@ -287,299 +320,50 @@ export function parsePricesArgs(argv: string[]): PricesArgs {
       }),
     },
   };
-}
+};
 
-export type AlpacaCredentials = { keyId: string; secretKey: string };
+type AlpacaCredentials = { keyId: string; secretKey: string };
 
 /** Reads the Alpaca API keys from `env`. Throws naming any that are missing. */
-export function alpacaCredentials(env: NodeJS.ProcessEnv): AlpacaCredentials {
+const alpacaCredentials = (env: NodeJS.ProcessEnv): AlpacaCredentials => {
   const keyId = env.ALPACA_API_KEY_ID;
   const secretKey = env.ALPACA_API_SECRET_KEY;
-  if (!keyId || !secretKey) {
+  if (isBlank(keyId) || isBlank(secretKey)) {
     const missing = [
-      keyId ? undefined : "ALPACA_API_KEY_ID",
-      secretKey ? undefined : "ALPACA_API_SECRET_KEY",
+      isBlank(keyId) ? "ALPACA_API_KEY_ID" : undefined,
+      isBlank(secretKey) ? "ALPACA_API_SECRET_KEY" : undefined,
     ].filter(Boolean);
     throw new Error(
       `missing ${missing.join(" and ")}: set ${missing.length > 1 ? "them" : "it"} in the environment or in .env at the repo root`
     );
   }
   return { keyId, secretKey };
-}
+};
 
 /**
  * Formats a tick as `hh:mm:ss  name  symbol  price  kind`, with the UTC
  * exchange time; kind is `mid` for a quote midpoint or `trade`.
  */
-export function formatTick(tick: PriceTick): string {
-  return [
+const formatTick = (tick: PriceTick): string =>
+  [
     tick.timestamp.slice(11, 19),
     tick.name.padEnd(8),
     tick.symbol.padEnd(8),
     tick.price.toFixed(2).padStart(10),
     tick.source === "quote" ? "mid" : "trade",
   ].join("  ");
-}
 
-export type JevSource =
-  | { kind: "live"; url: string; videoId: string }
-  | {
-      kind: "replay";
-      transcript: string;
-      prices?: string;
-      fast: boolean;
-      /** RFC 3339 time the audio began, aligning it with the ticks. */
-      audioStart?: string;
-      lagSeconds: number;
-      /** Record what is replayed as a live run records what it hears. */
-      tee: boolean;
-    };
-
-export type JevDecider =
-  { kind: "typesafe" } | { kind: "hold" } | { kind: "script"; path: string };
-
-export type JevArgs = {
-  source: JevSource;
-  /** Names the ledger and scratch state: the video id or the transcript's stem. */
-  id: string;
-  decider: JevDecider;
-  model?: string;
-  whisper?: string;
-  language?: string;
-  chunkSeconds?: number;
-  cash: number;
-  size: number;
-  sizing: "fixed" | "vol";
-  risk: number;
-  maxChaseZ: number;
-  stopZ: number;
-  takeProfitZ: number;
-  minChars: number;
-  intervalSeconds: number;
-  contextSeconds: number;
-  minConfidence: number;
-  minSignal: number;
-  maxLeverage: number;
-  maxPriceAgeSeconds: number;
-  snapshotSeconds: number;
-  state?: string;
-  reset: boolean;
-  out?: string;
-  json: boolean;
+export {
+  alpacaCredentials,
+  formatSegment,
+  formatTick,
+  isBlank,
+  parseChunkSeconds,
+  parseNumber,
+  parsePricesArgs,
+  parseTranscribeArgs,
+  parseYoutubeVideoId,
+  run,
+  usage,
 };
-
-function parseDecider(value: string | undefined): JevDecider {
-  if (value === undefined || value === "typesafe") return { kind: "typesafe" };
-  if (value === "hold") return { kind: "hold" };
-  if (value.startsWith("script:") && value.length > "script:".length)
-    return { kind: "script", path: value.slice("script:".length) };
-  throw new Error(
-    `--decider must be typesafe, hold or script:<path>, got ${value}`
-  );
-}
-
-/** Parses the arguments after `jev`. Throws on invalid input. */
-export function parseJevArgs(argv: string[]): JevArgs {
-  const { values, positionals } = parseArgs({
-    args: argv,
-    options: {
-      replay: { type: "string" },
-      prices: { type: "string" },
-      fast: { type: "boolean" },
-      "audio-start": { type: "string" },
-      lag: { type: "string" },
-      tee: { type: "boolean" },
-      decider: { type: "string" },
-      model: { type: "string" },
-      whisper: { type: "string" },
-      language: { type: "string" },
-      chunk: { type: "string" },
-      cash: { type: "string" },
-      size: { type: "string" },
-      sizing: { type: "string" },
-      risk: { type: "string" },
-      "max-chase-z": { type: "string" },
-      "stop-z": { type: "string" },
-      "take-profit-z": { type: "string" },
-      "min-chars": { type: "string" },
-      interval: { type: "string" },
-      context: { type: "string" },
-      "min-confidence": { type: "string" },
-      "min-signal": { type: "string" },
-      "max-leverage": { type: "string" },
-      "max-price-age": { type: "string" },
-      snapshot: { type: "string" },
-      state: { type: "string" },
-      reset: { type: "boolean" },
-      out: { type: "string" },
-      json: { type: "boolean" },
-    },
-    allowPositionals: true,
-    strict: true,
-  });
-
-  const [url, ...extra] = positionals;
-  if (extra.length > 0)
-    throw new Error(`unexpected arguments: ${extra.join(" ")}`);
-  for (const [name, value] of Object.entries(values))
-    if (value === "") throw new Error(`--${name} needs a value`);
-  if (url !== undefined && values.replay !== undefined)
-    throw new Error("jev takes a YouTube URL or --replay, not both");
-  if (url === undefined && values.replay === undefined)
-    throw new Error("jev needs a YouTube URL or --replay=<transcript.jsonl>");
-  if (values.replay === undefined) {
-    if (
-      values.prices !== undefined ||
-      values.fast ||
-      values["audio-start"] !== undefined ||
-      values.lag !== undefined ||
-      values.tee
-    )
-      throw new Error(
-        "--prices, --fast, --audio-start, --lag and --tee only apply to --replay"
-      );
-  } else if (
-    values.whisper !== undefined ||
-    values.language !== undefined ||
-    values.chunk !== undefined
-  ) {
-    throw new Error(
-      "--whisper, --language and --chunk only apply to a live stream"
-    );
-  }
-  const sizing = values.sizing ?? "fixed";
-  if (sizing !== "fixed" && sizing !== "vol")
-    throw new Error(`--sizing must be fixed or vol, got ${sizing}`);
-  if (values.risk !== undefined && sizing !== "vol")
-    throw new Error("--risk only applies to --sizing=vol");
-  if (values.fast && values.prices === undefined)
-    throw new Error(
-      "--fast needs --prices: a virtual clock cannot pace a live feed"
-    );
-
-  let source: JevSource;
-  let id: string;
-  if (url !== undefined) {
-    const videoId = parseYoutubeVideoId(url);
-    source = { kind: "live", url, videoId };
-    id = videoId;
-  } else {
-    const transcript = values.replay ?? "";
-    source = {
-      kind: "replay",
-      transcript,
-      ...(values.prices === undefined ? {} : { prices: values.prices }),
-      fast: values.fast ?? false,
-      ...(values["audio-start"] === undefined
-        ? {}
-        : { audioStart: parseTime("audio-start", values["audio-start"]) }),
-      lagSeconds: parseNumber("lag", values.lag, 0, { min: 0 }),
-      tee: values.tee ?? false,
-    };
-    id =
-      transcript
-        .split(/[\\/]/)
-        .pop()
-        ?.replace(/\.jsonl$/, "") ?? "replay";
-  }
-
-  return {
-    source,
-    id,
-    decider: parseDecider(values.decider),
-    model: values.model,
-    whisper: values.whisper,
-    language: values.language,
-    chunkSeconds: parseChunkSeconds(values.chunk),
-    cash: parseNumber("cash", values.cash, 100_000, { min: 0, aboveMin: true }),
-    size: parseNumber("size", values.size, 0.1, {
-      min: 0,
-      aboveMin: true,
-      max: 1,
-    }),
-    sizing,
-    risk: parseNumber("risk", values.risk, 0.002, {
-      min: 0,
-      aboveMin: true,
-      max: 1,
-    }),
-    maxChaseZ: parseNumber("max-chase-z", values["max-chase-z"], 3, {
-      min: 0,
-    }),
-    stopZ: parseNumber("stop-z", values["stop-z"], 0, { min: 0 }),
-    takeProfitZ: parseNumber("take-profit-z", values["take-profit-z"], 0, {
-      min: 0,
-    }),
-    minChars: parseNumber("min-chars", values["min-chars"], 400, {
-      min: 1,
-      max: 4000,
-      integer: true,
-    }),
-    intervalSeconds: parseNumber("interval", values.interval, 30, { min: 5 }),
-    contextSeconds: parseNumber("context", values.context, 300, { min: 0 }),
-    minConfidence: parseNumber(
-      "min-confidence",
-      values["min-confidence"],
-      0.6,
-      { min: 0, max: 1 }
-    ),
-    minSignal: parseNumber("min-signal", values["min-signal"], 0.5, {
-      min: 0,
-      max: 1,
-    }),
-    maxLeverage: parseNumber("max-leverage", values["max-leverage"], 1, {
-      min: 0,
-      aboveMin: true,
-    }),
-    maxPriceAgeSeconds: parseNumber(
-      "max-price-age",
-      values["max-price-age"],
-      600,
-      { min: 0, aboveMin: true }
-    ),
-    snapshotSeconds: parseNumber("snapshot", values.snapshot, 60, { min: 0 }),
-    state: values.state,
-    reset: values.reset ?? false,
-    out: values.out,
-    json: values.json ?? false,
-  };
-}
-
-/** Reads the TypeSafe API key from `env`. Throws if it is missing. */
-export function typesafeApiKey(env: NodeJS.ProcessEnv): string {
-  const apiKey = env.TYPESAFE_API_KEY;
-  if (!apiKey)
-    throw new Error(
-      "missing TYPESAFE_API_KEY: set it in the environment or in .env at the repo root"
-    );
-  return apiKey;
-}
-
-/** `JEV_MODEL`, unless it is blank as in `.env.example`. */
-function configuredModel(env: NodeJS.ProcessEnv): string | undefined {
-  const model = env.JEV_MODEL?.trim();
-  if (model === undefined || model === "") return undefined;
-  return model;
-}
-
-/** What a `jev` run needs from the environment. */
-export type JevConfig = {
-  /** Only when prices are live. */
-  alpaca?: AlpacaCredentials;
-  /** Only when the TypeSafe decider is used. */
-  typesafeApiKey?: string;
-  model: string;
-};
-
-/** Resolves credentials and the model for `args`; throws naming what is missing. */
-export function jevConfig(args: JevArgs, env: NodeJS.ProcessEnv): JevConfig {
-  const livePrices =
-    args.source.kind === "live" || args.source.prices === undefined;
-  return {
-    ...(livePrices ? { alpaca: alpacaCredentials(env) } : {}),
-    ...(args.decider.kind === "typesafe"
-      ? { typesafeApiKey: typesafeApiKey(env) }
-      : {}),
-    model: args.model ?? configuredModel(env) ?? DEFAULT_MODEL,
-  };
-}
+export type { AlpacaCredentials, PricesArgs, TranscribeArgs };

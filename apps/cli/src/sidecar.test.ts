@@ -17,14 +17,6 @@ const archive = {
   startedAt: "2026-09-25T15:43:13.000Z",
 };
 
-let dir: string;
-beforeEach(async () => {
-  dir = await mkdtemp(join(tmpdir(), "jev-sidecar-"));
-});
-afterEach(async () => {
-  await rm(dir, { recursive: true, force: true });
-});
-
 describe("sidecarPath", () => {
   it("sits next to the transcript", () => {
     expect(sidecarPath("/x/abc.jsonl")).toBe("/x/abc.meta.json");
@@ -51,6 +43,14 @@ describe("buildSidecar", () => {
 });
 
 describe("readSidecar", () => {
+  let dir: string;
+  beforeEach(async () => {
+    dir = await mkdtemp(join(tmpdir(), "jev-sidecar-"));
+  });
+  afterEach(async () => {
+    await rm(dir, { recursive: true, force: true });
+  });
+
   it("round-trips, reports a missing file as undefined and rejects junk", async () => {
     const path = join(dir, "abc.meta.json");
     expect(await readSidecar(path)).toBeUndefined();

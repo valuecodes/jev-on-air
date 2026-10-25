@@ -4,19 +4,19 @@
 import type { TurnInput } from "./questions";
 import type { TurnOutput } from "./schema";
 
-export type Usage = {
+type Usage = {
   inputTokens: number;
   outputTokens: number;
 };
 
-export type DecideResult = {
+type DecideResult = {
   output: TurnOutput;
   model?: string;
   latencyMs: number;
   usage?: Usage;
 };
 
-export type DeciderFailure =
+type DeciderFailure =
   /** The answer named a choice that was not offered. */
   | "unparseable"
   | "rate_limit"
@@ -34,7 +34,7 @@ const retryable: ReadonlySet<DeciderFailure> = new Set([
   "server",
 ]);
 
-export class DeciderError extends Error {
+class DeciderError extends Error {
   readonly kind: DeciderFailure;
   /** Whether the same input is worth sending again later. */
   readonly retryable: boolean;
@@ -47,22 +47,22 @@ export class DeciderError extends Error {
   }
 }
 
-export type Decider = {
+type Decider = {
   /** Decides on `input`. Throws `DeciderError` when no decision was made. */
-  decide(input: TurnInput, signal?: AbortSignal): Promise<DecideResult>;
+  decide: (input: TurnInput, signal?: AbortSignal) => Promise<DecideResult>;
 };
 
 const hold: TurnOutput = { decisions: [] };
 
 /** Never trades. Exercises the plumbing without spending tokens. */
-export class HoldDecider implements Decider {
+class HoldDecider implements Decider {
   decide(): Promise<DecideResult> {
     return Promise.resolve({ output: hold, latencyMs: 0 });
   }
 }
 
 /** Returns the scripted outputs in order, then holds. Records its inputs. */
-export class ScriptedDecider implements Decider {
+class ScriptedDecider implements Decider {
   readonly inputs: TurnInput[] = [];
   private readonly outputs: TurnOutput[];
 
@@ -78,3 +78,6 @@ export class ScriptedDecider implements Decider {
     });
   }
 }
+
+export { DeciderError, HoldDecider, ScriptedDecider };
+export type { Decider, DeciderFailure, DecideResult, Usage };

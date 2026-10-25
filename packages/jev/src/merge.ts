@@ -1,13 +1,13 @@
+import { Channel } from "@repo/alpaca/channel";
 // Combines several async sources into one. Sources are factories that take
 // an abort signal, because a generator blocked in `await` cannot be stopped
 // from outside any other way; each source is expected to end once the signal
 // aborts, as the transcriber and the price feed do.
 import { setTimeout as sleep } from "node:timers/promises";
-import { Channel } from "@repo/alpaca/channel";
 
-export type Source<T> = (signal: AbortSignal) => AsyncIterable<T>;
+type Source<T> = (signal: AbortSignal) => AsyncIterable<T>;
 
-export type MergeOptions = {
+type MergeOptions = {
   /**
    * Index of the source whose end ends the merged stream, even while the
    * others run on. Without it the stream ends when every source has ended.
@@ -19,22 +19,28 @@ export type MergeOptions = {
  * Yields values from every source as they arrive. The first failure aborts
  * the other sources and is thrown once the buffered values are consumed.
  */
-export function merge<T>(
+const merge = <T>(
   sources: readonly Source<T>[],
   options: MergeOptions = {}
-): Source<T> {
-  return async function* (signal) {
+): Source<T> =>
+  async function* (signal) {
     const controller = new AbortController();
     const onAbort = (): void => {
       controller.abort();
     };
-    if (signal.aborted) controller.abort();
+    if (signal.aborted) {
+      controller.abort();
+    }
     signal.addEventListener("abort", onAbort, { once: true });
 
     const channel = new Channel<T>();
     const pumps = sources.map(async (source, index) => {
-      for await (const value of source(controller.signal)) channel.push(value);
-      if (index === options.primary) channel.end();
+      for await (const value of source(controller.signal)) {
+        channel.push(value);
+      }
+      if (index === options.primary) {
+        channel.end();
+      }
     });
     void Promise.all(pumps).then(
       () => {
@@ -54,11 +60,10 @@ export function merge<T>(
       await Promise.allSettled(pumps);
     }
   };
-}
 
 /** Yields every `ms` milliseconds until the signal aborts. */
-export function interval(ms: number): Source<void> {
-  return async function* (signal) {
+const interval = (ms: number): Source<void> =>
+  async function* (signal) {
     while (!signal.aborted) {
       try {
         await sleep(ms, undefined, { signal });
@@ -68,14 +73,14 @@ export function interval(ms: number): Source<void> {
       yield;
     }
   };
-}
 
 /** Applies `fn` to every value of `source`. */
-export function mapSource<T, U>(
-  source: Source<T>,
-  fn: (value: T) => U
-): Source<U> {
-  return async function* (signal) {
-    for await (const value of source(signal)) yield fn(value);
+const mapSource = <T, U>(source: Source<T>, fn: (value: T) => U): Source<U> =>
+  async function* (signal) {
+    for await (const value of source(signal)) {
+      yield fn(value);
+    }
   };
-}
+
+export { interval, mapSource, merge };
+export type { MergeOptions, Source };

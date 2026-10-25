@@ -13,22 +13,23 @@ import type { StartRequest } from "./start";
 import type { OutputLine, RunState, RunSummary } from "./types";
 
 /** The parts of a `ChildProcess` desk uses, so tests can fake one. */
-export type ChildLike = {
+type ChildLike = {
   readonly pid?: number | undefined;
   readonly stdout: Readable | null;
   readonly stderr: Readable | null;
-  on(event: "spawn", listener: () => void): unknown;
-  on(event: "error", listener: (error: Error) => void): unknown;
-  on(
-    event: "close",
-    listener: (code: number | null, signal: NodeJS.Signals | null) => void
-  ): unknown;
+  readonly on: ((event: "spawn", listener: () => void) => unknown) &
+    ((event: "error", listener: (error: Error) => void) => unknown) &
+    ((
+      event: "close",
+      listener: (code: number | null, signal: NodeJS.Signals | null) => void
+    ) => unknown);
 };
 
-export type RunEvent =
-  { kind: "state"; run: RunSummary } | { kind: "output"; line: OutputLine };
+type RunEvent =
+  | { kind: "state"; run: RunSummary }
+  | { kind: "output"; line: OutputLine };
 
-export type RegistryDeps = {
+type RegistryDeps = {
   spawn: (argv: string[]) => ChildLike;
   /** Signals a whole process group. */
   killGroup: (pid: number, signal: NodeJS.Signals) => void;
@@ -36,15 +37,15 @@ export type RegistryDeps = {
   offsets: (videoId: string) => Promise<{ ledger: number; transcript: number }>;
 };
 
-export class RunConflictError extends Error {}
+class RunConflictError extends Error {}
 
 const OUTPUT_LIMIT = 2000;
 const LINE_LIMIT = 4000;
 const HISTORY_LIMIT = 20;
 /** The CLI's first signal aborts cleanly; give it this long to write `end`. */
-export const STOP_GRACE_MS = 15_000;
+const STOP_GRACE_MS = 15_000;
 /** Its second signal exits at once and reaps the transcriber; then SIGKILL. */
-export const KILL_GRACE_MS = 5_000;
+const KILL_GRACE_MS = 5000;
 
 type Run = {
   summary: RunSummary;
@@ -54,7 +55,7 @@ type Run = {
   timers: NodeJS.Timeout[];
 };
 
-export class RunRegistry {
+class RunRegistry {
   private readonly deps: RegistryDeps;
   private readonly runs: Run[] = [];
   private active: Run | undefined;
@@ -79,10 +80,11 @@ export class RunRegistry {
 
   /** Starts a run. Throws `RunConflictError` while another one is active. */
   async start(request: StartRequest): Promise<RunSummary> {
-    if (this.active)
+    if (this.active) {
       throw new RunConflictError(
         `a run is already active for ${this.active.summary.videoId}; stop it first`
       );
+    }
     // Claimed before the first await, so two requests cannot both start.
     const run: Run = {
       summary: {
@@ -104,7 +106,9 @@ export class RunRegistry {
     };
     this.active = run;
     this.runs.push(run);
-    if (this.runs.length > HISTORY_LIMIT) this.runs.shift();
+    if (this.runs.length > HISTORY_LIMIT) {
+      this.runs.shift();
+    }
 
     try {
       const offsets = await this.deps.offsets(request.videoId);
@@ -125,9 +129,11 @@ export class RunRegistry {
     this.drain(run, child.stdout, "stdout");
     this.drain(run, child.stderr, "stderr");
     child.on("spawn", () => {
-      if (run.stopRequested) this.signal(run);
-      else if (run.summary.state === "starting")
+      if (run.stopRequested) {
+        this.signal(run);
+      } else if (run.summary.state === "starting") {
         this.update(run, { state: "running" });
+      }
     });
     child.on("error", (error) =>
       this.finish(run, "failed", null, null, error.message)
@@ -152,15 +158,21 @@ export class RunRegistry {
    */
   stop(id: string): RunSummary | undefined {
     const run = this.active;
-    if (!run) return undefined;
-    if (run.summary.id !== id)
+    if (!run) {
+      return undefined;
+    }
+    if (run.summary.id !== id) {
       throw new RunConflictError(
         `the active run is for ${run.summary.videoId}, not the one shown; reload`
       );
+    }
     if (!run.stopRequested) {
       run.stopRequested = true;
-      if (run.summary.state === "running") this.signal(run);
-      else this.update(run, { state: "stopping" });
+      if (run.summary.state === "running") {
+        this.signal(run);
+      } else {
+        this.update(run, { state: "stopping" });
+      }
     }
     return { ...run.summary };
   }
@@ -179,11 +191,16 @@ export class RunRegistry {
     const latest = this.runs.findLast((run) => run.summary.videoId === videoId);
     if (latest) {
       listener({ kind: "state", run: { ...latest.summary } });
-      for (const line of latest.output)
-        if (line.seq > afterSeq) listener({ kind: "output", line });
+      for (const line of latest.output) {
+        if (line.seq > afterSeq) {
+          listener({ kind: "output", line });
+        }
+      }
     }
     const forward = (id: string, event: RunEvent): void => {
-      if (id === videoId) listener(event);
+      if (id === videoId) {
+        listener(event);
+      }
     };
     this.listeners.add(forward);
     return () => this.listeners.delete(forward);
@@ -196,15 +213,18 @@ export class RunRegistry {
       if (
         pid !== undefined &&
         (run.summary.state === "running" || run.summary.state === "stopping")
-      )
+      ) {
         this.kill(pid, "SIGTERM");
+      }
     }
   }
 
   private signal(run: Run): void {
     const pid = run.child?.pid;
     this.update(run, { state: "stopping" });
-    if (pid === undefined) return;
+    if (pid === undefined) {
+      return;
+    }
     this.kill(pid, "SIGTERM");
     const escalate = setTimeout(() => {
       this.kill(pid, "SIGTERM");
@@ -221,7 +241,9 @@ export class RunRegistry {
       this.deps.killGroup(pid, signal);
     } catch (error) {
       // Already gone.
-      if ((error as NodeJS.ErrnoException).code !== "ESRCH") throw error;
+      if ((error as NodeJS.ErrnoException).code !== "ESRCH") {
+        throw error;
+      }
     }
   }
 
@@ -230,7 +252,9 @@ export class RunRegistry {
     stream: Readable | null,
     name: OutputLine["stream"]
   ): void {
-    if (!stream) return;
+    if (!stream) {
+      return;
+    }
     const lines = createInterface({ input: stream, crlfDelay: Infinity });
     lines.on("line", (text) => {
       const line: OutputLine = {
@@ -240,7 +264,9 @@ export class RunRegistry {
         text: text.length > LINE_LIMIT ? `${text.slice(0, LINE_LIMIT)}…` : text,
       };
       run.output.push(line);
-      if (run.output.length > OUTPUT_LIMIT) run.output.shift();
+      if (run.output.length > OUTPUT_LIMIT) {
+        run.output.shift();
+      }
       this.broadcast(run.summary.videoId, { kind: "output", line });
     });
   }
@@ -252,11 +278,16 @@ export class RunRegistry {
     signal: NodeJS.Signals | null,
     error: string | null = null
   ): void {
-    if (run.summary.state === "exited" || run.summary.state === "failed")
+    if (run.summary.state === "exited" || run.summary.state === "failed") {
       return;
-    for (const timer of run.timers) clearTimeout(timer);
+    }
+    for (const timer of run.timers) {
+      clearTimeout(timer);
+    }
     run.timers = [];
-    if (this.active === run) this.active = undefined;
+    if (this.active === run) {
+      this.active = undefined;
+    }
     this.update(run, { state, exitCode, signal, error });
   }
 
@@ -273,37 +304,45 @@ export class RunRegistry {
   }
 
   private broadcast(videoId: string, event: RunEvent): void {
-    for (const listener of this.listeners) listener(videoId, event);
+    for (const listener of this.listeners) {
+      listener(videoId, event);
+    }
   }
 }
 
-async function size(path: string): Promise<number> {
+const size = async (path: string): Promise<number> => {
   try {
     return (await stat(path)).size;
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") return 0;
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+      return 0;
+    }
     throw error;
   }
-}
+};
+
+/** Variables Next sets for itself, which must not reach the CLI. */
+const isNextOwned = (key: string): boolean =>
+  key === "NODE_OPTIONS" ||
+  key === "NODE_ENV" ||
+  key.startsWith("NEXT_") ||
+  key.startsWith("__NEXT") ||
+  key.startsWith("TURBOPACK");
 
 /**
  * The environment for the CLI: desk's own, minus what Next sets for itself
  * (`NODE_ENV` included — it changes the logger's level). The CLI reads the
  * repo's `.env` on its own, exactly as from a terminal.
  */
-export function cliEnv(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+const cliEnv = (env: NodeJS.ProcessEnv): NodeJS.ProcessEnv => {
   const result = { ...env };
-  for (const key of Object.keys(result))
-    if (
-      key === "NODE_OPTIONS" ||
-      key === "NODE_ENV" ||
-      key.startsWith("NEXT_") ||
-      key.startsWith("__NEXT") ||
-      key.startsWith("TURBOPACK")
-    )
+  for (const key of Object.keys(result)) {
+    if (isNextOwned(key)) {
       delete result[key];
+    }
+  }
   return result;
-}
+};
 
 const defaultDeps: RegistryDeps = {
   spawn: (argv) =>
@@ -325,11 +364,21 @@ const defaultDeps: RegistryDeps = {
 const store = globalThis as typeof globalThis & { jevDeskRuns?: RunRegistry };
 
 /** The process-wide registry. */
-export function runs(): RunRegistry {
+const runs = (): RunRegistry => {
   if (!store.jevDeskRuns) {
     const registry = new RunRegistry(defaultDeps);
     store.jevDeskRuns = registry;
     process.once("exit", () => registry.shutdown());
   }
   return store.jevDeskRuns;
-}
+};
+
+export {
+  cliEnv,
+  KILL_GRACE_MS,
+  RunConflictError,
+  RunRegistry,
+  runs,
+  STOP_GRACE_MS,
+};
+export type { RunEvent };

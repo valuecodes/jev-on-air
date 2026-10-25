@@ -1,26 +1,26 @@
 import { describe, expect, it } from "vitest";
 
 import { fractionOfEquity, Portfolio, volatilityScaled } from "./portfolio";
-import type { ApplyResult, PriceMap } from "./portfolio";
+import type { ApplyResult, Fill, PriceMap } from "./portfolio";
 
 const prices: PriceMap = { gold: 200, bitcoin: 50_000, sp500: 500, oil: 80 };
 
-function book(cash = 100_000, maxLeverage?: number): Portfolio {
-  return new Portfolio({
+const book = (cash = 100_000, maxLeverage?: number): Portfolio =>
+  new Portfolio({
     cash,
     sizer: fractionOfEquity(0.1),
     ...(maxLeverage === undefined ? {} : { maxLeverage }),
   });
-}
 
-function fill(result: ApplyResult) {
-  if (result.kind !== "fill") throw new Error(`rejected: ${result.reason}`);
+const fill = (result: ApplyResult): Fill => {
+  if (result.kind !== "fill") {
+    throw new Error(`rejected: ${result.reason}`);
+  }
   return result.fill;
-}
+};
 
-function reason(result: ApplyResult): string {
-  return result.kind === "reject" ? result.reason : "filled";
-}
+const reason = (result: ApplyResult): string =>
+  result.kind === "reject" ? result.reason : "filled";
 
 describe("Portfolio", () => {
   it("opens and adds to a long, re-averaging the entry", () => {
@@ -229,7 +229,7 @@ describe("volatilityScaled", () => {
 
   it("stays within a quarter and twice the fixed fraction", () => {
     expect(notional(0.0001)).toBeCloseTo(20_000, 6);
-    expect(notional(100)).toBeCloseTo(2_500, 6);
+    expect(notional(100)).toBeCloseTo(2500, 6);
   });
 
   it("sizes like the fixed fraction without a volatility", () => {
@@ -242,6 +242,6 @@ describe("volatilityScaled", () => {
     const result = fill(
       portfolio.apply({ instrument: "gold", action: "buy" }, prices, 100)
     );
-    expect(result.notional).toBeCloseTo(2_500, 6);
+    expect(result.notional).toBeCloseTo(2500, 6);
   });
 });

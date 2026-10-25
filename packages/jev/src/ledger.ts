@@ -8,7 +8,7 @@ import type { Fill, Snapshot } from "./portfolio";
 import type { Exit } from "./questions";
 import type { Action, Choice, Decision, Hold } from "./schema";
 
-export type EventBase = {
+type EventBase = {
   /** Id of the run (its ISO start time), so appended runs can be told apart. */
   run: string;
   /** ISO time from the engine clock: wall clock live, virtual in fast replay. */
@@ -19,7 +19,7 @@ export type EventBase = {
   turn: number | null;
 };
 
-export type StartEvent = EventBase & {
+type StartEvent = EventBase & {
   type: "start";
   source: string;
   model: string;
@@ -32,7 +32,7 @@ export type StartEvent = EventBase & {
 };
 
 /** The settings of the market rules; a threshold of 0 is off. */
-export type Strategy = {
+type Strategy = {
   /** How fills are sized, e.g. `fixed` or `vol risk 0.002`. */
   sizing: string;
   maxChaseZ: number;
@@ -40,7 +40,7 @@ export type Strategy = {
   takeProfitZ: number;
 };
 
-export type DecisionEvent = EventBase & {
+type DecisionEvent = EventBase & {
   type: "decision";
   decisions: Decision[];
   /** Instruments held on, with their odds; absent in older ledgers. */
@@ -55,7 +55,7 @@ export type DecisionEvent = EventBase & {
   market?: Partial<Record<InstrumentId, MarketFeatures | null>>;
 };
 
-export type FillEvent = EventBase & {
+type FillEvent = EventBase & {
   type: "fill";
   /** The model's confidence; null for an exit the engine made itself. */
   confidence: number | null;
@@ -67,7 +67,7 @@ export type FillEvent = EventBase & {
   volatility?: number;
 } & Fill;
 
-export type RejectEvent = EventBase & {
+type RejectEvent = EventBase & {
   type: "reject";
   instrument: InstrumentId;
   action: Action;
@@ -75,21 +75,21 @@ export type RejectEvent = EventBase & {
   reason: string;
 };
 
-export type SnapshotEvent = EventBase & { type: "snapshot" } & Snapshot;
+type SnapshotEvent = EventBase & { type: "snapshot" } & Snapshot;
 
-export type ErrorEvent = EventBase & {
+type ErrorEvent = EventBase & {
   type: "error";
   kind: DeciderFailure;
   message: string;
   retryable: boolean;
 };
 
-export type EndEvent = EventBase & {
+type EndEvent = EventBase & {
   type: "end";
   reason: "stream ended" | "aborted";
 } & Snapshot;
 
-export type JevEvent =
+type JevEvent =
   | StartEvent
   | DecisionEvent
   | FillEvent
@@ -103,18 +103,21 @@ const signed = (value: number): string =>
   `${value >= 0 ? "+" : "-"}${Math.abs(value).toFixed(2)}`;
 
 /** The likeliest action among the holds, e.g. `  closest sp500 short 0.31`. */
-function closestMiss(holds: readonly Hold[]): string {
+const closestMiss = (holds: readonly Hold[]): string => {
   let best: { instrument: InstrumentId; choice: Choice; p: number } | undefined;
-  for (const hold of holds)
-    for (const [choice, p] of Object.entries(hold.probabilities ?? {}))
-      if (choice !== "hold" && p !== undefined && (!best || p > best.p))
+  for (const hold of holds) {
+    for (const [choice, p] of Object.entries(hold.probabilities ?? {})) {
+      if (choice !== "hold" && (best === undefined || p > best.p)) {
         best = { instrument: hold.instrument, choice: choice as Choice, p };
+      }
+    }
+  }
   return best
     ? `  closest ${best.instrument} ${best.choice} ${best.p.toFixed(2)}`
     : "";
-}
+};
 
-function book(snapshot: Snapshot): string {
+const book = (snapshot: Snapshot): string => {
   const positions = snapshot.positions.map(
     (position) =>
       `${position.instrument} ${position.side === "long" ? "L" : "S"} ${position.quantity.toFixed(4)}@${money(position.avgPrice)} (${signed(position.unrealizedPnl)})`
@@ -125,9 +128,9 @@ function book(snapshot: Snapshot): string {
     `realized ${signed(snapshot.realized)}`,
     ...positions,
   ].join("  ");
-}
+};
 
-function decision(item: Decision): string {
+const decision = (item: Decision): string => {
   const odds = item.probabilities
     ? ` (${Object.entries(item.probabilities)
         .sort(([, a], [, b]) => b - a)
@@ -136,17 +139,18 @@ function decision(item: Decision): string {
         .join(", ")})`
     : "";
   return `${item.action} ${item.instrument} ${item.confidence.toFixed(2)}${odds}`;
-}
+};
 
 /** One line per event: `hh:mm:ss  type      details`. */
-export function formatEvent(event: JevEvent): string {
+const formatEvent = (event: JevEvent): string => {
   const clock = event.time.slice(11, 19);
   const turn = event.turn === null ? "" : `#${event.turn} `;
   let detail: string;
   switch (event.type) {
-    case "start":
+    case "start": {
       detail = `${event.source}  model ${event.model}  cash ${money(event.cash)}  equity ${money(event.equity)}  size ${event.size}${event.strategy ? `  sizing ${event.strategy.sizing}  chase ${event.strategy.maxChaseZ}  stop ${event.strategy.stopZ}  take ${event.strategy.takeProfitZ}` : ""}${event.resumed ? "  (resumed)" : ""}`;
       break;
+    }
     case "decision": {
       const signal =
         event.signal === null ? "" : `  signal ${event.signal.toFixed(2)}`;
@@ -157,25 +161,44 @@ export function formatEvent(event: JevEvent): string {
           : `${event.decisions.map(decision).join("; ")}${signal}`;
       break;
     }
-    case "fill":
+    case "fill": {
       detail = `${event.exit === undefined ? "" : `${event.exit} `}${event.action} ${event.instrument} ${event.quantity.toFixed(4)} @ ${money(event.price)}  ${money(event.notional)}${event.realizedPnl === 0 ? "" : `  realized ${signed(event.realizedPnl)}`}  cash ${money(event.cash)}`;
       break;
-    case "reject":
+    }
+    case "reject": {
       detail = `${event.action} ${event.instrument} — ${event.reason}`;
       break;
-    case "snapshot":
+    }
+    case "snapshot": {
       detail = book(event);
       break;
-    case "error":
+    }
+    case "error": {
       detail = `${event.kind}${event.retryable ? " (will retry)" : ""} — ${event.message}`;
       break;
-    case "end":
+    }
+    case "end": {
       detail = `${event.reason}  ${book(event)}`;
       break;
+    }
   }
   // Provider and transcript text reach the terminal here; no escape sequences.
-  return `${clock}  ${event.type.padEnd(8)}  ${turn}${detail}`.replace(
+  return `${clock}  ${event.type.padEnd(8)}  ${turn}${detail}`.replaceAll(
     /\p{Cc}/gu,
     ""
   );
-}
+};
+
+export { formatEvent };
+export type {
+  DecisionEvent,
+  EndEvent,
+  ErrorEvent,
+  EventBase,
+  FillEvent,
+  JevEvent,
+  RejectEvent,
+  SnapshotEvent,
+  StartEvent,
+  Strategy,
+};

@@ -12,35 +12,31 @@ import type { LedgerLine, RunSummary, TranscriptLine } from "./types";
 
 const base = { audioTime: null, turn: null, time: "2026-09-27T07:00:00.000Z" };
 
-function start(run: string, source = "youtube:5vfaDsMhCF4"): JevEvent {
-  return {
-    ...base,
-    run,
-    type: "start",
-    source,
-    model: "m",
-    cash: 100,
-    equity: 100,
-    size: 0.1,
-    resumed: false,
-  };
-}
+const start = (run: string, source = "youtube:5vfaDsMhCF4"): JevEvent => ({
+  ...base,
+  run,
+  type: "start",
+  source,
+  model: "m",
+  cash: 100,
+  equity: 100,
+  size: 0.1,
+  resumed: false,
+});
 
-function decision(run: string, audioTime: number): JevEvent {
-  return {
-    ...base,
-    run,
-    audioTime,
-    turn: 1,
-    type: "decision",
-    decisions: [],
-    signal: 0.1,
-    model: "m",
-    latencyMs: 1,
-    segments: 1,
-    usage: null,
-  };
-}
+const decision = (run: string, audioTime: number): JevEvent => ({
+  ...base,
+  run,
+  audioTime,
+  turn: 1,
+  type: "decision",
+  decisions: [],
+  signal: 0.1,
+  model: "m",
+  latencyMs: 1,
+  segments: 1,
+  usage: null,
+});
 
 const ledger = (events: JevEvent[]): LedgerLine[] =>
   events.map((event, index) => ({ offset: (index + 1) * 10, event }));

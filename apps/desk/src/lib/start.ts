@@ -30,7 +30,7 @@ const SampleRequestSchema = z.strictObject({
 
 const StartRequestSchema = z.union([LiveRequestSchema, SampleRequestSchema]);
 
-export type StartRequest = {
+type StartRequest = {
   /** The ledger id: the YouTube video id, or a sample's id. */
   videoId: string;
   size?: number;
@@ -41,9 +41,11 @@ export type StartRequest = {
 };
 
 /** Validates a start request body. Throws with a readable message. */
-export function parseStartRequest(body: unknown): StartRequest {
+const parseStartRequest = (body: unknown): StartRequest => {
   const parsed = StartRequestSchema.safeParse(body);
-  if (!parsed.success) throw new Error(z.prettifyError(parsed.error));
+  if (!parsed.success) {
+    throw new Error(z.prettifyError(parsed.error));
+  }
   const { size, minSignal } = parsed.data;
   const common = {
     ...(size === undefined ? {} : { size }),
@@ -51,7 +53,9 @@ export function parseStartRequest(body: unknown): StartRequest {
   };
   if ("sample" in parsed.data) {
     const sample = findSample(parsed.data.sample);
-    if (!sample) throw new Error("unknown sample");
+    if (!sample) {
+      throw new Error("unknown sample");
+    }
     return {
       videoId: sample.id,
       ...common,
@@ -65,7 +69,7 @@ export function parseStartRequest(body: unknown): StartRequest {
     ...common,
     reset: parsed.data.reset ?? false,
   };
-}
+};
 
 /**
  * Prices older than this reject a fill. A paced replay starts this long
@@ -81,7 +85,7 @@ const SAMPLE_MAX_PRICE_AGE_SECONDS = 120;
  * the video id and sample paths from the registry's id, so nothing
  * user-typed reaches the argument list.
  */
-export function jevArgv(request: StartRequest): string[] {
+const jevArgv = (request: StartRequest): string[] => {
   const source = request.sample
     ? [
         `--replay=${join(cliDir, "samples", `${request.videoId}.jsonl`)}`,
@@ -104,4 +108,7 @@ export function jevArgv(request: StartRequest): string[] {
       : [`--min-signal=${request.minSignal}`]),
     ...(request.reset ? ["--reset"] : []),
   ];
-}
+};
+
+export { jevArgv, parseStartRequest };
+export type { StartRequest };

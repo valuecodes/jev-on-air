@@ -1,5 +1,5 @@
-import { Home } from "../components/Home";
+import { Home } from "~/components/home";
 
-export default function Page() {
-  return <Home />;
-}
+const Page = () => <Home />;
+
+export default Page;

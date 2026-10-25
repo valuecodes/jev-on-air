@@ -8,7 +8,7 @@ import { AlpacaStream } from "./stream";
 const url = "wss://example.test/v2/iex";
 const credentials = { keyId: "key", secretKey: "secret" };
 
-function setup() {
+const setup = () => {
   const server = new FakeServer();
   const { logger, lines } = createTestLogger();
   const stream = new AlpacaStream(logger, {
@@ -19,7 +19,7 @@ function setup() {
     retry: { minDelayMs: 1, maxDelayMs: 1 },
   });
   return { server, lines, stream };
-}
+};
 
 describe("AlpacaStream", () => {
   it("authenticates, subscribes and yields trades", async () => {

@@ -17,7 +17,7 @@ const bar = (t: string, c: number, v = 10) => ({
   vw: c,
 });
 
-function fakeFetch(pages: Record<string, unknown[]>) {
+const fakeFetch = (pages: Record<string, unknown[]>) => {
   const urls: string[] = [];
   const headers: Headers[] = [];
   const fetchImpl: Fetch = (url, init) => {
@@ -26,10 +26,9 @@ function fakeFetch(pages: Record<string, unknown[]>) {
     const key = url.includes("/v2/stocks/") ? "stocks" : "crypto";
     const queue = pages[key] ?? [];
     const body = queue.shift() ?? { bars: {}, next_page_token: null };
+    // `??` already replaced a `null`, so only the type is left to check.
     const status =
-      typeof body === "object" && body !== null && "status" in body
-        ? Number(body.status)
-        : 200;
+      typeof body === "object" && "status" in body ? Number(body.status) : 200;
     return Promise.resolve(
       new Response(JSON.stringify(body), {
         status,
@@ -38,13 +37,15 @@ function fakeFetch(pages: Record<string, unknown[]>) {
     );
   };
   return { fetchImpl, urls, headers };
-}
+};
 
-async function collect(history: PriceHistory) {
+const collect = async (history: PriceHistory) => {
   const ticks = [];
-  for await (const tick of history.ticks(range)) ticks.push(tick);
+  for await (const tick of history.ticks(range)) {
+    ticks.push(tick);
+  }
   return ticks;
-}
+};
 
 describe("PriceHistory", () => {
   it("asks both endpoints, follows pages and merges bars into ticks at the bar's close", async () => {
@@ -69,9 +70,9 @@ describe("PriceHistory", () => {
         {
           bars: {
             "BTC/USD": [
-              bar("2026-09-16T18:25:00Z", 64000),
-              bar("2026-09-16T18:26:00Z", 64010),
-              bar("2026-09-16T18:28:00Z", 64020),
+              bar("2026-09-16T18:25:00Z", 64_000),
+              bar("2026-09-16T18:26:00Z", 64_010),
+              bar("2026-09-16T18:28:00Z", 64_020),
             ],
           },
           next_page_token: "",
@@ -86,10 +87,10 @@ describe("PriceHistory", () => {
     expect(
       ticks.map((tick) => [tick.timestamp, tick.symbol, tick.price, tick.size])
     ).toEqual([
-      ["2026-09-16T18:26:00.000Z", "BTC/USD", 64000, 10],
+      ["2026-09-16T18:26:00.000Z", "BTC/USD", 64_000, 10],
       ["2026-09-16T18:26:00.000Z", "GLD", 243.1, 10],
       ["2026-09-16T18:26:00.000Z", "SPY", 512, 10],
-      ["2026-09-16T18:27:00.000Z", "BTC/USD", 64010, 10],
+      ["2026-09-16T18:27:00.000Z", "BTC/USD", 64_010, 10],
       ["2026-09-16T18:27:00.000Z", "GLD", 243.5, 7],
     ]);
     expect(ticks[1]).toMatchObject({
@@ -157,8 +158,9 @@ describe("PriceHistory", () => {
       fetch: aborting,
     });
     const none = [];
-    for await (const tick of cancelled.ticks(range, controller.signal))
+    for await (const tick of cancelled.ticks(range, controller.signal)) {
       none.push(tick);
+    }
     expect(none).toEqual([]);
   });
 

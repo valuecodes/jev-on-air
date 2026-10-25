@@ -10,10 +10,10 @@ const LIVE_WINDOW_MS = 3 * 60_000;
 const TAIL_BYTES = 64 * 1024;
 
 /** The `type` of the last complete line in a file, if it parses. */
-async function lastEventType(
+const lastEventType = async (
   path: string,
   size: number
-): Promise<string | undefined> {
+): Promise<string | undefined> => {
   const handle = await open(path, "r");
   try {
     const length = Math.min(size, TAIL_BYTES);
@@ -29,11 +29,11 @@ async function lastEventType(
   } finally {
     await handle.close();
   }
-}
+};
 
-async function readMeta(
+const readMeta = async (
   id: string
-): Promise<{ title: string | null; channel: string | null }> {
+): Promise<{ title: string | null; channel: string | null }> => {
   try {
     const meta = JSON.parse(await readFile(metaPath(id), "utf8")) as {
       video?: { title?: unknown; channel?: unknown };
@@ -46,14 +46,16 @@ async function readMeta(
   } catch {
     return { title: null, channel: null };
   }
-}
+};
 
-export async function listLedgers(now = Date.now()): Promise<LedgerInfo[]> {
+const listLedgers = async (now = Date.now()): Promise<LedgerInfo[]> => {
   let names: string[];
   try {
     names = await readdir(ledgerDir);
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") return [];
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+      return [];
+    }
     throw error;
   }
   const ids = names
@@ -82,4 +84,6 @@ export async function listLedgers(now = Date.now()): Promise<LedgerInfo[]> {
   return ledgers
     .filter((ledger) => ledger !== undefined)
     .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
-}
+};
+
+export { listLedgers };

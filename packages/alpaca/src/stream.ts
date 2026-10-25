@@ -1,7 +1,7 @@
+import type { LoggerLike } from "@repo/logger";
 // One Alpaca market-data WebSocket: authenticates, subscribes to trades and
 // quotes and yields them, reconnecting with backoff when the connection drops.
 import { setTimeout as sleep } from "node:timers/promises";
-import type { LoggerLike } from "@repo/logger";
 
 import { Channel } from "./channel";
 import {
@@ -13,24 +13,26 @@ import {
 } from "./protocol";
 import type { Credentials, MarketData } from "./protocol";
 
-export type SocketHandlers = {
-  message(data: string): void;
-  close(code: number, reason: string): void;
+type SocketHandlers = {
+  message: (data: string) => void;
+  close: (code: number, reason: string) => void;
 };
 
-export type Socket = {
-  send(data: string): void;
-  close(): void;
+type Socket = {
+  send: (data: string) => void;
+  close: () => void;
 };
 
 /** Opens a WebSocket to `url` that reports to `handlers`. Injectable for tests. */
-export type CreateSocket = (url: string, handlers: SocketHandlers) => Socket;
+type CreateSocket = (url: string, handlers: SocketHandlers) => Socket;
 
-export const createWebSocket: CreateSocket = (url, handlers) => {
+const createWebSocket: CreateSocket = (url, handlers) => {
   const socket = new WebSocket(url);
   socket.addEventListener("message", (event) => {
     // Alpaca sends JSON as text frames unless msgpack is requested.
-    if (typeof event.data === "string") handlers.message(event.data);
+    if (typeof event.data === "string") {
+      handlers.message(event.data);
+    }
   });
   // A failed connection fires `error` then `close`, so `close` covers both.
   socket.addEventListener("close", (event) => {
@@ -46,14 +48,14 @@ export const createWebSocket: CreateSocket = (url, handlers) => {
   };
 };
 
-export type RetryOptions = {
+type RetryOptions = {
   /** First reconnect delay; doubles per failed attempt (default 1000). */
   minDelayMs?: number;
   /** Reconnect delay cap (default 30000). */
   maxDelayMs?: number;
 };
 
-export type AlpacaStreamOptions = {
+type AlpacaStreamOptions = {
   url: string;
   credentials: Credentials;
   symbols: readonly string[];
@@ -75,6 +77,11 @@ export type AlpacaStreamOptions = {
 // A connection that stays up this long counts as healthy even with no data.
 const healthyAfterMs = 30_000;
 
+// Read through a call: TypeScript would otherwise keep the `aborted` it
+// narrowed before an `await`/`yield`, though the signal can fire meanwhile.
+const isAborted = (signal: AbortSignal | undefined): boolean =>
+  signal?.aborted === true;
+
 type Connection = {
   data: Channel<MarketData>;
   /** Whether the server accepted our credentials on this connection. */
@@ -84,7 +91,7 @@ type Connection = {
   close: () => void;
 };
 
-export class AlpacaStream {
+class AlpacaStream {
   private readonly logger: LoggerLike;
   private readonly options: AlpacaStreamOptions;
 
@@ -103,19 +110,25 @@ export class AlpacaStream {
     const maxDelay = this.options.retry?.maxDelayMs ?? 30_000;
     let attempt = 0;
     let everAuthenticated = false;
-    while (!signal?.aborted) {
+    while (!isAborted(signal)) {
       const connection = this.connect(signal, everAuthenticated);
       try {
         yield* connection.data;
       } finally {
         connection.close();
       }
-      if (signal?.aborted) return;
+      if (isAborted(signal)) {
+        return;
+      }
 
-      if (connection.authenticated()) everAuthenticated = true;
+      if (connection.authenticated()) {
+        everAuthenticated = true;
+      }
       // Only a connection that actually worked starts the backoff over; one
       // the server keeps closing right after auth must not retry every second.
-      if (connection.healthy()) attempt = 0;
+      if (connection.healthy()) {
+        attempt = 0;
+      }
       const delay = Math.min(minDelay * 2 ** attempt, maxDelay);
       attempt += 1;
       this.logger.warn("stream closed, reconnecting", { delayMs: delay });
@@ -158,7 +171,9 @@ export class AlpacaStream {
 
     // (Re)starts the idle watchdog; runs from the subscription onwards.
     const armIdle = (): void => {
-      if (idleTimeoutMs === undefined || closed) return;
+      if (idleTimeoutMs === undefined || closed) {
+        return;
+      }
       clearTimeout(idleTimer);
       idleTimer = setTimeout(() => {
         expire("no data, stream looks dead");
@@ -166,7 +181,9 @@ export class AlpacaStream {
     };
 
     const handleFrame = (frame: string): void => {
-      if (handshakeTimer === undefined) armIdle();
+      if (handshakeTimer === undefined) {
+        armIdle();
+      }
       let messages;
       try {
         messages = parseFrame(frame);
@@ -176,14 +193,16 @@ export class AlpacaStream {
       }
       for (const message of messages) {
         switch (message.type) {
-          case "connected":
+          case "connected": {
             holder.socket?.send(authMessage(credentials));
             break;
-          case "authenticated":
+          }
+          case "authenticated": {
             authenticatedAt = Date.now();
             holder.socket?.send(subscribeMessage(symbols));
             break;
-          case "subscription":
+          }
+          case "subscription": {
             this.logger.info("subscribed", {
               trades: message.trades,
               quotes: message.quotes,
@@ -192,6 +211,7 @@ export class AlpacaStream {
             handshakeTimer = undefined;
             armIdle();
             break;
+          }
           case "error": {
             const error = new AlpacaError(message.code, message.message);
             const staleConnection = reconnecting && message.code === 406;
@@ -204,10 +224,11 @@ export class AlpacaStream {
             return;
           }
           case "trade":
-          case "quote":
+          case "quote": {
             dataSeen = true;
             data.push(message);
             break;
+          }
         }
       }
     };
@@ -217,7 +238,9 @@ export class AlpacaStream {
     };
 
     const close = (): void => {
-      if (closed) return;
+      if (closed) {
+        return;
+      }
       closed = true;
       clearTimeout(handshakeTimer);
       clearTimeout(idleTimer);
@@ -225,6 +248,7 @@ export class AlpacaStream {
       holder.socket?.close();
       data.end();
     };
+    const isClosed = (): boolean => closed;
 
     this.logger.debug("connecting");
     const socket = createSocket(url, {
@@ -234,9 +258,13 @@ export class AlpacaStream {
         close();
       },
     });
-    // A socket that reported a failure synchronously is already done.
+    // A socket that reported a failure synchronously is already done. Read
+    // through a call: TypeScript narrows `closed` to `false` here, not seeing
+    // that the handlers above may already have set it.
     holder.socket = socket;
-    if (closed) socket.close();
+    if (isClosed()) {
+      socket.close();
+    }
     signal?.addEventListener("abort", onAbort, { once: true });
 
     return {
@@ -250,3 +278,6 @@ export class AlpacaStream {
     };
   }
 }
+
+export { AlpacaStream };
+export type { CreateSocket, RetryOptions, Socket, SocketHandlers };

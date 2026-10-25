@@ -34,5 +34,4 @@ const toSeverity = (label: string): { readonly severity: Severity } => ({
     : "DEFAULT",
 });
 
-export type { Severity };
 export { toSeverity };

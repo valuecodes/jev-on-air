@@ -1,9 +1,3 @@
-// The `jev` command: runs the decision engine over a live stream or a
-// recording, keeps the portfolio in a state file and writes every event to
-// a ledger and to stdout.
-import { once } from "node:events";
-import { rm } from "node:fs/promises";
-import { basename, join, resolve } from "node:path";
 import { PriceFeed } from "@repo/alpaca/prices";
 import type { PriceTick } from "@repo/alpaca/prices";
 import { HoldDecider, ScriptedDecider } from "@repo/jev/decider";
@@ -32,76 +26,27 @@ import { StateFile } from "@repo/jev/state";
 import { TypeSafeDecider } from "@repo/jev/typesafe";
 import type { LoggerLike } from "@repo/logger";
 import { parseSegmentLine, Transcriber } from "@repo/transcriber";
+// The `jev` command: runs the decision engine over a live stream or a
+// recording, keeps the portfolio in a state file and writes every event to
+// a ledger and to stdout.
+import { once } from "node:events";
+import { rm } from "node:fs/promises";
+import { basename } from "node:path";
 
-import type { JevArgs, JevConfig } from "./cli";
+import type { JevArgs, JevConfig } from "./jev-args";
+import { paths } from "./jev-paths";
+import type { Paths } from "./jev-paths";
 import { JsonlWriter, readJsonlAs } from "./jsonl";
 import { readSidecar, sidecarPath, writeSidecar } from "./sidecar";
 import type { Sidecar } from "./sidecar";
 import { childEnv } from "./time";
 import { describeVideo } from "./transcribe";
 
-const cacheDir = join(import.meta.dirname, "..", ".cache");
-
 // A replay seeds the market features with up to this much price history
 // from before the ticks it replays, so they are ready from the first line.
 const historyMs = 60 * 60_000;
 
-/** Where the run reads and writes, all resolved to absolute paths. */
-type Paths = {
-  ledger: string;
-  state: string;
-  transcript?: string;
-  prices?: string;
-  script?: string;
-  /**
-   * Live runs tee their transcript here, so any run can be replayed; a
-   * replay with `--tee` records what it replays, for desk to follow.
-   */
-  tee?: string;
-  /** ...and their price ticks here, in the `prices --json` format. */
-  ticks?: string;
-};
-
-function paths(args: JevArgs): Paths {
-  // `pnpm cli` runs from apps/cli; INIT_CWD is where the user typed it.
-  const cwd = process.env.INIT_CWD ?? process.cwd();
-  const jevDir = join(cacheDir, "jev");
-  const live = args.source.kind === "live";
-  const result: Paths = {
-    ledger: args.out
-      ? resolve(cwd, args.out)
-      : join(jevDir, `${args.id}.jsonl`),
-    state: args.state
-      ? resolve(cwd, args.state)
-      : live
-        ? join(jevDir, "portfolio.json")
-        : join(jevDir, "replay", `${args.id}.state.json`),
-  };
-  if (args.source.kind === "replay") {
-    result.transcript = resolve(cwd, args.source.transcript);
-    if (args.source.prices) result.prices = resolve(cwd, args.source.prices);
-    if (args.source.tee) {
-      result.tee = join(cacheDir, "transcripts", `${args.id}.jsonl`);
-      result.ticks = join(cacheDir, "prices", `${args.id}.jsonl`);
-    }
-  } else {
-    result.tee = join(cacheDir, "transcripts", `${args.source.videoId}.jsonl`);
-    result.ticks = join(cacheDir, "prices", `${args.source.videoId}.jsonl`);
-  }
-  if (args.decider.kind === "script")
-    result.script = resolve(cwd, args.decider.path);
-
-  const seen = new Map<string, string>();
-  for (const [name, path] of Object.entries(result)) {
-    const other = seen.get(path);
-    if (other !== undefined)
-      throw new Error(`${name} and ${other} are the same file: ${path}`);
-    seen.set(path, name);
-  }
-  return result;
-}
-
-export class JevCommand {
+class JevCommand {
   private readonly logger: LoggerLike;
 
   constructor(logger: LoggerLike) {
@@ -200,12 +145,15 @@ export class JevCommand {
       onEvent: async (event) => {
         // The book is saved before the ledger line, so a crash between the
         // two leaves a fill the ledger does not know about, never the reverse.
-        if (event.type === "fill" || event.type === "end")
+        if (event.type === "fill" || event.type === "end") {
           await stateFile.save(portfolio.toState(event.time, run));
+        }
         await ledger.append(event);
         const line = `${args.json ? JSON.stringify(event) : formatEvent(event)}\n`;
         // Wait out a slow pipe rather than queueing output in memory.
-        if (!process.stdout.write(line)) await once(process.stdout, "drain");
+        if (!process.stdout.write(line)) {
+          await once(process.stdout, "drain");
+        }
       },
     });
     try {
@@ -221,22 +169,20 @@ export class JevCommand {
     config: JevConfig,
     files: Paths
   ): Promise<Decider> {
-    switch (args.decider.kind) {
-      case "hold":
-        return new HoldDecider();
-      case "script": {
-        const outputs = await readJsonlAs(files.script ?? "", (line) =>
-          TurnOutputSchema.parse(JSON.parse(line))
-        );
-        return new ScriptedDecider(outputs);
-      }
-      case "typesafe":
-        return new TypeSafeDecider(this.logger, {
-          apiKey: config.typesafeApiKey,
-          model: config.model,
-          skipBelowSignal: args.minSignal,
-        });
+    if (args.decider.kind === "hold") {
+      return new HoldDecider();
     }
+    if (args.decider.kind === "script") {
+      const outputs = await readJsonlAs(files.script ?? "", (line) =>
+        TurnOutputSchema.parse(JSON.parse(line))
+      );
+      return new ScriptedDecider(outputs);
+    }
+    return new TypeSafeDecider(this.logger, {
+      apiKey: config.typesafeApiKey,
+      model: config.model,
+      skipBelowSignal: args.minSignal,
+    });
   }
 
   private async events(
@@ -254,7 +200,9 @@ export class JevCommand {
       kind: "heartbeat",
     }));
     const ticks = (): Source<EngineEvent> => {
-      if (!config.alpaca) throw new Error("live prices need Alpaca keys");
+      if (!config.alpaca) {
+        throw new Error("live prices need Alpaca keys");
+      }
       const feed = new PriceFeed(this.logger, { credentials: config.alpaca });
       return mapSource(
         (signal) => feed.stream(signal),
@@ -296,7 +244,9 @@ export class JevCommand {
       const recorded: Source<EngineEvent> = async function* (signal) {
         try {
           for await (const event of prices(signal)) {
-            if (event.kind === "tick") await record.append(event.tick);
+            if (event.kind === "tick") {
+              await record.append(event.tick);
+            }
             yield event;
           }
         } finally {
@@ -321,11 +271,12 @@ export class JevCommand {
     let audioStart = args.source.audioStart;
     if (audioStart === undefined) {
       audioStart = sidecar?.audioStart;
-      if (audioStart !== undefined)
+      if (audioStart !== undefined) {
         this.logger.info("audio start from the transcript's sidecar", {
           audioStart,
           title: sidecar?.video.title,
         });
+      }
     }
     const originMs =
       audioStart === undefined ? undefined : Date.parse(audioStart);
@@ -405,13 +356,14 @@ export class JevCommand {
       ],
       { primary: 0 }
     );
-    if (originMs === undefined)
+    if (originMs === undefined) {
       return {
         events: record(events),
         clock: undefined,
         awaitDecisions: false,
         history,
       };
+    }
     // With a known audio start the clock runs at real speed from the
     // recording's own time, as the fast clock does, so the ledger's times
     // line up with the recorded ticks.
@@ -447,12 +399,13 @@ export class JevCommand {
     // Opened first: they create the directories the sidecar goes in.
     const lines = await JsonlWriter.open(teePath);
     const ticks = await JsonlWriter.open(ticksPath);
-    if (sidecar)
+    if (sidecar) {
       await writeSidecar(sidecarPath(teePath), {
         video: sidecar.video,
         transcribedAt: new Date().toISOString(),
         ...(audioStart === undefined ? {} : { audioStart }),
       });
+    }
     this.logger.info("writing transcript and ticks", {
       out: teePath,
       ticks: ticksPath,
@@ -461,8 +414,11 @@ export class JevCommand {
       async function* (signal) {
         try {
           for await (const event of events(signal)) {
-            if (event.kind === "segment") await lines.append(event.segment);
-            else if (event.kind === "tick") await ticks.append(event.tick);
+            if (event.kind === "segment") {
+              await lines.append(event.segment);
+            } else if (event.kind === "tick") {
+              await ticks.append(event.tick);
+            }
             yield event;
           }
         } finally {
@@ -472,3 +428,5 @@ export class JevCommand {
       };
   }
 }
+
+export { JevCommand };

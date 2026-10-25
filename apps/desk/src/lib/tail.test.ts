@@ -6,14 +6,6 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { FileTailer, splitLines } from "./tail";
 import type { TailLine } from "./tail";
 
-let dir: string;
-beforeEach(async () => {
-  dir = await mkdtemp(join(tmpdir(), "jev-desk-tail-"));
-});
-afterEach(async () => {
-  await rm(dir, { recursive: true, force: true });
-});
-
 describe("splitLines", () => {
   it("returns complete lines with their end offsets and keeps the rest", () => {
     const { lines, rest } = splitLines(
@@ -37,7 +29,7 @@ describe("splitLines", () => {
   });
 });
 
-function follow(path: string, from?: number) {
+const follow = (path: string, from?: number) => {
   const lines: TailLine[] = [];
   let resets = 0;
   const tailer = new FileTailer(path, {
@@ -49,9 +41,17 @@ function follow(path: string, from?: number) {
     },
   });
   return { tailer, lines, resets: () => resets };
-}
+};
 
 describe("FileTailer", () => {
+  let dir: string;
+  beforeEach(async () => {
+    dir = await mkdtemp(join(tmpdir(), "jev-desk-tail-"));
+  });
+  afterEach(async () => {
+    await rm(dir, { recursive: true, force: true });
+  });
+
   it("waits for a missing file and reads it once created", async () => {
     const path = join(dir, "a.jsonl");
     const { tailer, lines } = follow(path);

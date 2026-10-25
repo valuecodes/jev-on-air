@@ -6,7 +6,7 @@ import type { FSWatcher } from "node:fs";
 import { open, stat } from "node:fs/promises";
 import { basename, dirname } from "node:path";
 
-export type TailLine = {
+type TailLine = {
   text: string;
   /** Byte offset just past the line's newline: where the next line starts. */
   end: number;
@@ -21,12 +21,12 @@ const MAX_READ = 1 << 20;
  * line (or a UTF-8 character) cut by a read is only decoded once complete.
  * Blank lines are dropped but still move the offset.
  */
-export function splitLines(
+const splitLines = (
   pending: Buffer,
   chunk: Buffer,
   base: number
-): { lines: TailLine[]; rest: Buffer } {
-  const buffer = pending.length ? Buffer.concat([pending, chunk]) : chunk;
+): { lines: TailLine[]; rest: Buffer } => {
+  const buffer = pending.length > 0 ? Buffer.concat([pending, chunk]) : chunk;
   const lines: TailLine[] = [];
   let start = 0;
   for (
@@ -35,13 +35,15 @@ export function splitLines(
     index = buffer.indexOf(NEWLINE, start)
   ) {
     const text = buffer.toString("utf8", start, index).replace(/\r$/, "");
-    if (text.trim() !== "") lines.push({ text, end: base + index + 1 });
+    if (text.trim() !== "") {
+      lines.push({ text, end: base + index + 1 });
+    }
     start = index + 1;
   }
   return { lines, rest: Buffer.from(buffer.subarray(start)) };
-}
+};
 
-export type TailerOptions = {
+type TailerOptions = {
   /** Offset to resume from; must be a line boundary (a `TailLine.end`). */
   from?: number;
   onLines: (lines: TailLine[]) => void;
@@ -52,7 +54,7 @@ export type TailerOptions = {
   pollMs?: number;
 };
 
-export class FileTailer {
+class FileTailer {
   private readonly path: string;
   private readonly options: TailerOptions;
   /** Bytes read so far, including `pending`. */
@@ -83,7 +85,9 @@ export class FileTailer {
   start(): void {
     try {
       this.watcher = watch(dirname(this.path), (_event, name) => {
-        if (name === null || name === basename(this.path)) void this.sync();
+        if (name === null || name === basename(this.path)) {
+          void this.sync();
+        }
       });
       this.watcher.on("error", () => this.watcher?.close());
     } catch {
@@ -110,6 +114,14 @@ export class FileTailer {
     return this.chain;
   }
 
+  /**
+   * Whether `stop` has not run. A getter, so a loop re-reads it after each
+   * await instead of trusting the narrowing from an earlier check.
+   */
+  private get running(): boolean {
+    return !this.closed;
+  }
+
   private reset(): void {
     this.readFrom = 0;
     this.pending = Buffer.alloc(0);
@@ -117,12 +129,16 @@ export class FileTailer {
   }
 
   private async read(): Promise<void> {
-    if (this.closed) return;
+    if (this.closed) {
+      return;
+    }
     let info;
     try {
       info = await stat(this.path);
     } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+        throw error;
+      }
       // Deleted after being read: whatever replaces it starts from zero.
       if (this.identity !== undefined) {
         this.identity = undefined;
@@ -134,24 +150,29 @@ export class FileTailer {
     if (
       (this.identity !== undefined && identity !== this.identity) ||
       info.size < this.readFrom
-    )
+    ) {
       this.reset();
+    }
     this.identity = identity;
-    if (info.size <= this.readFrom) return;
+    if (info.size <= this.readFrom) {
+      return;
+    }
 
     const handle = await open(this.path, "r");
     try {
       const buffer = Buffer.alloc(
         Math.min(info.size - this.readFrom, MAX_READ)
       );
-      while (!this.closed && this.readFrom < info.size) {
+      while (this.running && this.readFrom < info.size) {
         const { bytesRead } = await handle.read(
           buffer,
           0,
           Math.min(buffer.length, info.size - this.readFrom),
           this.readFrom
         );
-        if (bytesRead === 0) break;
+        if (bytesRead === 0) {
+          break;
+        }
         const { lines, rest } = splitLines(
           this.pending,
           buffer.subarray(0, bytesRead),
@@ -159,10 +180,15 @@ export class FileTailer {
         );
         this.pending = rest;
         this.readFrom += bytesRead;
-        if (lines.length) this.options.onLines(lines);
+        if (lines.length > 0) {
+          this.options.onLines(lines);
+        }
       }
     } finally {
       await handle.close();
     }
   }
 }
+
+export { FileTailer, splitLines };
+export type { TailLine };

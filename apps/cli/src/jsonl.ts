@@ -6,19 +6,23 @@ import { dirname } from "node:path";
 import { createInterface } from "node:readline";
 
 /** Yields the non-blank lines of `path`. */
-export async function* readJsonl(path: string): AsyncGenerator<string> {
+const readJsonl = async function* (path: string): AsyncGenerator<string> {
   const lines = createInterface({
     input: createReadStream(path, "utf8"),
     crlfDelay: Infinity,
   });
-  for await (const line of lines) if (line.trim() !== "") yield line;
-}
+  for await (const line of lines) {
+    if (line.trim() !== "") {
+      yield line;
+    }
+  }
+};
 
 /** Parses every line of `path` with `parse`, naming the line on failure. */
-export async function readJsonlAs<T>(
+const readJsonlAs = async <T>(
   path: string,
   parse: (line: string) => T
-): Promise<T[]> {
+): Promise<T[]> => {
   const values: T[] = [];
   let number = 0;
   for await (const line of readJsonl(path)) {
@@ -33,10 +37,10 @@ export async function readJsonlAs<T>(
     }
   }
   return values;
-}
+};
 
 /** Appends JSON values to `path`, one per line, creating it if needed. */
-export class JsonlWriter {
+class JsonlWriter {
   private readonly file: Awaited<ReturnType<typeof open>>;
 
   private constructor(file: Awaited<ReturnType<typeof open>>) {
@@ -56,3 +60,5 @@ export class JsonlWriter {
     await this.file.close();
   }
 }
+
+export { JsonlWriter, readJsonlAs };

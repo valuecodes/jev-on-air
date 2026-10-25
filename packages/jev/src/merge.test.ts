@@ -3,34 +3,42 @@ import { describe, expect, it } from "vitest";
 import { interval, mapSource, merge } from "./merge";
 import type { Source } from "./merge";
 
-function fromArray<T>(values: readonly T[]): Source<T> {
-  return async function* () {
+const fromArray = <T>(values: readonly T[]): Source<T> =>
+  async function* () {
     for (const value of values) {
       await Promise.resolve();
       yield value;
     }
   };
-}
 
 /** Yields nothing and ends only when aborted, like a quiet live feed. */
-function untilAborted<T>(): Source<T> {
-  return async function* (signal) {
+const untilAborted = <T>(): Source<T> =>
+  async function* (signal) {
     yield* [];
-    if (signal.aborted) return;
+    if (signal.aborted) {
+      return;
+    }
     await new Promise<void>((resolve) => {
       signal.addEventListener("abort", () => resolve(), { once: true });
     });
   };
-}
 
-async function collect<T>(
+const collect = async <T>(
   source: Source<T>,
   signal = new AbortController().signal
-): Promise<T[]> {
+): Promise<T[]> => {
   const values: T[] = [];
-  for await (const value of source(signal)) values.push(value);
+  for await (const value of source(signal)) {
+    values.push(value);
+  }
   return values;
-}
+};
+
+const failing: Source<number> = async function* () {
+  yield* [];
+  await Promise.resolve();
+  throw new Error("feed died");
+};
 
 describe("merge", () => {
   it("yields every value of every source and ends when all end", async () => {
@@ -58,15 +66,12 @@ describe("merge", () => {
   });
 
   it("throws the first failure and aborts the others", async () => {
-    const failing: Source<number> = async function* () {
-      yield* [];
-      await Promise.resolve();
-      throw new Error("feed died");
-    };
     let aborted = false;
     const quiet: Source<number> = async function* (signal) {
       yield* [];
-      if (signal.aborted) return;
+      if (signal.aborted) {
+        return;
+      }
       await new Promise<void>((resolve) => {
         signal.addEventListener("abort", () => resolve(), { once: true });
       });
@@ -93,7 +98,9 @@ describe("interval", () => {
     const ticks: number[] = [];
     for await (const _ of mapSource(interval(1), () => 1)(controller.signal)) {
       ticks.push(_);
-      if (ticks.length === 3) controller.abort();
+      if (ticks.length === 3) {
+        controller.abort();
+      }
     }
     expect(ticks).toEqual([1, 1, 1]);
   });

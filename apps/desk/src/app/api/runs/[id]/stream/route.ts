@@ -1,42 +1,42 @@
 // GET: server-sent events for one ledger id — its ledger lines, transcript
 // lines, downsampled prices, and the state and output of desk's run for it.
 // Each event's id is a cursor over all of them (lib/cursor.ts).
-import { formatCursor, parseCursor } from "../../../../../lib/cursor";
-import { guard } from "../../../../../lib/guard";
-import {
-  isLedgerId,
-  ledgerPath,
-  ticksPath,
-  transcriptPath,
-} from "../../../../../lib/paths";
-import { downsample } from "../../../../../lib/prices";
-import { runs } from "../../../../../lib/runs";
-import { FileTailer } from "../../../../../lib/tail";
-import type { TailLine } from "../../../../../lib/tail";
-
-export const dynamic = "force-dynamic";
+import { formatCursor, parseCursor } from "~/lib/cursor";
+import { guard } from "~/lib/guard";
+import { isLedgerId, ledgerPath, ticksPath, transcriptPath } from "~/lib/paths";
+import { downsample } from "~/lib/prices";
+import { runs } from "~/lib/runs";
+import { FileTailer } from "~/lib/tail";
+import type { TailLine } from "~/lib/tail";
 
 const PING_MS = 15_000;
 
-export async function GET(
+const noop = (): void => undefined;
+
+const GET = async (
   request: Request,
   { params }: { params: Promise<{ id: string }> }
-): Promise<Response> {
+): Promise<Response> => {
   const refused = guard(request, { mutating: false });
-  if (refused) return refused;
+  if (refused) {
+    return refused;
+  }
   const { id } = await params;
-  if (!isLedgerId(id))
+  if (!isLedgerId(id)) {
     return Response.json({ error: "unknown ledger" }, { status: 404 });
+  }
 
   const cursor = parseCursor(request.headers.get("last-event-id"));
   const encoder = new TextEncoder();
-  let cleanup = (): void => undefined;
+  let cleanup = noop;
 
   const body = new ReadableStream<Uint8Array>({
     start(controller) {
       let closed = false;
       const write = (chunk: string): void => {
-        if (closed) return;
+        if (closed) {
+          return;
+        }
         try {
           controller.enqueue(encoder.encode(chunk));
         } catch {
@@ -92,12 +92,17 @@ export async function GET(
       // Ticks come many a second: one event per read, a point per second.
       const ticks = follow("ticks", ticksPath(id), (lines) => {
         const last = lines.at(-1);
-        if (!last) return;
+        if (!last) {
+          return;
+        }
         cursor.ticks = last.end;
         const { points, invalid } = downsample(lines.map((line) => line.text));
-        if (invalid)
+        if (invalid > 0) {
           send("notice", { message: `skipped ${invalid} bad tick lines` });
-        if (points.length) send("prices", { offset: last.end, points });
+        }
+        if (points.length > 0) {
+          send("prices", { offset: last.end, points });
+        }
       });
       const registry = runs();
       const after = { generation: cursor.generation, seq: cursor.output };
@@ -116,7 +121,9 @@ export async function GET(
       ticks.start();
 
       cleanup = () => {
-        if (closed) return;
+        if (closed) {
+          return;
+        }
         closed = true;
         ledger.stop();
         transcript.stop();
@@ -143,4 +150,8 @@ export async function GET(
       Connection: "keep-alive",
     },
   });
-}
+};
+
+// Next reads route segment config only from an inline `export const`.
+export const dynamic = "force-dynamic";
+export { GET };

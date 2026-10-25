@@ -17,7 +17,7 @@ class FakeChild extends EventEmitter {
   readonly stderr = new PassThrough();
 }
 
-function setup() {
+const setup = () => {
   const children: FakeChild[] = [];
   const argvs: string[][] = [];
   const kills: [number, NodeJS.Signals][] = [];
@@ -32,18 +32,18 @@ function setup() {
     offsets: () => Promise.resolve({ ledger: 100, transcript: 50 }),
   });
   return { registry, children, argvs, kills };
-}
+};
 
 const request = { videoId: "5vfaDsMhCF4", reset: false };
 
-beforeEach(() => {
-  vi.useFakeTimers();
-});
-afterEach(() => {
-  vi.useRealTimers();
-});
-
 describe("RunRegistry", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("starts the CLI and records where the run's lines begin", async () => {
     const { registry, children, argvs } = setup();
     const run = await registry.start(request);
@@ -82,9 +82,9 @@ describe("RunRegistry", () => {
       registry.start(request),
       registry.start({ ...request, videoId: "aaaaaaaaaaa" }),
     ]);
-    expect(results[0]?.status).toBe("fulfilled");
+    expect(results[0].status).toBe("fulfilled");
     expect(
-      results[1]?.status === "rejected" && results[1].reason
+      results[1].status === "rejected" && results[1].reason
     ).toBeInstanceOf(RunConflictError);
   });
 

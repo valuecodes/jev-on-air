@@ -2,11 +2,13 @@ import { describe, expect, it } from "vitest";
 
 import { Channel } from "./channel";
 
-async function collect<T>(iterable: AsyncIterable<T>): Promise<T[]> {
+const collect = async <T>(iterable: AsyncIterable<T>): Promise<T[]> => {
   const values: T[] = [];
-  for await (const value of iterable) values.push(value);
+  for await (const value of iterable) {
+    values.push(value);
+  }
   return values;
-}
+};
 
 describe("Channel", () => {
   it("yields values pushed before and after the consumer waits", async () => {
@@ -26,7 +28,9 @@ describe("Channel", () => {
     channel.push(1);
     channel.fail(new Error("boom"));
     await expect(async () => {
-      for await (const value of channel) seen.push(value);
+      for await (const value of channel) {
+        seen.push(value);
+      }
     }).rejects.toThrow("boom");
     expect(seen).toEqual([1]);
   });

@@ -35,9 +35,9 @@ import { CHOICES, normalizeTurnOutput } from "./schema";
 import type { Choice, Decision, Hold } from "./schema";
 
 /** The alias TypeSafe keeps on its newest stable release. */
-export const DEFAULT_MODEL = "jev-latest";
+const DEFAULT_MODEL = "jev-latest";
 
-export type TypeSafeDeciderOptions = {
+type TypeSafeDeciderOptions = {
   /** A configured client; otherwise one is made from `apiKey`. */
   client?: TypeSafeClient;
   apiKey?: string;
@@ -53,7 +53,7 @@ export type TypeSafeDeciderOptions = {
 };
 
 /** The answers a turn needs: the instrument choices and the signal gate. */
-export type TurnAnswers = Partial<Record<InstrumentId, ChoiceResponse>> & {
+type TurnAnswers = Partial<Record<InstrumentId, ChoiceResponse>> & {
   [SIGNAL_QUESTION]?: NoulResponse;
 };
 
@@ -65,53 +65,62 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
  * the server's JSON through unchecked, and an odd reply should cost a turn,
  * not the run.
  */
-function readChoice(
+const readChoice = (
   instrument: InstrumentId,
   answer: unknown
-): { choice: Choice } & Pick<Decision, "confidence" | "probabilities"> {
-  if (!isRecord(answer))
+): { choice: Choice } & Pick<Decision, "confidence" | "probabilities"> => {
+  if (!isRecord(answer)) {
     throw new DeciderError("unparseable", `no answer for ${instrument}`);
+  }
   const { choice: picked, confidence, probabilities } = answer;
   if (
     typeof picked !== "string" ||
     !(CHOICES as readonly string[]).includes(picked)
-  )
+  ) {
     throw new DeciderError(
       "unparseable",
       `unknown choice ${String(picked)} for ${instrument}`
     );
-  if (typeof confidence !== "number" || !Number.isFinite(confidence))
+  }
+  if (typeof confidence !== "number" || !Number.isFinite(confidence)) {
     throw new DeciderError("unparseable", `no confidence for ${instrument}`);
+  }
   const odds: NonNullable<Decision["probabilities"]> = {};
-  if (isRecord(probabilities))
+  if (isRecord(probabilities)) {
     for (const option of CHOICES) {
       const probability = probabilities[option];
-      if (typeof probability === "number" && Number.isFinite(probability))
+      if (typeof probability === "number" && Number.isFinite(probability)) {
         odds[option] = Number(probability.toFixed(3));
+      }
     }
+  }
   return { choice: picked as Choice, confidence, probabilities: odds };
-}
+};
 
 /** The signal answer, if one came back. Throws on a malformed one. */
-function readSignal(answers: Record<string, unknown>): number | undefined {
+const readSignal = (answers: Record<string, unknown>): number | undefined => {
   // The gate is optional, but a present answer must be a probability: a
   // malformed one would otherwise silently switch the gate off.
   const gate: unknown = answers[SIGNAL_QUESTION];
-  if (gate === undefined) return undefined;
+  if (gate === undefined) {
+    return undefined;
+  }
   const noul = isRecord(gate) ? gate.noul : undefined;
-  if (typeof noul !== "number" || !Number.isFinite(noul))
+  if (typeof noul !== "number" || !Number.isFinite(noul)) {
     throw new DeciderError("unparseable", "invalid signal answer");
+  }
   return noul;
-}
+};
 
 /** Turns the answers into a result, or throws the matching `DeciderError`. */
-export function interpretAnswers(
+const interpretAnswers = (
   answers: TurnAnswers | undefined,
   instruments: readonly InstrumentId[],
   meta: { model: string; usage: Usage | undefined; latencyMs: number }
-): DecideResult {
-  if (!isRecord(answers))
+): DecideResult => {
+  if (!isRecord(answers)) {
     throw new DeciderError("unparseable", "reply carried no answers");
+  }
   const signal = readSignal(answers);
   const decisions: Decision[] = [];
   const holds: Hold[] = [];
@@ -120,8 +129,11 @@ export function interpretAnswers(
       instrument,
       answers[instrument]
     );
-    if (picked === "hold") holds.push({ instrument, ...odds });
-    else decisions.push({ instrument, action: picked, ...odds });
+    if (picked === "hold") {
+      holds.push({ instrument, ...odds });
+    } else {
+      decisions.push({ instrument, action: picked, ...odds });
+    }
   }
   const usage = meta.usage;
   return {
@@ -135,31 +147,56 @@ export function interpretAnswers(
     ...(isRecord(usage)
       ? {
           usage: {
-            inputTokens: Number(usage.input_tokens) || 0,
-            outputTokens: Number(usage.output_tokens) || 0,
+            inputTokens: usage.input_tokens || 0,
+            outputTokens: usage.output_tokens || 0,
           },
         }
       : {}),
   };
-}
+};
 
 /** Maps an SDK error onto a `DeciderError`; anything else passes through. */
-export function toDeciderError(error: unknown): unknown {
-  if (error instanceof DeciderError) return error;
-  if (error instanceof APIUserAbortError)
+const toDeciderError = (error: unknown): unknown => {
+  if (error instanceof DeciderError) {
+    return error;
+  }
+  if (error instanceof APIUserAbortError) {
     return new DeciderError("aborted", "call aborted", { cause: error });
-  if (error instanceof APIConnectionError)
+  }
+  if (error instanceof APIConnectionError) {
     return new DeciderError("connection", error.message, { cause: error });
-  if (error instanceof RateLimitError)
+  }
+  if (error instanceof RateLimitError) {
     return new DeciderError("rate_limit", error.message, { cause: error });
-  if (error instanceof InternalServerError)
+  }
+  if (error instanceof InternalServerError) {
     return new DeciderError("server", error.message, { cause: error });
-  if (error instanceof APIError || error instanceof TypeSafeError)
+  }
+  if (error instanceof APIError || error instanceof TypeSafeError) {
     return new DeciderError("api", error.message, { cause: error });
+  }
   return error;
-}
+};
 
-export class TypeSafeDecider implements Decider {
+/** Both calls' token counts, when either reported any. */
+const addUsage = (
+  a: Usage | undefined,
+  b: Usage | undefined
+): Usage | undefined => {
+  if (!isRecord(a)) {
+    return b;
+  }
+  if (!isRecord(b)) {
+    return a;
+  }
+  return {
+    ...b,
+    input_tokens: (a.input_tokens || 0) + (b.input_tokens || 0),
+    output_tokens: (a.output_tokens || 0) + (b.output_tokens || 0),
+  };
+};
+
+class TypeSafeDecider implements Decider {
   private readonly logger: LoggerLike;
   private readonly client: TypeSafeClient;
   private readonly model: string;
@@ -197,8 +234,9 @@ export class TypeSafeDecider implements Decider {
       buildSignalQuestion(),
       signal
     );
-    if (!isRecord(gate.answers))
+    if (!isRecord(gate.answers)) {
       throw new DeciderError("unparseable", "reply carried no answers");
+    }
     // Clamped like the engine will clamp it, before it is compared or shown.
     const raw = readSignal(gate.answers);
     const read = raw === undefined ? undefined : Math.min(1, Math.max(0, raw));
@@ -266,17 +304,5 @@ export class TypeSafeDecider implements Decider {
   }
 }
 
-/** Both calls' token counts, when either reported any. */
-function addUsage(
-  a: Usage | undefined,
-  b: Usage | undefined
-): Usage | undefined {
-  if (!isRecord(a)) return b;
-  if (!isRecord(b)) return a;
-  return {
-    ...b,
-    input_tokens: (Number(a.input_tokens) || 0) + (Number(b.input_tokens) || 0),
-    output_tokens:
-      (Number(a.output_tokens) || 0) + (Number(b.output_tokens) || 0),
-  };
-}
+export { DEFAULT_MODEL, interpretAnswers, toDeciderError, TypeSafeDecider };
+export type { TurnAnswers, TypeSafeDeciderOptions };

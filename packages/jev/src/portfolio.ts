@@ -6,9 +6,9 @@ import type { InstrumentId } from "@repo/alpaca/instruments";
 import type { Action } from "./schema";
 import type { PortfolioState } from "./state";
 
-export type Side = "long" | "short";
+type Side = "long" | "short";
 
-export type Position = {
+type Position = {
   side: Side;
   quantity: number;
   /** Volume-weighted average entry price. */
@@ -16,11 +16,11 @@ export type Position = {
 };
 
 /** Latest price per instrument, in USD. */
-export type PriceMap = Partial<Record<InstrumentId, number>>;
+type PriceMap = Partial<Record<InstrumentId, number>>;
 
-export type Order = { instrument: InstrumentId; action: Action };
+type Order = { instrument: InstrumentId; action: Action };
 
-export type Fill = {
+type Fill = {
   instrument: InstrumentId;
   action: Action;
   side: Side;
@@ -36,17 +36,18 @@ export type Fill = {
   cash: number;
 };
 
-export type ApplyResult =
-  { kind: "fill"; fill: Fill } | { kind: "reject"; reason: string };
+type ApplyResult =
+  | { kind: "fill"; fill: Fill }
+  | { kind: "reject"; reason: string };
 
-export type PositionView = Position & {
+type PositionView = Position & {
   instrument: InstrumentId;
   /** Mark price; the average price when the instrument has no price yet. */
   price: number;
   unrealizedPnl: number;
 };
 
-export type Snapshot = {
+type Snapshot = {
   cash: number;
   equity: number;
   realized: number;
@@ -61,18 +62,19 @@ export type Snapshot = {
  * `volatility` is the instrument's one-minute volatility in percent, when
  * known.
  */
-export type Sizer = (input: {
+type Sizer = (input: {
   equity: number;
   price: number;
   volatility?: number;
 }) => number;
 
 /** Sizes every fill to `fraction` of current equity. */
-export function fractionOfEquity(fraction: number): Sizer {
-  return ({ equity, price }) => (fraction * equity) / price;
-}
+const fractionOfEquity =
+  (fraction: number): Sizer =>
+  ({ equity, price }) =>
+    (fraction * equity) / price;
 
-export type VolatilityScaledOptions = {
+type VolatilityScaledOptions = {
   /** Fraction of equity per fill when volatility is unknown. */
   fraction: number;
   /** Fraction of equity a one-sigma 15-minute move should cost. */
@@ -89,11 +91,13 @@ const maxScale = 2;
  * of equity: quiet markets get more, wild ones less, within 0.25× to 2× of
  * `fraction`. Without a volatility it sizes like `fractionOfEquity`.
  */
-export function volatilityScaled(options: VolatilityScaledOptions): Sizer {
+const volatilityScaled = (options: VolatilityScaledOptions): Sizer => {
   const { fraction, risk } = options;
   return ({ equity, price, volatility }) => {
     const base = fraction * equity;
-    if (volatility === undefined || !(volatility > 0)) return base / price;
+    if (volatility === undefined || !(volatility > 0)) {
+      return base / price;
+    }
     const move = (volatility * Math.sqrt(15)) / 100;
     const notional = Math.min(
       maxScale * base,
@@ -101,9 +105,9 @@ export function volatilityScaled(options: VolatilityScaledOptions): Sizer {
     );
     return notional / price;
   };
-}
+};
 
-export type PortfolioOptions = {
+type PortfolioOptions = {
   cash: number;
   sizer: Sizer;
   /**
@@ -115,7 +119,7 @@ export type PortfolioOptions = {
 // Below this a position is flat: float noise from reducing a long to zero.
 const dust = 1e-9;
 
-export class Portfolio {
+class Portfolio {
   private cash: number;
   private realized: number;
   private readonly positions = new Map<InstrumentId, Position>();
@@ -136,16 +140,17 @@ export class Portfolio {
   ): Portfolio {
     const portfolio = new Portfolio({ ...options, cash: state.cash });
     portfolio.realized = state.realized;
-    for (const [instrument, position] of Object.entries(state.positions))
-      if (position)
-        portfolio.positions.set(instrument as InstrumentId, { ...position });
+    for (const [instrument, position] of Object.entries(state.positions)) {
+      portfolio.positions.set(instrument as InstrumentId, { ...position });
+    }
     return portfolio;
   }
 
   toState(updatedAt: string, lastRun?: string): PortfolioState {
     const positions: PortfolioState["positions"] = {};
-    for (const [instrument, position] of this.positions)
+    for (const [instrument, position] of this.positions) {
       positions[instrument] = { ...position };
+    }
     return {
       version: 1,
       cash: this.cash,
@@ -176,8 +181,11 @@ export class Portfolio {
           : (position.avgPrice - price) * position.quantity;
       unrealized += unrealizedPnl;
       grossExposure += value;
-      if (position.side === "long") longValue += value;
-      else shortValue += value;
+      if (position.side === "long") {
+        longValue += value;
+      } else {
+        shortValue += value;
+      }
       positions.push({ ...position, instrument, price, unrealizedPnl });
     }
     return {
@@ -200,14 +208,18 @@ export class Portfolio {
   apply(order: Order, prices: PriceMap, volatility?: number): ApplyResult {
     const { instrument, action } = order;
     const price = prices[instrument];
-    if (price === undefined)
+    if (price === undefined) {
       return { kind: "reject", reason: `no price yet for ${instrument}` };
-    if (!Number.isFinite(price) || price <= 0)
+    }
+    if (!Number.isFinite(price) || price <= 0) {
       return { kind: "reject", reason: `invalid price ${price}` };
+    }
 
     const position = this.positions.get(instrument);
     if (action === "close") {
-      if (!position) return { kind: "reject", reason: "no position to close" };
+      if (!position) {
+        return { kind: "reject", reason: "no position to close" };
+      }
       return this.reduce(
         instrument,
         position,
@@ -222,9 +234,12 @@ export class Portfolio {
     const sized = Number.isFinite(size) && size > 0;
 
     if (action === "sell") {
-      if (!position) return { kind: "reject", reason: "no long to sell" };
-      if (position.side === "short")
+      if (!position) {
+        return { kind: "reject", reason: "no long to sell" };
+      }
+      if (position.side === "short") {
         return { kind: "reject", reason: "short open; use close" };
+      }
       // Selling reduces risk, so it is allowed even when equity is gone: the
       // whole position goes when a unit cannot be sized.
       const quantity = sized
@@ -233,24 +248,30 @@ export class Portfolio {
       return this.reduce(instrument, position, quantity, price, action);
     }
 
-    if (!(equity > 0))
+    if (!(equity > 0)) {
       return { kind: "reject", reason: "equity is not positive" };
-    if (!sized) return { kind: "reject", reason: "zero quantity" };
+    }
+    if (!sized) {
+      return { kind: "reject", reason: "zero quantity" };
+    }
 
     const side: Side = action === "buy" ? "long" : "short";
-    if (position && position.side !== side)
+    if (position && position.side !== side) {
       return {
         kind: "reject",
         reason: `${position.side} open; close first`,
       };
+    }
     const notional = size * price;
-    if (side === "long" && notional > this.cash)
+    if (side === "long" && notional > this.cash) {
       return { kind: "reject", reason: "insufficient cash" };
-    if (grossExposure + notional > equity * this.maxLeverage)
+    }
+    if (grossExposure + notional > equity * this.maxLeverage) {
       return {
         kind: "reject",
         reason: `exposure ${(grossExposure + notional).toFixed(2)} would exceed ${(equity * this.maxLeverage).toFixed(2)}`,
       };
+    }
 
     const quantity = (position?.quantity ?? 0) + size;
     const avgPrice = position
@@ -313,3 +334,18 @@ export class Portfolio {
     };
   }
 }
+
+export { fractionOfEquity, Portfolio, volatilityScaled };
+export type {
+  ApplyResult,
+  Fill,
+  Order,
+  PortfolioOptions,
+  Position,
+  PositionView,
+  PriceMap,
+  Side,
+  Sizer,
+  Snapshot,
+  VolatilityScaledOptions,
+};

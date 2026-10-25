@@ -16,15 +16,17 @@ const upper = node(
 );
 const endless = node("source", "setInterval(() => console.log('x'), 10)");
 
-async function collect(
+const collect = async (
   pipeline: Pipeline,
   commands: Command[],
   signal?: AbortSignal
-) {
+) => {
   const lines: string[] = [];
-  for await (const line of pipeline.run(commands, signal)) lines.push(line);
+  for await (const line of pipeline.run(commands, signal)) {
+    lines.push(line);
+  }
   return lines;
-}
+};
 
 describe("Pipeline", () => {
   it("pipes each stage into the next and yields lines", async () => {
@@ -95,7 +97,10 @@ describe("Pipeline", () => {
     );
     const controller = new AbortController();
     setTimeout(() => controller.abort(), 200);
-    await collect(new Pipeline(logger), [leaky, upper], controller.signal);
+    // The point is that this settles at all; nothing reaches `upper`.
+    await expect(
+      collect(new Pipeline(logger), [leaky, upper], controller.signal)
+    ).resolves.toEqual([]);
   });
 
   it("finishes when the last stage exits but a descendant keeps its stdout", async () => {
@@ -127,7 +132,10 @@ describe("Pipeline", () => {
     );
     const controller = new AbortController();
     setTimeout(() => controller.abort(), 300);
-    await collect(new Pipeline(logger), [flood, sink], controller.signal);
+    // The point is that this settles at all; `sink` never prints.
+    await expect(
+      collect(new Pipeline(logger), [flood, sink], controller.signal)
+    ).resolves.toEqual([]);
   });
 
   it("reports a command that cannot be started", async () => {

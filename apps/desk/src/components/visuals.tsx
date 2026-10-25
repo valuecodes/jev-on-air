@@ -25,7 +25,7 @@ type Look = {
   bar: string;
 };
 
-export const instruments: Record<Instrument, Look> = {
+const instruments: Record<Instrument, Look> = {
   gold: {
     name: "Gold",
     icon: Coins,
@@ -52,7 +52,7 @@ export const instruments: Record<Instrument, Look> = {
   },
 };
 
-export const actions: Record<Action, Look> = {
+const actions: Record<Action, Look> = {
   buy: {
     name: "Buy",
     icon: ArrowUpRight,
@@ -82,7 +82,7 @@ export const actions: Record<Action, Look> = {
 const pill =
   "inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-xs font-semibold";
 
-export function InstrumentChip({ id }: { id: Instrument }) {
+const InstrumentChip = ({ id }: { id: Instrument }) => {
   const { name, icon: Icon, chip } = instruments[id];
   return (
     <span className={`${pill} ${chip}`}>
@@ -90,9 +90,9 @@ export function InstrumentChip({ id }: { id: Instrument }) {
       {name}
     </span>
   );
-}
+};
 
-export function ActionPill({ action }: { action: Action }) {
+const ActionPill = ({ action }: { action: Action }) => {
   const { name, icon: Icon, chip } = actions[action];
   return (
     <span className={`${pill} ${chip} tracking-wider uppercase`}>
@@ -100,10 +100,10 @@ export function ActionPill({ action }: { action: Action }) {
       {name}
     </span>
   );
-}
+};
 
 /** A thin bar filled to `value` (0–1), with the percentage beside it. */
-export function Meter({
+const Meter = ({
   value,
   fill,
   label,
@@ -111,12 +111,14 @@ export function Meter({
   value: number;
   fill: string;
   label?: string;
-}) {
+}) => {
   const percent = Math.round(Math.min(1, Math.max(0, value)) * 100);
   return (
     <span className="inline-flex items-center gap-2">
-      {label && <span className="text-muted text-xs">{label}</span>}
-      <span className="bg-raised h-1.5 w-20 overflow-hidden rounded-full">
+      {label !== undefined && label !== "" && (
+        <span className="text-xs text-muted">{label}</span>
+      )}
+      <span className="h-1.5 w-20 overflow-hidden rounded-full bg-raised">
         <span
           className={`block h-full rounded-full ${fill}`}
           style={{ width: `${percent}%` }}
@@ -125,25 +127,30 @@ export function Meter({
       <span className={`${mono} text-xs`}>{percent}%</span>
     </span>
   );
-}
+};
 
-/** How likely the new lines moved a market: gray, then amber, then green. */
-export function SignalMeter({ signal }: { signal: number }) {
-  const fill =
-    signal >= 0.5
-      ? "bg-good shadow-[0_0_8px_var(--color-good)]"
-      : signal >= 0.25
-        ? "bg-warn"
-        : "bg-muted";
-  return <Meter value={signal} fill={fill} label="signal" />;
-}
+/** Gray, then amber, then green as the signal grows. */
+const signalFill = (signal: number): string => {
+  if (signal >= 0.5) {
+    return "bg-good shadow-[0_0_8px_var(--color-good)]";
+  }
+  if (signal >= 0.25) {
+    return "bg-warn";
+  }
+  return "bg-muted";
+};
+
+/** How likely the new lines moved a market. */
+const SignalMeter = ({ signal }: { signal: number }) => (
+  <Meter value={signal} fill={signalFill(signal)} label="signal" />
+);
 
 /** A pulsing dot for anything live. */
-export function LiveDot({ tone = "good" }: { tone?: "good" | "bad" }) {
-  return (
-    <span
-      className={`animate-glow inline-block size-2 rounded-full ${tone === "good" ? "bg-good text-good" : "bg-bad text-bad"}`}
-      aria-hidden
-    />
-  );
-}
+const LiveDot = ({ tone = "good" }: { tone?: "good" | "bad" }) => (
+  <span
+    className={`inline-block size-2 animate-glow rounded-full ${tone === "good" ? "bg-good text-good" : "bg-bad text-bad"}`}
+    aria-hidden
+  />
+);
+
+export { ActionPill, InstrumentChip, instruments, LiveDot, Meter, SignalMeter };
