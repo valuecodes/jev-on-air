@@ -17,22 +17,34 @@ catalog:
   "@typesafe-ai/sdk": 0.5.7
   knip: 6.41.0
   lightweight-charts: 5.2.1
-  lucide-react: 1.45.0
-  next: 16.3.5
+  lucide-react: 1.55.0
+  next: 16.4.0
   oxfmt: 0.72.0
   oxlint: 1.87.0
-  oxlint-tsgolint: 7.0.2003
-  pino: 10.3.1
+  oxlint-tsgolint: 7.0.2004
+  pino: 10.4.0
   react: 19.3.0
   react-dom: 19.3.0
   tailwindcss: 4.3.3
-  tsx: 4.23.13
+  tsx: 4.23.15
   turbo: 2.11.7
   # `typescript` is the native (Go) compiler; its binary is still `tsc`.
   typescript: 7.0.2
   vitest: 4.1.11
   # Runtime schemas: jev validates decision files, desk validates requests.
-  zod: 4.6.2
+  zod: 4.6.6
+
+# Security pins for transitive deps, each the exact patched version. Drop an
+# entry once every parent resolves to a patched version on its own.
+overrides:
+  # GHSA-mrhx-c7xc-m3w5. knip > zod; direct users take it from the catalog.
+  zod: 4.6.6
+  # GHSA-587h-7wmj-h5pm and 5 more. vitest > @vitest/mocker > vite.
+  vite: 8.3.4
+  # GHSA-68fv-2mgg-jv7q. postcss > source-map-js, @tailwindcss/node > source-map-js.
+  source-map-js: 1.2.2
+  # GHSA-wq5f-xc86-pv6w. next > sharp.
+  sharp: 0.35.5
 
 # Skipped by `pnpm up --latest`. `@types/node` must track the Node major in
 # `.nvmrc`, so bump it by hand within that line.
