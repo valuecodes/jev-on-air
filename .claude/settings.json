@@ -18,7 +18,10 @@
       "Bash(nc:*)",
       "Bash(ssh:*)",
       "Read(**/.env*)",
-      "Read(**/secrets/**)"
+      "Read(**/secrets/**)",
+      "Bash(git commit --no-verify:*)",
+      "Bash(git commit -n:*)",
+      "Bash(git push --no-verify:*)"
     ],
     "ask": [
       "Bash(pnpm install:*)",

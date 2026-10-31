@@ -106,5 +106,6 @@ PRs and on push to `main`, plus CodeQL code scanning and actionlint + zizmor ove
 workflow files. The checks live once in `checks.yml`, called by `feature.yml` (PRs) and
 `main.yml` (push to `main`). The `all-passed` job fans them in: require only that check
 in branch protection. The secret scan runs `secret-scan.yml` from `valuecodes/maintain-kit`
-over the full history; a local `gitleaks git --staged` (gitleaks v8.19+) does the same for
-staged changes.
+over the full history. Locally, `pnpm install` enables the git hooks in `.githooks/`:
+`pre-commit` runs format:check, lint and `gitleaks git --staged` (gitleaks v8.19+ must be
+installed), and `pre-push` runs typecheck, test and knip.

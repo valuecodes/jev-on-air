@@ -44,7 +44,7 @@ and inside an app use the `~/` alias (`src/*`) to go up the tree.
 or in a root `.env` (see `.env.example`). `pnpm cli jev` needs those plus `TYPESAFE_API_KEY`.
 
 ```bash
-pnpm install                     # Install all dependencies
+pnpm install                     # Install all dependencies, enable the git hooks
 pnpm cli --hello-world           # Run the CLI (args go to apps/cli)
 pnpm cli transcribe <youtube-url> # Stream a live/video transcript
 pnpm cli prices                  # Stream live prices from Alpaca
@@ -69,11 +69,23 @@ configured by the root `knip.jsonc` and exits 0 when clean. Formatting is oxfmt
 (Prettier-compatible), configured by the root `.oxfmtrc.jsonc`, which also sorts
 imports and Tailwind classes.
 
-There is no post-edit formatting hook: run `pnpm format` yourself before committing.
+Nothing formats on edit, and the pre-commit hook only checks formatting: run
+`pnpm format` yourself before committing.
 
-CI scans the full git history with gitleaks at the version pinned in `secret-scan.yml`
-from `valuecodes/maintain-kit`, so this repo holds no gitleaks pin. To check staged
-changes before committing, run `gitleaks git --staged` with a local gitleaks (v8.19+).
+Git hooks live in `.githooks/` and are plain shell scripts, with no hook manager.
+`pnpm install` enables them through the root `prepare` script. The setting goes in
+the clone's shared git config, so it covers every worktree, and a branch without
+`.githooks/` simply runs no hooks. If you cloned before the hooks existed and have
+not run `pnpm install` since, run `git config core.hooksPath .githooks` once.
+`pre-commit` runs `format:check`, `lint` and `gitleaks git --staged` with the local
+gitleaks (v8.19+). The secrets scan fails closed, so the commit is refused when
+gitleaks is not installed. `pre-push` runs `typecheck`, `test` and `knip`. CI still
+runs every check. `format:check` and `lint` read the working tree, not the staged
+snapshot, so stage everything you mean to commit.
+
+The hook runs whatever gitleaks is installed; CI scans the full git history with the
+version pinned in `secret-scan.yml` from `valuecodes/maintain-kit`, so this repo holds
+no gitleaks pin.
 
 CI checks are defined once in the reusable `.github/workflows/checks.yml`: typecheck,
 lint, knip, format:check, test, build, CodeQL code scanning
@@ -113,6 +125,7 @@ dashboard, updates, secret-scan and workflow-lint callers pin the same
 
 - Keep diffs tight and focused; no drive-by refactors or new tooling without discussion.
 - Never commit secrets, credentials, or `.env` files. All code must be public-safe.
+- Never bypass the git hooks with `--no-verify`; fix the failure instead.
 - Add dependencies to the correct workspace with `pnpm --filter <package> add <dep>`.
   Every external version lives in the `catalog:` block of `pnpm-workspace.yaml`
   and manifests reference it as `catalog:`; `@repo/*` deps stay `workspace:*`.
