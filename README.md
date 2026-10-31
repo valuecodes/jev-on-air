@@ -30,7 +30,7 @@ flowchart LR
 
 ## What's inside
 
-- Command-line app in `apps/cli` (Node.js 24, TypeScript run directly)
+- Command-line app in `apps/cli` (Node.js 26, TypeScript run directly)
 - Local dashboard in `apps/desk` (Next.js): start/stop `jev` runs and watch them live
 - Shared tooling: oxlint, oxfmt, Knip, TypeScript 7, Turbo
 - `@repo/logger` — structured JSON logging for Cloud Run / Cloud Logging
@@ -42,7 +42,7 @@ flowchart LR
 - Agent settings in `.claude/`, CI in `.github/`
 
 ```text
-apps/cli               Node.js 24 CLI: transcribe, prices, jev
+apps/cli               Node.js 26 CLI: transcribe, prices, jev
 apps/desk              local Next.js dashboard: start/stop jev runs, watch them stream
 packages/alpaca        Alpaca market data: live prices over WebSocket
 packages/jev           paper-trading decision engine, portfolio and ledger
@@ -56,7 +56,7 @@ packages/typescript    shared tsconfig presets (base, node, react)
 
 ## Getting started
 
-Requires Node.js 24 (exact version in `.nvmrc`) and pnpm 12.11.2 (`packageManager` in `package.json`).
+Requires Node.js 26 (exact version in `.nvmrc`) and pnpm 12 (exact version in `packageManager` in `package.json`).
 
 ```bash
 pnpm install

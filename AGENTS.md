@@ -14,7 +14,7 @@ into simulated trade signals.
 
 | Name | Filter | Description                                                            |
 | ---- | ------ | ---------------------------------------------------------------------- |
-| cli  | `cli`  | Node.js 24 command-line app, runs TypeScript via tsx                   |
+| cli  | `cli`  | Node.js 26 command-line app, runs TypeScript via tsx                   |
 | desk | `desk` | Local-only Next.js dashboard: start/stop `jev` runs, watch them stream |
 
 ### Packages (`packages/`)
@@ -38,7 +38,7 @@ and inside an app use the `~/` alias (`src/*`) to go up the tree.
 
 ## Commands
 
-**Prerequisites:** Node.js 24 (exact version in `.nvmrc`), pnpm 12.11.2 (`packageManager` in root `package.json`).
+**Prerequisites:** Node.js 26 (exact version in `.nvmrc`), pnpm 12 (exact version in `packageManager` in root `package.json`).
 `pnpm cli transcribe` also needs [uv](https://docs.astral.sh/uv/) and `ffmpeg` on `PATH`.
 `pnpm cli prices` needs `ALPACA_API_KEY_ID` and `ALPACA_API_SECRET_KEY`, in the environment
 or in a root `.env` (see `.env.example`). `pnpm cli jev` needs those plus `TYPESAFE_API_KEY`.
