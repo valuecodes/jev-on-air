@@ -28,7 +28,7 @@ into simulated trade signals.
 | typescript  | `@repo/typescript`  | Shared tsconfig presets (`base.json`, `node.json`, `react.json`)                         |
 
 CI helpers are not workspaces: the composite setup action lives in
-`.github/actions/setup/` and the gitleaks script in `.github/scripts/`.
+`.github/actions/setup/`.
 
 Apps may import packages; packages must never import apps. oxlint bans `../`
 imports and deep `@repo/*/src` imports: import other workspaces by package name,
@@ -59,7 +59,6 @@ pnpm test                        # turbo run test
 pnpm build                       # turbo run build
 pnpm format                      # oxfmt, writes in place
 pnpm format:check                # oxfmt --check (no writes)
-pnpm secrets:scan                # gitleaks over the full git history
 pnpm clean                       # turbo run clean
 ```
 
@@ -72,16 +71,16 @@ imports and Tailwind classes.
 
 There is no post-edit formatting hook: run `pnpm format` yourself before committing.
 
-`secrets:scan` runs gitleaks (`.github/scripts/secrets-scan.sh`, version pinned
-there) using a local `gitleaks` v8.19+ if one is on PATH, otherwise the pinned Docker image.
-It exits 0 when clean and 1 when it finds a leak.
+CI scans the full git history with gitleaks at the version pinned in `secret-scan.yml`
+from `valuecodes/maintain-kit`, so this repo holds no gitleaks pin. To check staged
+changes before committing, run `gitleaks git --staged` with a local gitleaks (v8.19+).
 
 CI checks are defined once in the reusable `.github/workflows/checks.yml`: typecheck,
-lint, knip, format:check, test, build, secrets-scan, CodeQL code scanning
-(`javascript-typescript` and `python`) and workflow-lint. `feature.yml` calls it on PRs and
-`main.yml` on push to `main` (deploy jobs go there). workflow-lint calls the reusable
-workflow from `valuecodes/automation`: actionlint (with shellcheck) and zizmor over the
-workflow and action files. Each tool reads `.github/actionlint.yaml` / `zizmor.yml` if
+lint, knip, format:check, test, build, CodeQL code scanning
+(`javascript-typescript` and `python`), secret-scan and workflow-lint. `feature.yml` calls it
+on PRs and `main.yml` on push to `main` (deploy jobs go there). secret-scan and workflow-lint
+call the reusable workflows from `valuecodes/maintain-kit`: gitleaks over the full git
+history, and actionlint (with shellcheck) and zizmor over the workflow and action files. Each tool reads `.github/actionlint.yaml` / `zizmor.yml` if
 added. `all-passed` in `feature.yml` fans the checks in and is the one check to require
 in branch protection. The typecheck, test and build jobs restore Turbo's `.turbo` cache
 from the previous run of the same task, so unchanged packages replay instead of rerunning.
@@ -89,18 +88,16 @@ from the previous run of the same task, so unchanged packages replay instead of 
 Dependabot (`.github/dependabot.yml`) bumps the SHA-pinned actions and reusable workflows
 monthly in one grouped PR; npm dependencies are updated by hand.
 
-`maintenance-dashboard.yml` calls the maintenance dashboard workflow from
-`valuecodes/automation` daily.
-It keeps one issue, **Maintenance dashboard** (label `maintenance-dashboard`), listing
-what is due: `catalog:` updates, pnpm (`packageManager`), gitleaks (`GITLEAKS_VERSION`
-in the secrets-scan script), Node.js (`.nvmrc`) and `pnpm audit` findings. Like
+`maintain-kit-dashboard.yml` calls the dashboard workflow from
+`valuecodes/maintain-kit` daily.
+It keeps one issue, **Maintenance dashboard** (label `maintain-kit-dashboard`), listing
+what is due: `catalog:` updates, pnpm (`packageManager`), Node.js (`.nvmrc`) and
+`pnpm audit` findings. Like
 `minimumReleaseAge`, a release shows up only once it is 14 days old; a Node.js security
 release shows up right away and is flagged. It never opens PRs or commits; doing the
 updates stays manual. For a Node.js bump, change only `.nvmrc` (the one place that
-holds the exact version). If `GITLEAKS_VERSION` moves out of
-`.github/scripts/secrets-scan.sh`, pass the new path as the `gitleaks-script` input. The
-dashboard and workflow-lint callers pin the same `valuecodes/automation` commit, so bump
-them together.
+holds the exact version). The dashboard, secret-scan and workflow-lint callers pin the
+same `valuecodes/maintain-kit` commit, so bump them together.
 
 ---
 
