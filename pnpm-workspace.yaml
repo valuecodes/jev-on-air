@@ -57,12 +57,21 @@ updateConfig:
 # guardrail, not a CI check.
 catalogMode: strict
 
+# Writes exact versions (no `^` or `~`) on `pnpm add`. pnpm 12 reads only
+# auth settings from `.npmrc`, so this has to live here.
+saveExact: true
+
 allowBuilds:
   # Installs Tailwind 4's native binary. Without it Tailwind silently emits no
   # styles, and `pnpm build` still passes.
   "@tailwindcss/oxide": true
   # Still used by Vite's dependency pre-bundling and Vitest's transforms.
   esbuild: true
+
+# pnpm already fails the install when the root `engines.node` doesn't match.
+# This also refuses any non-optional dependency whose own `engines` excludes
+# the running Node.js, instead of only warning.
+engineStrict: true
 
 # 14 days, in minutes: a new release is not resolvable until it is this old.
 # So `pnpm up --latest` deliberately skips fresh releases; use

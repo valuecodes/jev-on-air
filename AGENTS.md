@@ -119,6 +119,6 @@ dashboard, updates, secret-scan and workflow-lint callers pin the same
   Update with `pnpm up --latest -r`; `updateConfig.ignoreDependencies` holds
   `@types/node` to the `.nvmrc` major, so bump it by hand.
 - Every install enforces the supply-chain settings in `pnpm-workspace.yaml`
-  (`minimumReleaseAge`, `trustPolicy: no-downgrade`) plus pnpm 12's default
-  `blockExoticSubdeps`. When one fails, investigate: never disable it, and never
-  exclude a whole package to get past it.
+  (`minimumReleaseAge`, `trustPolicy: no-downgrade`, `engineStrict`) plus pnpm
+  12's default `blockExoticSubdeps`. When one fails, investigate: never disable
+  it, and never exclude a whole package to get past it.
